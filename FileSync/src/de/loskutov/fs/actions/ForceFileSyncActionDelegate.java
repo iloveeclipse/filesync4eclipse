@@ -1,0 +1,165 @@
+/*******************************************************************************
+ * Copyright (c) 2005 Andrei Loskutov.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the BSD License
+ * which accompanies this distribution, and is available at
+ * http://www.opensource.org/licenses/bsd-license.php
+ * Contributor:  Andrei Loskutov - initial API and implementation
+ *******************************************************************************/
+package de.loskutov.fs.actions;
+
+import org.eclipse.core.resources.IProject;
+import org.eclipse.core.resources.IProjectNature;
+import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IncrementalProjectBuilder;
+import org.eclipse.core.runtime.IAdaptable;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jface.action.IAction;
+import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.preference.IPreferenceStore;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.ui.actions.ActionDelegate;
+
+import de.loskutov.fs.FileSyncPlugin;
+import de.loskutov.fs.builder.FileSyncBuilder;
+import de.loskutov.fs.preferences.FileSyncConstants;
+import de.loskutov.fs.properties.ProjectHelper;
+
+/**
+ * @author Andrei
+ */
+public class ForceFileSyncActionDelegate extends ActionDelegate {
+
+    private IProject project;
+
+    public ForceFileSyncActionDelegate() {
+        super();
+    }
+
+    public void dispose() {
+        project = null;
+        super.dispose();
+    }
+
+    public void run(IAction action) {
+        FileSyncBuilder builder = getOrCreateBuilder();
+        if(builder != null){
+            sync(builder);
+        }
+    }
+
+    /**
+     * Public method to be able to test it
+     */
+    public FileSyncBuilder getOrCreateBuilder() {
+        if (project == null) {
+            FileSyncPlugin.error("Could not run FileSync builder - project is null!",
+                    null);
+            return null;
+        }
+        IPreferenceStore store = FileSyncPlugin.getDefault().getPreferenceStore();
+        boolean askUser = store.getBoolean(FileSyncConstants.KEY_ASK_USER);
+        if (ProjectHelper.isBuilderDisabled(project)) {
+            if (askUser) {
+                MessageDialog.openInformation(FileSyncPlugin.getShell(),
+                        "FileSync builder is disabled!",
+                        "Please activate FileSync builder for project '"
+                        + project.getName() + "' under\n"
+                        + "Project->Properties->Builders!");
+            }
+            return null;
+        }
+
+        if (!ProjectHelper.hasBuilder(project)) {
+            boolean ok = true; // TODO should be taken from prefs
+            if(askUser){
+                ok = MessageDialog.openQuestion(FileSyncPlugin.getShell(),
+                        "FileSync builder is not enabled!",
+                        "Should FileSync builder be enabled for project '"
+                        + project.getName() + "' ?");
+            }
+            if (ok) {
+                ProjectHelper.addBuilder(project);
+            }
+        }
+
+        return new FileSyncBuilder(project);
+    }
+
+    private void sync(FileSyncBuilder builder) {
+        final FileSyncBuilder finalBuilder = builder;
+
+        final Job myJob = new Job("Full project sync") {
+            public IStatus run(IProgressMonitor monitor) {
+                finalBuilder.build(IncrementalProjectBuilder.FULL_BUILD, monitor);
+                return Status.OK_STATUS;//new JobStatus(IStatus.INFO, 0, this, "", null);
+            }
+        };
+        myJob.schedule();
+    }
+
+    //    private FileSyncBuilder getBuilder() {
+    //        //        BuildManager manager = ((Workspace) ResourcesPlugin.getWorkspace()).getBuildManager();
+    //        ICommand[] commands = null;
+    //
+    //        // TODO does not work as expected...
+    //
+    //        //        try {
+    //        //            commands = project.getDescription().getBuildSpec();
+    //        //        } catch (CoreException e) {
+    //        //            FileSyncPlugin.error("Could not get builder info from project " + project.getName(), e);
+    //        //            return null;
+    //        //        }
+    //        // the hack for problem above
+    //        commands = ((Project) project).internalGetDescription().getBuildSpec(false);
+    //
+    //        for (int i = 0; i < commands.length; i++) {
+    //            String builderName = commands[i].getBuilderName();
+    //            if (FileSyncBuilder.BUILDER_ID.equals(builderName)) {
+    //                return (FileSyncBuilder) ((BuildCommand) commands[i]).getBuilder();
+    //            }
+    //        }
+    //        return null;
+    //        //        ProjectInfo info = (ProjectInfo) ((Workspace) ResourcesPlugin
+    //        //                .getWorkspace()).getResourceInfo(project.getFullPath(), false,
+    //        //                false);
+    //        //        Hashtable builders = info.getBuilders();
+    //        //        final FileSyncBuilder builder = (FileSyncBuilder) builders
+    //        //                .get(FileSyncBuilder.BUILDER_ID);
+    //        //        return builder;
+    //    }
+
+    public void runWithEvent(IAction action, Event event) {
+        run(action);
+    }
+
+    public void selectionChanged(IAction action, ISelection selection) {
+        if (!(selection instanceof IStructuredSelection)) {
+            project = null;
+            return;
+        }
+        IStructuredSelection ssel = (IStructuredSelection) selection;
+        Object firstElement = ssel.getFirstElement();
+        if (firstElement instanceof IAdaptable) {
+            project = (IProject) ((IAdaptable) firstElement).getAdapter(IProject.class);
+        }
+        if (project != null) {
+            return;
+        }
+        if (firstElement instanceof IResource) {
+            project = ((IResource) firstElement).getProject();
+        }
+        if (project != null) {
+            return;
+        }
+        if (firstElement instanceof IProjectNature) {
+            project = ((IProjectNature) firstElement).getProject();
+        }
+    }
+
+}

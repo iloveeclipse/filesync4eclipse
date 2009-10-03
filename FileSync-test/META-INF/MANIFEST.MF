@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: FileSync_test Plug-in
+Bundle-SymbolicName: FileSync_test
+Bundle-Version: 1.0.3
+Bundle-Localization: plugin
+Require-Bundle: de.loskutov.FileSync,
+ org.eclipse.core.runtime,
+ org.eclipse.ui,
+ org.eclipse.core.resources,
+ org.junit
+Bundle-Vendor: Andrei Loskutov

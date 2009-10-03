@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.0"?>
+<plugin>
+   <extension
+         id="FSBuilder"
+         name="FileSync Builder"
+         point="org.eclipse.core.resources.builders">
+      <builder hasNature="false">
+         <run class="de.loskutov.fs.builder.FileSyncBuilder"/>
+      </builder>
+   </extension>
+   <extension
+         id="FSPropertyPage"
+         name="FileSync property page"
+         point="org.eclipse.ui.propertyPages">
+      <page
+            adaptable="true"
+            objectClass="org.eclipse.core.resources.IProject"
+            nameFilter="*"
+            class="de.loskutov.fs.properties.ProjectSyncPropertyPage"
+            name="File synchronization"
+            id="de.loskutov.fs.properties.samplePropertyPage"/>
+   </extension>
+   <extension
+         id="FSPreferences"
+         name="FileSync preferences"
+         point="org.eclipse.core.runtime.preferences">
+      <initializer class="de.loskutov.fs.preferences.PreferencesInitializer"/>
+   </extension>
+  <extension point="org.eclipse.ui.popupMenus">
+    <objectContribution
+      id="FSForceSyncContribution"
+      adaptable="true"
+      objectClass="org.eclipse.core.resources.IProject">
+      <action
+            enablesFor="1"
+            label="Force File Synchronization"
+            icon="icons/refresh.gif"
+            class="de.loskutov.fs.actions.ForceFileSyncActionDelegate"
+            id="FSForceSync"/>
+      <visibility>
+         <objectState
+               value="true"
+               name="open"/>
+      </visibility>
+    </objectContribution>
+  </extension>
+
+</plugin>

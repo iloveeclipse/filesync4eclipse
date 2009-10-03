@@ -1,0 +1,123 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>FileSync plugin for Eclipse</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<meta name="author" content="Andrei Loskutov" />
+<meta name="copyright" content="Copyright 2005 Andrei Loskutov" />
+<meta name="description" content="FileSync plugin keeps external files in-sync with files in Eclipse projects" />
+<meta name="keywords" content="Hannover, Java, Eclipse, Plugin, FileSync, File, Synchronization, Tool, Programmer, Uni, Nienburg, Moskau, Loskutov, Andrei" />
+<meta name="revisit-after" content="3 Days" />
+<meta name="robots" content="index, follow" />
+<meta name="distribution" content="global" />
+<meta name="rating" content="General" />
+<meta name="audience" content="All" />
+<link rel="stylesheet" href="../styles/styles.css" type="text/css" />
+<link rel="SHORTCUT ICON" href="../favicon.ico" />
+</head>
+<body>
+<table width="86%" border="0" align="center" cellpadding="8" cellspacing="0" class="mainTable">
+  <tr>
+    <td> <a href="http://andrei.gmxhome.de/index.html" class="box">Home</a> | <a href="http://andrei.gmxhome.de/perforce/index.html" class="box">BranchView</a> | <a href="http://andrei.gmxhome.de/eclipse.html" class="box">Eclipse
+        plugins</a> <strong>-&gt;</strong> <span class="menu">FileSync</span></td>
+    <td align="right">| <a href="http://andrei.gmxhome.de/privat.html" class="box">About</a></td>
+  </tr>
+</table>
+<br />
+<table width="86%" border="0" align="center" cellpadding="20" cellspacing="0" class="mainTable">
+  <tr>
+    <td>
+		<a href="http://www.eclipse.org/community/index.html" class="none" title="Eclipse ready"><img src="../images/rea_eclipse_pos_logo_fc_sm.jpg" alt="Eclipse ready" width="140" height="79" border="0" align="right" class="none" /></a>		
+		<h1>FileSync  plugin for Eclipse</h1>
+    <blockquote>
+    <p> FileSync plugin for <a href="http://www.eclipse.org/">Eclipse</a> is
+      a file synchronisation tool. The main goal is to keep  files
+      outside of Eclipse projects in-sync with Eclipse project files. The
+      plugin works as builder in Eclipse and will  synchronize all changes
+      on Eclipse project files to mapped external folders. E.g. if
+      a file is created, changed or deleted in Eclipse, then the mapped (external)
+      file will be created, changed or deleted too. Please note, that synchronization works is only in one direction - from Eclipse to the rest of the world. </p>
+    <p>Here you can see <a href="http://andrei.gmxhome.de/filesync/examples.html" class="box">some examples</a></p>
+    <p>This programm is free, see <a href="copyright.html" class="box">copyright</a>. </p>
+    <p>Usage of FileSync plugin <span class="red">could lead to data damage</span>,
+      so please agree with followed statement before installing FileSync plugin:</p>
+    <p class="red">THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+      ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+      WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+      DISCLAIMED. IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE FOR
+      ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+      DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+      OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+      CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+      OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE
+      USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. </p>
+    </blockquote>
+<p class="titel">Download</p>
+<blockquote>
+  <p><a href="http://andrei.gmxhome.de/filesync/links.html" class="box">Here</a></p>
+</blockquote>
+<p class="titel">Users about FileSync </p>
+<blockquote>
+  <p><a href="http://www.eclipseplugincentral.com/Web_Links-index-req-viewlink-cid-585.html">Plugin page at Eclipse plugin central</a></p>
+</blockquote>
+<p class="titel">Installation</p>
+<blockquote>
+    <p><strong>Eclipse 3.1+</strong>: all what you need to install FileSync plugin is to <strong>copy</strong>      FileSync
+      jar to you <span class="code">%Eclipse%/plugin</span> directory
+      and restart Eclipse. </p>
+    <p>For Eclipse 3.1 Update Manager users: you can use special Eclipse update
+      site for this plugin. Go to &quot;Help -&gt; Software Updates -&gt; Find
+      and Install... -&gt; Search for new features to install -&gt; Next -&gt; New
+      Remote Site...&quot; and use the <strong>http://andrei.gmxhome.de/eclipse/</strong> as
+      url.</p>
+    </blockquote>
+<p class="titel">Usage</p>
+<blockquote>
+    <p><a href="http://andrei.gmxhome.de/filesync/usage.html" class="box">Here</a></p>
+    </blockquote>
+<p class="titel">Feedback</p>
+<blockquote>
+    <p>Please send comments to <img src="../images/loskutov.gif" alt="loskutov" width="130" height="12" align="top" /></p>
+</blockquote>
+<p class="titel">History</p>
+<blockquote>
+  <p class="red">New in version 1.3.2.1 (Eclipse 3.1 - 3.3) [01.11.2007] </p>
+  <ul>
+    <li>
+      <p>&quot;Default destination&quot; field and settings file supports UNC path on Windows now (like \\server\share\folder path) </p>
+    </li>
+  </ul>
+  <p class="none">New in version 1.3.2 (Eclipse 3.1 - 3.3) [06.10.2006] </p>
+  <ul>
+    <li>
+      <p>The same as 1.3.1.beta, made it &quot;stable&quot; now </p>
+    </li>
+  </ul>
+  <p>New in version 1.3.1.beta (Eclipse 3.1 and 3.2) </p>
+  <ul>
+    <li>
+      <p>New <strong>experimental</strong> feature: if the file to synchronize contains variables, then it is possible to substitute these variables with  values &quot;on the fly&quot;. </p>
+    </li>
+    <li>
+      <p>Variables/values could be specified only through Java .properties file format, %KEY%=%VALUE%, and used only in Ant notation -  &quot;Hallo ${KEY}&quot; would be replaced to &quot;Hallo VALUE&quot;. Because of this changes, mapping format was changed (but is still up/down compatible with previous releases).
+        At the end of each mapping line one could add the *project relative* path to the specific variables file for this mapping. This is optional.
+        The variables files are monitored by plugin, so that changes in this files would lead to start of full synchronisation of the project.</p>
+    </li>
+    <li>
+      <p>Also the project preferences UI page was changed to reflect this new feature. Any suggestions and bug reports regarding the new feature / new UI changes are welcome. </p>
+    </li>
+    <li>
+      <p> Updated JUnit test case (1.0.3) </p>
+    </li>
+  </ul>
+  <p><span class="red">Here you can see <a href="http://andrei.gmxhome.de/filesync/history.html" class="box">older
+      versions history </a></span></p>
+  </blockquote></td>
+</tr>
+</table>
+
+<p align="center"><i><small>Last changed at:
+  <!-- #BeginDate format:Br1m -->01.11.07  12:19<!-- #EndDate -->
+</small></i></p>
+</body>
+</html>
