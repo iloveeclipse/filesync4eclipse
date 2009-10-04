@@ -1,6 +1,7 @@
 1.3.5
  - Added option to synchronize team private data too (like .svn shit)
-  
+ - Switched to the EPL v 1.0 license
+
 1.3.4
  - variable replacement capability in the target specification.
   For example, something like: //server/share/${env_var:CLIENT}
