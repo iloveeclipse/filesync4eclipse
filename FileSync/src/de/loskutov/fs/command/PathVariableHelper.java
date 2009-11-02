@@ -9,6 +9,7 @@
 package de.loskutov.fs.command;
 
 import org.eclipse.core.resources.IPathVariableManager;
+import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
@@ -83,7 +84,7 @@ public class PathVariableHelper {
             }
             int stop = start + variableValue.length();
             return path.substring(0, start) + variableName
-                + path.substring(stop, path.length());
+            + path.substring(stop, path.length());
         }
 
     }
@@ -116,7 +117,7 @@ public class PathVariableHelper {
      * {@link IPathVariableManager#resolvePath(org.eclipse.core.runtime.IPath)}.
      * @param path
      */
-    public IPath resolveVariable(String path) {
+    public IPath resolveVariable(String path, IPath projectPath) {
         if(path == null || path.length() == 0){
             return null;
         }
@@ -134,15 +135,29 @@ public class PathVariableHelper {
         }
 
         IPath ipath;
+        IWorkspace workspace = ResourcesPlugin.getWorkspace();
+        if(FS.isWin32() && path.indexOf("/") >= 0){
+            path = path.replace('/', '\\');
+        }
+
         if (path.startsWith(FileMapping.MAP_WORKSPACE_RELATIVE)) {
             // make a real path relatetd to workspace
-            ipath = ResourcesPlugin.getWorkspace().getRoot().getLocation().makeAbsolute()
-                    .append(path.substring(1));
+            ipath = workspace.getRoot().getLocation().makeAbsolute().append(path.substring(1));
+            return ipath;
+        }
+        if (path.startsWith(FileMapping.MAP_PROJECT_RELATIVE)) {
+            if(projectPath == null){
+                // project is deleted or closed?
+                FileSyncPlugin.log("Cannot compute project relative path for: " + path, null,
+                        IStatus.ERROR);
+                return null;
+            }
+            // make a real path relatetd to the project area
+            ipath = projectPath.append(path.substring(1));
             return ipath;
         }
 
-        IPathVariableManager pvm = ResourcesPlugin.getWorkspace()
-                .getPathVariableManager();
+        IPathVariableManager pvm = workspace.getPathVariableManager();
         ipath = new Path(path);
         IPath path2 = pvm.resolvePath(ipath);
         if (!ipath.equals(path2)) {
@@ -177,8 +192,8 @@ public class PathVariableHelper {
                      */
                     FileSyncPlugin.log(
                             "Destination path does not have a leading slash: "
-                                    + ipath + " and therefore default destination "
-                                    + "will be used (if any)", null, IStatus.ERROR);
+                            + ipath + " and therefore default destination "
+                            + "will be used (if any)", null, IStatus.ERROR);
                     return null;
                 }
             }
@@ -186,19 +201,23 @@ public class PathVariableHelper {
         return ipath;
     }
 
-    public String unResolveVariable(IPath path) {
+    public String unResolveVariable(IPath path, IPath projectPath) {
         if(path == null){
             return null;
         }
+        // TODO un-resolve project
         IPath workspaceLocation = ResourcesPlugin.getWorkspace().getRoot().getLocation()
-                .makeAbsolute();
+        .makeAbsolute();
         String pathStr;
-        if (workspaceLocation.isPrefixOf(path)) {
+        if (projectPath != null && projectPath.isPrefixOf(path)) {
+            pathStr = FileMapping.MAP_PROJECT_RELATIVE
+            + removeFirstSegments(path, projectPath.segmentCount());
+        } else if (workspaceLocation.isPrefixOf(path)) {
             pathStr = FileMapping.MAP_WORKSPACE_RELATIVE
-                    + removeFirstSegments(path, workspaceLocation.segmentCount());
+            + removeFirstSegments(path, workspaceLocation.segmentCount());
         } else if (pathVariableValue != null && pathVariableValue.isPrefixOf(path)) {
             pathStr = pathVariableName + "/"
-                    + removeFirstSegments(path, pathVariableValue.segmentCount());
+            + removeFirstSegments(path, pathVariableValue.segmentCount());
         } else {
             pathStr = path.toPortableString();
         }

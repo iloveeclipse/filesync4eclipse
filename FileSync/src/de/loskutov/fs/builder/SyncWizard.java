@@ -44,7 +44,7 @@ import de.loskutov.fs.properties.ProjectProperties;
  */
 public class SyncWizard {
     protected static final IContentType TEXT_TYPE = Platform.getContentTypeManager()
-            .getContentType("org.eclipse.core.runtime.text"); //$NON-NLS-1$
+    .getContentType("org.eclipse.core.runtime.text"); //$NON-NLS-1$
 
 
     /**
@@ -105,10 +105,6 @@ public class SyncWizard {
         copyDelegate.setPropertiesMap(propertiesMap);
     }
 
-
-    /**
-     * @param props
-     */
     public void setProjectProps(ProjectProperties props) throws IllegalArgumentException {
         projectProps = props;
         mappings = props.getMappings();
@@ -120,7 +116,8 @@ public class SyncWizard {
         String root = preferences.get(ProjectProperties.KEY_DEFAULT_DESTINATION, "");
 
         PathVariableHelper pvh = new PathVariableHelper();
-        rootPath = pvh.resolveVariable(root);
+        IPath projectPath = props.getProject().getLocation();
+        rootPath = pvh.resolveVariable(root, projectPath);
 
         if ((rootPath == null || rootPath.isEmpty()) && usesDefaultOutputFolder()) {
             throw new IllegalArgumentException("Default target folder is required"
@@ -301,7 +298,7 @@ public class SyncWizard {
         }
         if (usesDefaultOutputFolder() && rootPath != null) {
             IContainer[] containers = ResourcesPlugin.getWorkspace().getRoot()
-                    .findContainersForLocation(rootPath);
+            .findContainersForLocation(rootPath);
             if (containers.length > 0) {
                 for (int i = 0; i < containers.length; i++) {
                     if (!list.contains(containers[i])) {
@@ -509,7 +506,7 @@ public class SyncWizard {
      */
     protected boolean isContainer(IResource resource) {
         return resource.getType() == IResource.FOLDER
-                || resource.getType() == IResource.PROJECT;
+        || resource.getType() == IResource.PROJECT;
     }
 
     /**
@@ -571,8 +568,9 @@ public class SyncWizard {
      */
     public final static boolean isExcluded(IPath resourcePath,
             char[][] inclusionPatterns, char[][] exclusionPatterns, boolean isFolderPath) {
-        if (inclusionPatterns == null && exclusionPatterns == null)
+        if (inclusionPatterns == null && exclusionPatterns == null) {
             return false;
+        }
         return isExcluded(resourcePath.toString().toCharArray(), inclusionPatterns,
                 exclusionPatterns, isFolderPath);
     }
@@ -589,8 +587,9 @@ public class SyncWizard {
      */
     public final static boolean isExcluded(char[] path, char[][] inclusionPatterns,
             char[][] exclusionPatterns, boolean isFolderPath) {
-        if (inclusionPatterns == null && exclusionPatterns == null)
+        if (inclusionPatterns == null && exclusionPatterns == null) {
             return false;
+        }
 
         inclusionCheck: if (inclusionPatterns != null) {
             for (int i = 0, length = inclusionPatterns.length; i < length; i++) {

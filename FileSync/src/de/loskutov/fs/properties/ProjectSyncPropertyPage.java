@@ -196,7 +196,9 @@ IStatusChangeListener {
         try {
             String defDest = preferences.get(ProjectProperties.KEY_DEFAULT_DESTINATION,
             "");
-            destPath = pathVariableHelper.resolveVariable(defDest);
+            IPath projectPath = project.getLocation();
+
+            destPath = pathVariableHelper.resolveVariable(defDest, projectPath);
             variables = readVariablesPath(preferences);
         } catch (IllegalStateException e) {
             FileSyncPlugin
@@ -1065,7 +1067,9 @@ IStatusChangeListener {
     protected void performDefaults() {
         IEclipsePreferences preferences = getPreferences(false);
         String defPath = preferences.get(ProjectProperties.KEY_DEFAULT_DESTINATION, "");
-        IPath path = pathVariableHelper.resolveVariable(defPath);
+        IPath projectPath = project.getLocation();
+
+        IPath path = pathVariableHelper.resolveVariable(defPath, projectPath);
         if (path == null) {
             destPathDialogField.setText("");
         } else {
@@ -1111,8 +1115,9 @@ IStatusChangeListener {
                     ((PathListElement) mappingList.get(i)).getMapping().encode());
         }
 
+        IPath projectPath = project.getLocation();
         String defPath = pathVariableHelper
-        .unResolveVariable(getDefaultDestinationPath());
+        .unResolveVariable(getDefaultDestinationPath(), projectPath);
         if (defPath == null) {
             defPath = "";
         }

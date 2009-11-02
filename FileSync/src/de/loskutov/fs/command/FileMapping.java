@@ -45,6 +45,9 @@ public class FileMapping {
     /** replacement for the path of the current workspace for destination folders */
     public static final String MAP_WORKSPACE_RELATIVE = ":";
 
+    /** replacement for the path of the project for destination folders */
+    public static final String MAP_PROJECT_RELATIVE = "@";
+
     public static final String PATTERN_SEPARATOR = ";";
 
     public static final String EMPTY_ENTRY = ",";
@@ -67,7 +70,7 @@ public class FileMapping {
 
     private static final char[][] ALL_CHARS = new char[][] { "**/*".toCharArray() };
 
-    private PathVariableHelper pathVariableHelper;
+    private final PathVariableHelper pathVariableHelper;
 
     private IPath variablesPath;
 
@@ -149,7 +152,7 @@ public class FileMapping {
         if (st.hasMoreTokens()) {
             path = st.nextToken();
             if (!isEmptyPath(path)) {
-                setDestinationPath(pathVariableHelper.resolveVariable(path));
+                setDestinationPath(pathVariableHelper.resolveVariable(path, projectPath));
             }
         }
         if (st.hasMoreTokens()) {
@@ -201,7 +204,7 @@ public class FileMapping {
         }
         sb.append(MAP_SEPARATOR);
         if (getDestinationPath() != null) {
-            sb.append(pathVariableHelper.unResolveVariable(getDestinationPath()));
+            sb.append(pathVariableHelper.unResolveVariable(getDestinationPath(), projectPath));
         } else {
             sb.append(EMPTY_ENTRY);
         }
@@ -317,10 +320,10 @@ public class FileMapping {
             for (int i = 0; i < length; i++) {
                 if (!sourcePath.isRoot()) {
                     fullCharExclusionPatterns[i] = prefixPath
-                            .append(exclusionPatterns[i]).toString().toCharArray();
+                    .append(exclusionPatterns[i]).toString().toCharArray();
                 } else {
                     fullCharExclusionPatterns[i] = exclusionPatterns[i].toString()
-                            .toCharArray();
+                    .toCharArray();
                 }
             }
         }
@@ -341,10 +344,10 @@ public class FileMapping {
             for (int i = 0; i < length; i++) {
                 if (!sourcePath.isRoot()) {
                     fullCharInclusionPatterns[i] = prefixPath
-                            .append(inclusionPatterns[i]).toString().toCharArray();
+                    .append(inclusionPatterns[i]).toString().toCharArray();
                 } else {
                     fullCharInclusionPatterns[i] = inclusionPatterns[i].toString()
-                            .toCharArray();
+                    .toCharArray();
                 }
             }
         }
