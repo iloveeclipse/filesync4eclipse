@@ -33,10 +33,8 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.DialogPage;
-import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.dialogs.StatusDialog;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.ITreeContentProvider;
@@ -48,12 +46,12 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
-import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Shell;
+import org.eclipse.swt.widgets.TabFolder;
+import org.eclipse.swt.widgets.TabItem;
 import org.eclipse.ui.dialogs.ElementTreeSelectionDialog;
 import org.eclipse.ui.dialogs.ISelectionStatusValidator;
 import org.eclipse.ui.dialogs.NewFolderDialog;
@@ -119,7 +117,6 @@ IStatusChangeListener {
     private final static int IDX_EDIT = 2;
 
     private final static int IDX_REMOVE = 3;
-    private final static int IDX_RATE = 15;
 
     private final PathListElementComparator pathComparator;
 
@@ -157,10 +154,37 @@ IStatusChangeListener {
         };
     }
 
+    protected static Composite createContainer(Composite parent) {
+        Composite composite = new Composite(parent, SWT.NONE);
+        GridLayout layout = new GridLayout();
+        layout.marginWidth = 0;
+        layout.marginHeight = 0;
+        composite.setLayout(layout);
+        GridData gridData = new GridData(GridData.VERTICAL_ALIGN_FILL
+                | GridData.HORIZONTAL_ALIGN_FILL);
+        gridData.grabExcessHorizontalSpace = true;
+        composite.setLayoutData(gridData);
+        return composite;
+    }
+
     /**
      * @see PreferencePage#createContents(Composite)
      */
     protected Control createContents(Composite parent) {
+        TabFolder tabFolder = new TabFolder(parent, SWT.TOP);
+        tabFolder.setLayout(new GridLayout(1, true));
+        tabFolder.setLayoutData(new GridData(GridData.FILL_BOTH));
+
+        TabItem tabFilter = new TabItem(tabFolder, SWT.NONE);
+        tabFilter.setText("Source and Target Configuration");
+
+        TabItem support = new TabItem(tabFolder, SWT.NONE);
+        support.setText("Misc...");
+        Composite supportPanel = createContainer(tabFolder);
+        support.setControl(supportPanel);
+        SupportPanel.createSupportLinks(supportPanel);
+
+
         // ensure the page has no special buttons
         noDefaultAndApplyButton();
 
@@ -209,9 +233,10 @@ IStatusChangeListener {
 
         init(destPath, variables, properties.getMappings());
 
-        PixelConverter converter = new PixelConverter(parent);
+        PixelConverter converter = new PixelConverter(tabFolder);
 
-        Composite composite = new Composite(parent, SWT.NONE);
+        Composite composite = new Composite(tabFolder, SWT.NONE);
+        tabFilter.setControl(composite);
 
         GridLayout layout = new GridLayout();
         layout.marginWidth = 0;
@@ -276,19 +301,7 @@ IStatusChangeListener {
                 /* 0 = IDX_ADDEXIST */"&Add Folder...",
                 /* 1 */null,
                 /* 2 = IDX_EDIT */"Edit...",
-                /* 3 = IDX_REMOVE */"Remove",
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-        /* 15 == IDX_RATE */ "Rate It!"};
+        /* 3 = IDX_REMOVE */"Remove"};
 
         foldersList = new TreeListDialogField(adapter, buttonLabels,
                 new PathListLabelProvider());
@@ -499,20 +512,9 @@ IStatusChangeListener {
             editEntry();
         } else if (index == IDX_REMOVE) {
             removeEntry();
-        } else if (index == IDX_RATE) {
-            rateIt();
         }
     }
 
-    private void rateIt() {
-        Dialog dialog = new DialogExtension(getShell());
-        dialog.setBlockOnOpen(true);
-        dialog.open();
-    }
-
-    /**
-     *
-     */
     private void addEntry() {
         List elementsToAdd = new ArrayList(10);
         if (hasMembers(project)) {
@@ -1373,26 +1375,6 @@ IStatusChangeListener {
         destFolderStatus.setOK();
     }
 
-    private static final class DialogExtension extends StatusDialog {
-        private DialogExtension(Shell parentShell) {
-            super(parentShell);
-            setShellStyle(getShellStyle() | SWT.RESIZE);
-            setTitle("Rate FileSync on www.eclipseplugincentral.com");
-        }
-
-        protected Control createDialogArea(Composite parent) {
-            Composite dialogArea2 = (Composite) super.createDialogArea(parent);
-            RateIt.createTextArea(dialogArea2);
-            return dialogArea2;
-        }
-
-        protected Button createButton(Composite parent, int id, String label, boolean defaultButton) {
-            if(id == IDialogConstants.OK_ID){
-                return null;
-            }
-            return super.createButton(parent, id, label, defaultButton);
-        }
-    }
 
     class PathContainerAdapter implements ITreeListAdapter, IDialogFieldListener {
 
