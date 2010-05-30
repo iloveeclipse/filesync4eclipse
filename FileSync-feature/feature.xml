@@ -28,7 +28,7 @@ with Eclipse project files.
 
    <requires>
       <import plugin="org.eclipse.ui"/>
-      <import plugin="org.eclipse.core.runtime" version="3.3.0" match="greaterOrEqual"/>
+      <import plugin="org.eclipse.core.runtime" version="3.5.0" match="greaterOrEqual"/>
       <import plugin="org.eclipse.core.resources"/>
       <import plugin="org.eclipse.ui.ide"/>
       <import plugin="org.eclipse.core.net"/>
