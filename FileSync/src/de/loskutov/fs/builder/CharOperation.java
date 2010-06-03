@@ -18,23 +18,6 @@ package de.loskutov.fs.builder;
 public final class CharOperation {
 
     /**
-     * Constant for an empty char array
-     */
-    public static final char[] NO_CHAR = new char[0];
-
-    /**
-     * Constant for an empty char array with two dimensions.
-     */
-    static final char[][] NO_CHAR_CHAR = new char[0][];
-
-    /**
-     * Constant for an empty String array.
-     * @since 3.1
-     */
-    public static final String[] NO_STRINGS = new String[0];
-
-
-    /**
      * Answers the concatenation of the two arrays inserting the separator character between the two arrays.
      * It answers null if the two arrays are null.
      * If the first array is null, then the second array is returned.
@@ -73,20 +56,24 @@ public final class CharOperation {
      * between the two arrays , or null if the two arrays are null.
      */
     public static final char[] concat(
-        char[] first,
-        char[] second,
-        char separator) {
-        if (first == null)
+            char[] first,
+            char[] second,
+            char separator) {
+        if (first == null) {
             return second;
-        if (second == null)
+        }
+        if (second == null) {
             return first;
+        }
 
         int length1 = first.length;
-        if (length1 == 0)
+        if (length1 == 0) {
             return second;
+        }
         int length2 = second.length;
-        if (length2 == 0)
+        if (length2 == 0) {
             return first;
+        }
 
         char[] result = new char[length1 + length2 + 1];
         System.arraycopy(first, 0, result, 0, length1);
@@ -135,9 +122,11 @@ public final class CharOperation {
      * @throws ArrayIndexOutOfBoundsException if  start is lower than 0
      */
     public static final int indexOf(char toBeFound, char[] array, int start) {
-        for (int i = start; i < array.length; i++)
-            if (toBeFound == array[i])
+        for (int i = start; i < array.length; i++) {
+            if (toBeFound == array[i]) {
                 return i;
+            }
+        }
         return -1;
     }
 
@@ -170,9 +159,11 @@ public final class CharOperation {
      * @throws NullPointerException if array is null
      */
     public static final int lastIndexOf(char toBeFound, char[] array) {
-        for (int i = array.length; --i >= 0;)
-            if (toBeFound == array[i])
+        for (int i = array.length; --i >= 0;) {
+            if (toBeFound == array[i]) {
                 return i;
+            }
+        }
         return -1;
     }
 
@@ -221,37 +212,44 @@ public final class CharOperation {
      * @return true if the a sub-pattern matches the subpart of the given name, false otherwise
      */
     public static final boolean match(
-        char[] pattern,
-        int patternStart,
-        int patternEnd,
-        char[] name,
-        int nameStart,
-        int nameEnd,
-        boolean isCaseSensitive) {
+            char[] pattern,
+            int patternStart,
+            int patternEnd,
+            char[] name,
+            int nameStart,
+            int nameEnd,
+            boolean isCaseSensitive) {
 
         if (name == null)
+        {
             return false; // null name cannot match
+        }
         if (pattern == null)
+        {
             return true; // null pattern is equivalent to '*'
+        }
         int iPattern = patternStart;
         int iName = nameStart;
 
-        if (patternEnd < 0)
+        if (patternEnd < 0) {
             patternEnd = pattern.length;
-        if (nameEnd < 0)
+        }
+        if (nameEnd < 0) {
             nameEnd = name.length;
+        }
 
         /* check first segment */
         char patternChar = 0;
         while ((iPattern < patternEnd)
-            && (patternChar = pattern[iPattern]) != '*') {
-            if (iName == nameEnd)
+                && (patternChar = pattern[iPattern]) != '*') {
+            if (iName == nameEnd) {
                 return false;
+            }
             if (patternChar
-                != (isCaseSensitive
-                    ? name[iName]
-                    : Character.toLowerCase(name[iName]))
-                && patternChar != '?') {
+                    != (isCaseSensitive
+                            ? name[iName]
+                                   : Character.toLowerCase(name[iName]))
+                                   && patternChar != '?') {
                 return false;
             }
             iName++;
@@ -282,7 +280,7 @@ public final class CharOperation {
             }
             /* check current name character */
             if ((isCaseSensitive ? name[iName] : Character.toLowerCase(name[iName]))
-                        != patternChar
+                    != patternChar
                     && patternChar != '?') {
                 iPattern = segmentStart; // mismatch - restart current segment
                 iName = ++prefixStart;
@@ -293,8 +291,8 @@ public final class CharOperation {
         }
 
         return (segmentStart == patternEnd)
-            || (iName == nameEnd && iPattern == patternEnd)
-            || (iPattern == patternEnd - 1 && pattern[iPattern] == '*');
+        || (iName == nameEnd && iPattern == patternEnd)
+        || (iPattern == patternEnd - 1 && pattern[iPattern] == '*');
     }
 
     /**
@@ -316,21 +314,27 @@ public final class CharOperation {
      * @return true if the pattern matches the filepath using the pathSepatator, false otherwise
      */
     public static final boolean pathMatch(
-        char[] pattern,
-        char[] filepath,
-        boolean isCaseSensitive,
-        char pathSeparator) {
+            char[] pattern,
+            char[] filepath,
+            boolean isCaseSensitive,
+            char pathSeparator) {
 
         if (filepath == null)
+        {
             return false; // null name cannot match
+        }
         if (pattern == null)
+        {
             return true; // null pattern is equivalent to '*'
+        }
 
         // offsets inside pattern
         int pSegmentStart = pattern[0] == pathSeparator ? 1 : 0;
         int pLength = pattern.length;
         int pSegmentEnd = CharOperation.indexOf(pathSeparator, pattern, pSegmentStart+1);
-        if (pSegmentEnd < 0) pSegmentEnd = pLength;
+        if (pSegmentEnd < 0) {
+            pSegmentEnd = pLength;
+        }
 
         // special case: pattern foo\ is equivalent to foo\**
         boolean freeTrailingDoubleStar = pattern[pLength - 1] == pathSeparator;
@@ -346,19 +350,126 @@ public final class CharOperation {
             return false; // both must start with a separator or none.
         }
         int fSegmentEnd = CharOperation.indexOf(pathSeparator, filepath, fSegmentStart+1);
-        if (fSegmentEnd < 0) fSegmentEnd = fLength;
+        if (fSegmentEnd < 0) {
+            fSegmentEnd = fLength;
+        }
 
         // first segments
         while (pSegmentStart < pLength
-            && !(pSegmentEnd == pLength && freeTrailingDoubleStar
-                    || (pSegmentEnd == pSegmentStart + 2
-                            && pattern[pSegmentStart] == '*'
-                            && pattern[pSegmentStart + 1] == '*'))) {
+                && !(pSegmentEnd == pLength && freeTrailingDoubleStar
+                        || (pSegmentEnd == pSegmentStart + 2
+                                && pattern[pSegmentStart] == '*'
+                                    && pattern[pSegmentStart + 1] == '*'))) {
 
-            if (fSegmentStart >= fLength)
+            if (fSegmentStart >= fLength) {
                 return false;
+            }
             if (!CharOperation
-                .match(
+                    .match(
+                            pattern,
+                            pSegmentStart,
+                            pSegmentEnd,
+                            filepath,
+                            fSegmentStart,
+                            fSegmentEnd,
+                            isCaseSensitive)) {
+                return false;
+            }
+
+            // jump to next segment
+            pSegmentEnd =
+                CharOperation.indexOf(
+                        pathSeparator,
+                        pattern,
+                        pSegmentStart = pSegmentEnd + 1);
+            // skip separator
+            if (pSegmentEnd < 0) {
+                pSegmentEnd = pLength;
+            }
+
+            fSegmentEnd =
+                CharOperation.indexOf(
+                        pathSeparator,
+                        filepath,
+                        fSegmentStart = fSegmentEnd + 1);
+            // skip separator
+            if (fSegmentEnd < 0) {
+                fSegmentEnd = fLength;
+            }
+        }
+
+        /* check sequence of doubleStar+segment */
+        int pSegmentRestart;
+        if ((pSegmentStart >= pLength && freeTrailingDoubleStar)
+                || (pSegmentEnd == pSegmentStart + 2
+                        && pattern[pSegmentStart] == '*'
+                            && pattern[pSegmentStart + 1] == '*')) {
+            pSegmentEnd =
+                CharOperation.indexOf(
+                        pathSeparator,
+                        pattern,
+                        pSegmentStart = pSegmentEnd + 1);
+            // skip separator
+            if (pSegmentEnd < 0) {
+                pSegmentEnd = pLength;
+            }
+            pSegmentRestart = pSegmentStart;
+        } else {
+            if (pSegmentStart >= pLength)
+            {
+                return fSegmentStart >= fLength; // true if filepath is done too.
+            }
+            pSegmentRestart = 0; // force fSegmentStart check
+        }
+        int fSegmentRestart = fSegmentStart;
+        checkSegment : while (fSegmentStart < fLength) {
+
+            if (pSegmentStart >= pLength) {
+                if (freeTrailingDoubleStar) {
+                    return true;
+                }
+                // mismatch - restart current path segment
+                pSegmentEnd =
+                    CharOperation.indexOf(pathSeparator, pattern, pSegmentStart = pSegmentRestart);
+                if (pSegmentEnd < 0) {
+                    pSegmentEnd = pLength;
+                }
+
+                fSegmentRestart =
+                    CharOperation.indexOf(pathSeparator, filepath, fSegmentRestart + 1);
+                // skip separator
+                if (fSegmentRestart < 0) {
+                    fSegmentRestart = fLength;
+                } else {
+                    fSegmentRestart++;
+                }
+                fSegmentEnd =
+                    CharOperation.indexOf(pathSeparator, filepath, fSegmentStart = fSegmentRestart);
+                if (fSegmentEnd < 0) {
+                    fSegmentEnd = fLength;
+                }
+                continue checkSegment;
+            }
+
+            /* path segment is ending */
+            if (pSegmentEnd == pSegmentStart + 2
+                    && pattern[pSegmentStart] == '*'
+                        && pattern[pSegmentStart + 1] == '*') {
+                pSegmentEnd =
+                    CharOperation.indexOf(pathSeparator, pattern, pSegmentStart = pSegmentEnd + 1);
+                // skip separator
+                if (pSegmentEnd < 0) {
+                    pSegmentEnd = pLength;
+                }
+                pSegmentRestart = pSegmentStart;
+                fSegmentRestart = fSegmentStart;
+                if (pSegmentStart >= pLength) {
+                    return true;
+                }
+                continue checkSegment;
+            }
+            /* chech current path segment */
+            if (!CharOperation.match(
                     pattern,
                     pSegmentStart,
                     pSegmentEnd,
@@ -366,55 +477,12 @@ public final class CharOperation {
                     fSegmentStart,
                     fSegmentEnd,
                     isCaseSensitive)) {
-                return false;
-            }
-
-            // jump to next segment
-            pSegmentEnd =
-                CharOperation.indexOf(
-                    pathSeparator,
-                    pattern,
-                    pSegmentStart = pSegmentEnd + 1);
-            // skip separator
-            if (pSegmentEnd < 0)
-                pSegmentEnd = pLength;
-
-            fSegmentEnd =
-                CharOperation.indexOf(
-                    pathSeparator,
-                    filepath,
-                    fSegmentStart = fSegmentEnd + 1);
-            // skip separator
-            if (fSegmentEnd < 0) fSegmentEnd = fLength;
-        }
-
-        /* check sequence of doubleStar+segment */
-        int pSegmentRestart;
-        if ((pSegmentStart >= pLength && freeTrailingDoubleStar)
-                || (pSegmentEnd == pSegmentStart + 2
-                    && pattern[pSegmentStart] == '*'
-                    && pattern[pSegmentStart + 1] == '*')) {
-            pSegmentEnd =
-                CharOperation.indexOf(
-                    pathSeparator,
-                    pattern,
-                    pSegmentStart = pSegmentEnd + 1);
-            // skip separator
-            if (pSegmentEnd < 0) pSegmentEnd = pLength;
-            pSegmentRestart = pSegmentStart;
-        } else {
-            if (pSegmentStart >= pLength) return fSegmentStart >= fLength; // true if filepath is done too.
-            pSegmentRestart = 0; // force fSegmentStart check
-        }
-        int fSegmentRestart = fSegmentStart;
-        checkSegment : while (fSegmentStart < fLength) {
-
-            if (pSegmentStart >= pLength) {
-                if (freeTrailingDoubleStar) return true;
                 // mismatch - restart current path segment
                 pSegmentEnd =
                     CharOperation.indexOf(pathSeparator, pattern, pSegmentStart = pSegmentRestart);
-                if (pSegmentEnd < 0) pSegmentEnd = pLength;
+                if (pSegmentEnd < 0) {
+                    pSegmentEnd = pLength;
+                }
 
                 fSegmentRestart =
                     CharOperation.indexOf(pathSeparator, filepath, fSegmentRestart + 1);
@@ -426,76 +494,39 @@ public final class CharOperation {
                 }
                 fSegmentEnd =
                     CharOperation.indexOf(pathSeparator, filepath, fSegmentStart = fSegmentRestart);
-                if (fSegmentEnd < 0) fSegmentEnd = fLength;
-                continue checkSegment;
-            }
-
-            /* path segment is ending */
-            if (pSegmentEnd == pSegmentStart + 2
-                && pattern[pSegmentStart] == '*'
-                && pattern[pSegmentStart + 1] == '*') {
-                pSegmentEnd =
-                    CharOperation.indexOf(pathSeparator, pattern, pSegmentStart = pSegmentEnd + 1);
-                // skip separator
-                if (pSegmentEnd < 0) pSegmentEnd = pLength;
-                pSegmentRestart = pSegmentStart;
-                fSegmentRestart = fSegmentStart;
-                if (pSegmentStart >= pLength) return true;
-                continue checkSegment;
-            }
-            /* chech current path segment */
-            if (!CharOperation.match(
-                                pattern,
-                                pSegmentStart,
-                                pSegmentEnd,
-                                filepath,
-                                fSegmentStart,
-                                fSegmentEnd,
-                                isCaseSensitive)) {
-                // mismatch - restart current path segment
-                pSegmentEnd =
-                    CharOperation.indexOf(pathSeparator, pattern, pSegmentStart = pSegmentRestart);
-                if (pSegmentEnd < 0) pSegmentEnd = pLength;
-
-                fSegmentRestart =
-                    CharOperation.indexOf(pathSeparator, filepath, fSegmentRestart + 1);
-                // skip separator
-                if (fSegmentRestart < 0) {
-                    fSegmentRestart = fLength;
-                } else {
-                    fSegmentRestart++;
+                if (fSegmentEnd < 0) {
+                    fSegmentEnd = fLength;
                 }
-                fSegmentEnd =
-                    CharOperation.indexOf(pathSeparator, filepath, fSegmentStart = fSegmentRestart);
-                if (fSegmentEnd < 0) fSegmentEnd = fLength;
                 continue checkSegment;
             }
             // jump to next segment
             pSegmentEnd =
                 CharOperation.indexOf(
-                    pathSeparator,
-                    pattern,
-                    pSegmentStart = pSegmentEnd + 1);
+                        pathSeparator,
+                        pattern,
+                        pSegmentStart = pSegmentEnd + 1);
             // skip separator
-            if (pSegmentEnd < 0)
+            if (pSegmentEnd < 0) {
                 pSegmentEnd = pLength;
+            }
 
             fSegmentEnd =
                 CharOperation.indexOf(
-                    pathSeparator,
-                    filepath,
-                    fSegmentStart = fSegmentEnd + 1);
+                        pathSeparator,
+                        filepath,
+                        fSegmentStart = fSegmentEnd + 1);
             // skip separator
-            if (fSegmentEnd < 0)
+            if (fSegmentEnd < 0) {
                 fSegmentEnd = fLength;
+            }
         }
 
         return (pSegmentRestart >= pSegmentEnd)
-            || (fSegmentStart >= fLength && pSegmentStart >= pLength)
-            || (pSegmentStart == pLength - 2
+        || (fSegmentStart >= fLength && pSegmentStart >= pLength)
+        || (pSegmentStart == pLength - 2
                 && pattern[pSegmentStart] == '*'
-                && pattern[pSegmentStart + 1] == '*')
-            || (pSegmentStart == pLength && freeTrailingDoubleStar);
+                    && pattern[pSegmentStart + 1] == '*')
+                    || (pSegmentStart == pLength && freeTrailingDoubleStar);
     }
 
     /**
@@ -531,14 +562,18 @@ public final class CharOperation {
      * @throws NullPointerException if the given array is null
      */
     public static final char[] subarray(char[] array, int start, int end) {
-        if (end == -1)
+        if (end == -1) {
             end = array.length;
-        if (start > end)
+        }
+        if (start > end) {
             return null;
-        if (start < 0)
+        }
+        if (start < 0) {
             return null;
-        if (end > array.length)
+        }
+        if (end > array.length) {
             return null;
+        }
 
         char[] result = new char[end - start];
         System.arraycopy(array, start, result, 0, end - start);

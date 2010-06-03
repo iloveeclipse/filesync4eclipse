@@ -138,10 +138,6 @@ public class CopyDelegate extends AbstractCopyDelegate {
         }
     }
 
-    public boolean isUseCurrentDateForDestinationFiles() {
-        return useCurrentDateForDestinationFiles;
-    }
-
     public void setUseCurrentDateForDestinationFiles(
             boolean useCurrentDateForDestinationFiles) {
         this.useCurrentDateForDestinationFiles = useCurrentDateForDestinationFiles;
@@ -149,10 +145,6 @@ public class CopyDelegate extends AbstractCopyDelegate {
 
     public void setEncoding(String encoding) {
         this.encoding = encoding;
-    }
-
-    public String getEncoding() {
-        return encoding;
     }
 
     @Override

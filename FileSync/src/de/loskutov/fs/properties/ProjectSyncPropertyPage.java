@@ -36,6 +36,7 @@ import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.DialogPage;
 import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.layout.PixelConverter;
 import org.eclipse.jface.preference.PreferencePage;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.ITreeContentProvider;
@@ -76,11 +77,9 @@ import de.loskutov.fs.dialogs.IStringButtonAdapter;
 import de.loskutov.fs.dialogs.ITreeListAdapter;
 import de.loskutov.fs.dialogs.LayoutUtil;
 import de.loskutov.fs.dialogs.MultipleFolderSelectionDialog;
-import de.loskutov.fs.dialogs.PixelConverter;
 import de.loskutov.fs.dialogs.SelectionButtonDialogField;
 import de.loskutov.fs.dialogs.StatusInfo;
 import de.loskutov.fs.dialogs.StringButtonDialogField;
-import de.loskutov.fs.dialogs.StringDialogField;
 import de.loskutov.fs.dialogs.TreeListDialogField;
 import de.loskutov.fs.dialogs.TypedElementSelectionValidator;
 import de.loskutov.fs.dialogs.TypedViewerFilter;
@@ -101,8 +100,6 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
     protected StringButtonDialogField destPathDialogField;
 
     protected TreeListDialogField<IPathListObject> foldersList;
-
-    protected StringDialogField outputLocationField;
 
     protected SelectionButtonDialogField useFolderOutputsField;
 
@@ -136,21 +133,16 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
 
     private final IValueCallback defPathCallback;
 
-    /**
-     * Constructor for SamplePropertyPage.
-     */
     public ProjectSyncPropertyPage() {
         super();
         pathComparator = new PathListElementComparator();
 
         defVariablesCallback = new IValueCallback() {
-
             public Object getValue() {
                 return getDefaultVariablesPath();
             }
         };
         defPathCallback = new IValueCallback() {
-
             public Object getValue() {
                 return getDefaultDestinationPath();
             }
@@ -954,14 +946,6 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
                 defVariablesCallback);
     }
 
-    public List<IPathListObject> getSelection() {
-        return foldersList.getSelectedElements();
-    }
-
-    public void setSelection(List<IPathListObject> selElements) {
-        foldersList.selectElements(new StructuredSelection(selElements));
-    }
-
     protected void fixNestingConflicts(List<IPathListObject> newEntries, List<IPathListObject> existing, Set<IPathListObject> modifiedSourceEntries) {
         for (int i = 0; i < newEntries.size(); i++) {
             PathListElement curr = (PathListElement) newEntries.get(i);
@@ -1274,14 +1258,6 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
     }
 
     /**
-     * @return Returns the Java project. Can return <code>null<code> if the page has not
-     * been initialized.
-     */
-    public IProject getProject() {
-        return project;
-    }
-
-    /**
      * @return Returns the current output location. Note that the path returned must not be valid.
      */
     public IPath getDefaultDestinationPath() {
@@ -1290,21 +1266,6 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
             return null;
         }
         return FileSyncPlugin.getDefault().getFsPathUtil().create(text).makeAbsolute();
-    }
-
-    /**
-     * @return Returns the current class path (raw). Note that the entries returned must not be
-     *         valid.
-     */
-    public FileMapping[] getFileMappings() {
-        int nElements = mappingList.size();
-        FileMapping[] entries = new FileMapping[mappingList.size()];
-
-        for (int i = 0; i < nElements; i++) {
-            PathListElement currElement = mappingList.get(i);
-            entries[i] = currElement.getMapping();
-        }
-        return entries;
     }
 
     void changeControlPressed(DialogField field) {

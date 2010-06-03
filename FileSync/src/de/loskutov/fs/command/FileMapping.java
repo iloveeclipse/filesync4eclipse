@@ -11,7 +11,6 @@
  *******************************************************************************/
 package de.loskutov.fs.command;
 
-import java.io.File;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
@@ -83,32 +82,17 @@ public class FileMapping {
 
     private IPath projectPath;
 
-    private String encoding;
-
     /**
      * {@link SyncWizard#begin()} tries to create the targetFolder. If it's not possible, valid is set to
      * false.
      */
     private boolean valid = true;
 
-    /** only temporary solution during copy of files */
-    private transient File currDestFile;
-
-    /**
-     *
-     */
     private FileMapping() {
         super();
         pathVariableHelper = new PathVariableHelper();
     }
 
-    /**
-     * @param sourcePath
-     * @param destinationPath
-     * @param variables
-     * @param inclusionPatterns
-     * @param exclusionPatterns
-     */
     public FileMapping(IPath sourcePath, IPath destinationPath, IPath variables,
             IPath[] inclusionPatterns, IPath[] exclusionPatterns, IPath projectPath) {
         this();
@@ -443,37 +427,6 @@ public class FileMapping {
             }
         }
         return filePath;
-    }
-
-    public File getCurrentDestFile() {
-        return currDestFile;
-    }
-
-    public void setCurrentDestFile(File currDestFile) {
-        this.currDestFile = currDestFile;
-    }
-
-    /**
-     * @param encoding
-     *            the encoding to set
-     */
-    public void setEncoding(String encoding) {
-        this.encoding = encoding;
-    }
-
-    /**
-     * @return the encoding
-     */
-    public String getEncoding() {
-        return encoding;
-    }
-
-    /**
-     * @param projectPath
-     *            the projectPath to set
-     */
-    public void setProjectPath(IPath projectPath) {
-        this.projectPath = projectPath;
     }
 
     /**

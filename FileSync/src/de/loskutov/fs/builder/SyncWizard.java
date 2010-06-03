@@ -704,9 +704,6 @@ public class SyncWizard {
     }
 
     protected File getDestinationFile(IResource source, IPath relativePath, FileMapping fm) {
-
-        fm.setCurrentDestFile(null);
-
         IPath sourcePath = fm.getSourcePath();
         IPath destinationPath = getDestinationRootPath(fm);
 
@@ -723,7 +720,6 @@ public class SyncWizard {
             return null;
         }
         File destinationFile = getDestinationFile(destinationPath);
-        fm.setCurrentDestFile(destinationFile);
         return destinationFile;
     }
 
@@ -884,72 +880,6 @@ public class SyncWizard {
 
     public boolean commit() {
         return true;
-    }
-
-    // /**
-    // * Collects tree of filtered IResource objects, <br>
-    // * in preorder(dfs) : contains each node before its children<br>
-    // * or in postorder(bfs): contains children before their parent.
-    // * This is important to be able to create first folders and then files
-    // * or to delete first files then folders.
-    // */
-    // private final class FilteredCollector {
-    //
-    // List collectedSources = new ArrayList();
-    //
-    // /**
-    // * Collects tree of filtered IResource objects, <br>
-    // * in preorder(dfs) : contains each node before its children<br>
-    // * or in postorder(bfs): contains children before their parent.
-    // * This is important to be able to create first folders and then files
-    // * or to delete first files then folders.
-    // */
-    // public boolean visit(IResource resource, boolean preorder) {
-    //
-    // if(matchFilter(resource)){
-    //
-    // if(preorder) {
-    // collectedSources.add(resource);
-    // }
-    //
-    // if(isContainer(resource)){
-    // IResource[] resources;
-    // try {
-    // resources = ((IContainer)resource).members(false);
-    // } catch (CoreException e) {
-    // FileSyncPlugin.logError(
-    // "Could not access members from " + resource, e);
-    // return false;
-    // }
-    // for (int i = 0; i < resources.length; i++) {
-    // boolean b = visit(resources[i], preorder);
-    // if(!b){
-    // return false;
-    // }
-    // }
-    // }
-    //
-    // if(!preorder){
-    // collectedSources.add(resource);
-    // }
-    // }
-    // return true;
-    // }
-    //
-    // /**
-    // * @return Returns the collectedSources.
-    // */
-    // public List getCollectedSources() {
-    // return collectedSources;
-    // }
-    // }
-    //
-
-    /**
-     * @return Returns the deleteDestinationOnCleanBuild.
-     */
-    public boolean isDeleteDestinationOnCleanBuild() {
-        return deleteDestinationOnCleanBuild;
     }
 
     /**

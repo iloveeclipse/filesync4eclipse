@@ -16,8 +16,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.eclipse.core.runtime.Assert;
-import org.eclipse.jface.viewers.ColumnLayoutData;
-import org.eclipse.jface.viewers.ColumnWeightData;
+import org.eclipse.jface.layout.PixelConverter;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ILabelProvider;
@@ -44,7 +43,6 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Table;
-import org.eclipse.swt.widgets.TableColumn;
 
 /**
  * A list with a button bar.
@@ -53,34 +51,6 @@ import org.eclipse.swt.widgets.TableColumn;
  * DialogFields controls are: Label, List and Composite containing buttons.
  */
 public class ListDialogField<T> extends DialogField {
-
-    public static class ColumnsDescription {
-        protected ColumnLayoutData[] columns;
-        protected String[] headers;
-        protected boolean drawLines;
-
-        public ColumnsDescription(ColumnLayoutData[] columns, String[] headers, boolean drawLines) {
-            this.columns= columns;
-            this.headers= headers;
-            this.drawLines= drawLines;
-        }
-
-        public ColumnsDescription(String[] headers, boolean drawLines) {
-            this(createColumnWeightData(headers.length), headers, drawLines);
-        }
-
-        public ColumnsDescription(int nColumns, boolean drawLines) {
-            this(createColumnWeightData(nColumns), null, drawLines);
-        }
-
-        private static ColumnLayoutData[] createColumnWeightData(int nColumns) {
-            ColumnLayoutData[] data= new ColumnLayoutData[nColumns];
-            for (int i= 0; i < nColumns; i++) {
-                data[i]= new ColumnWeightData(1);
-            }
-            return data;
-        }
-    }
 
     protected TableViewer fTable;
     protected Control fTableControl;
@@ -95,11 +65,8 @@ public class ListDialogField<T> extends DialogField {
     private boolean[] fButtonsEnabled;
 
     private int fRemoveButtonIndex;
-    private int fUpButtonIndex;
-    private int fDownButtonIndex;
-
-    private Label fLastSeparator;
-
+    private final int fUpButtonIndex;
+    private final int fDownButtonIndex;
 
     private Composite fButtonsControl;
     private ISelection fSelectionWhenEnabled;
@@ -108,7 +75,6 @@ public class ListDialogField<T> extends DialogField {
 
     private final Object fParentElement;
 
-    private ColumnsDescription fTableColumns;
 
 
     /**
@@ -141,7 +107,6 @@ public class ListDialogField<T> extends DialogField {
         fTable= null;
         fTableControl= null;
         fButtonsControl= null;
-        fTableColumns= null;
 
         fRemoveButtonIndex= -1;
         fUpButtonIndex= -1;
@@ -159,40 +124,12 @@ public class ListDialogField<T> extends DialogField {
     }
 
     /**
-     * Sets the index of the 'up' button in the button label array passed in the constructor.
-     * The behaviour of the button marked as the 'up' button will then be handled internally.
-     * (enable state, button invocation behaviour)
-     */
-    public void setUpButtonIndex(int upButtonIndex) {
-        Assert.isTrue(upButtonIndex < fButtonLabels.length);
-        fUpButtonIndex= upButtonIndex;
-    }
-
-    /**
-     * Sets the index of the 'down' button in the button label array passed in the constructor.
-     * The behaviour of the button marked as the 'down' button will then be handled internally.
-     * (enable state, button invocation behaviour)
-     */
-    public void setDownButtonIndex(int downButtonIndex) {
-        Assert.isTrue(downButtonIndex < fButtonLabels.length);
-        fDownButtonIndex= downButtonIndex;
-    }
-
-    /**
      * Sets the viewerSorter.
      * @param viewerSorter The viewerSorter to set
      */
     public void setViewerSorter(ViewerSorter viewerSorter) {
         fViewerSorter= viewerSorter;
     }
-
-    public void setTableColumns(ColumnsDescription column) {
-        fTableColumns= column;
-    }
-
-
-
-    // ------ adapter communication
 
     private void buttonPressed(int index) {
         if (!managedButtonPressed(index) && fListAdapter != null) {
@@ -228,7 +165,7 @@ public class ListDialogField<T> extends DialogField {
 
     @Override
     public Control[] doFillIntoGrid(Composite parent, int nColumns) {
-        PixelConverter converter= new PixelConverter(parent);
+        PixelConverter converter = new PixelConverter(parent);
 
         assertEnoughColumns(nColumns);
 
@@ -267,18 +204,6 @@ public class ListDialogField<T> extends DialogField {
     }
 
     /**
-     * Sets the minimal width of the buttons. Must be called after widget creation.
-     */
-    public void setButtonsMinWidth(int minWidth) {
-        if (fLastSeparator != null) {
-            ((GridData)fLastSeparator.getLayoutData()).widthHint= minWidth;
-        }
-    }
-
-
-    // ------ ui creation
-
-    /**
      * Returns the list control. When called the first time, the control will be created.
      * @param parent The parent composite when called the first time, or <code>null</code>
      * after.
@@ -287,32 +212,11 @@ public class ListDialogField<T> extends DialogField {
         if (fTableControl == null) {
             assertCompositeNotNull(parent);
 
-            if (fTableColumns == null) {
-                fTable= createTableViewer(parent);
-                Table tableControl= fTable.getTable();
+            fTable= createTableViewer(parent);
+            Table tableControl= fTable.getTable();
 
-                fTableControl= tableControl;
-                tableControl.setLayout(new TableLayout());
-            } else {
-                TableLayoutComposite composite= new TableLayoutComposite(parent, SWT.NONE);
-                composite.setFont(parent.getFont());
-                fTableControl= composite;
-
-                fTable= createTableViewer(composite);
-                Table tableControl= fTable.getTable();
-
-                tableControl.setHeaderVisible(fTableColumns.headers != null);
-                tableControl.setLinesVisible(fTableColumns.drawLines);
-                ColumnLayoutData[] columns= fTableColumns.columns;
-                for (int i= 0; i < columns.length; i++) {
-                    composite.addColumnData(columns[i]);
-                    TableColumn column= new TableColumn(tableControl, SWT.NONE);
-                    //tableLayout.addColumnData(columns[i]);
-                    if (fTableColumns.headers != null) {
-                        column.setText(fTableColumns.headers[i]);
-                    }
-                }
-            }
+            fTableControl= tableControl;
+            tableControl.setLayout(new TableLayout());
 
             fTable.getTable().addKeyListener(new KeyAdapter() {
                 @Override
@@ -342,22 +246,8 @@ public class ListDialogField<T> extends DialogField {
         return fTableControl;
     }
 
-    /**
-     * Returns the internally used table viewer.
-     */
-    public TableViewer getTableViewer() {
-        return fTable;
-    }
-
-    /*
-     * Subclasses may override to specify a different style.
-     */
     protected int getListStyle(){
-        int style=  SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL ;
-        if (fTableColumns != null) {
-            style |= SWT.FULL_SELECTION;
-        }
-        return style;
+        return SWT.BORDER | SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL;
     }
 
     protected TableViewer createTableViewer(Composite parent) {
@@ -380,18 +270,6 @@ public class ListDialogField<T> extends DialogField {
         button.setLayoutData(gd);
 
         return button;
-    }
-
-    private Label createSeparator(Composite parent) {
-        Label separator= new Label(parent, SWT.SEPARATOR | SWT.HORIZONTAL);
-        separator.setFont(parent.getFont());
-        separator.setVisible(false);
-        GridData gd= new GridData();
-        gd.horizontalAlignment= GridData.FILL;
-        gd.verticalAlignment= GridData.BEGINNING;
-        gd.verticalIndent= 4;
-        separator.setLayoutData(gd);
-        return separator;
     }
 
     /**
@@ -429,12 +307,9 @@ public class ListDialogField<T> extends DialogField {
                         fButtonControls[i].setEnabled(isEnabled() && fButtonsEnabled[i]);
                     } else {
                         fButtonControls[i]= null;
-                        createSeparator(contents);
                     }
                 }
             }
-
-            fLastSeparator= createSeparator(contents);
 
             updateButtonState();
             fButtonsControl= contents;
@@ -556,20 +431,6 @@ public class ListDialogField<T> extends DialogField {
     }
 
     /**
-     * Gets the elements shown at the given index.
-     */
-    public Object getElement(int index) {
-        return fElements.get(index);
-    }
-
-    /**
-     * Gets the index of an element in the list or -1 if element is not in list.
-     */
-    public int getIndexOfElement(Object elem) {
-        return fElements.indexOf(elem);
-    }
-
-    /**
      * Replaces an element.
      */
     public void replaceElement(T oldElement, T newElement) throws IllegalArgumentException {
@@ -583,20 +444,6 @@ public class ListDialogField<T> extends DialogField {
                 }
                 fTable.refresh();
                 selectElements(new StructuredSelection(selected));
-            }
-            dialogFieldChanged();
-        } else {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    /**
-     * Notifies clients that the element has changed.
-     */
-    public void elementChanged(Object element) throws IllegalArgumentException {
-        if (fElements.contains(element)) {
-            if (isOkToUse(fTableControl)) {
-                fTable.update(element, null);
             }
             dialogFieldChanged();
         } else {
@@ -628,60 +475,6 @@ public class ListDialogField<T> extends DialogField {
     }
 
     /**
-     * Adds elements at the end of the list.
-     */
-    public void addElements(List<T> elements) {
-        int nElements= elements.size();
-
-        if (nElements > 0) {
-            // filter duplicated
-            ArrayList<T> elementsToAdd= new ArrayList<T>(nElements);
-
-            for (int i= 0; i < nElements; i++) {
-                T elem= elements.get(i);
-                if (!fElements.contains(elem)) {
-                    elementsToAdd.add(elem);
-                }
-            }
-            fElements.addAll(elementsToAdd);
-            if (isOkToUse(fTableControl)) {
-                fTable.add(elementsToAdd.toArray());
-                fTable.setSelection(new StructuredSelection(elementsToAdd));
-            }
-            dialogFieldChanged();
-        }
-    }
-
-
-
-    /**
-     * Adds an element at a position.
-     */
-    public void removeAllElements() {
-        if (fElements.size() > 0) {
-            fElements.clear();
-            if (isOkToUse(fTableControl)) {
-                fTable.refresh();
-            }
-            dialogFieldChanged();
-        }
-    }
-
-    /**
-     * Removes an element from the list.
-     */
-    public void removeElement(Object element) throws IllegalArgumentException {
-        if (fElements.remove(element)) {
-            if (isOkToUse(fTableControl)) {
-                fTable.remove(element);
-            }
-            dialogFieldChanged();
-        } else {
-            throw new IllegalArgumentException();
-        }
-    }
-
-    /**
      * Removes elements from the list.
      */
     public void removeElements(List<T> elements) {
@@ -693,14 +486,6 @@ public class ListDialogField<T> extends DialogField {
             dialogFieldChanged();
         }
     }
-
-    /**
-     * Gets the number of elements
-     */
-    public int getSize() {
-        return fElements.size();
-    }
-
 
     public void selectElements(ISelection selection) {
         fSelectionWhenEnabled= selection;
@@ -861,10 +646,6 @@ public class ListDialogField<T> extends DialogField {
 
         public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
             // will never happen
-        }
-
-        public boolean isDeleted(Object element) {
-            return false;
         }
 
         public void dispose() {

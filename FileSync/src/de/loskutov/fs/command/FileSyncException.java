@@ -13,10 +13,6 @@ public class FileSyncException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 
-    public FileSyncException() {
-        super();
-    }
-
     public FileSyncException(String message, Throwable cause) {
         super(message, cause);
     }

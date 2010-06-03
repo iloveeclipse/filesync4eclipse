@@ -26,10 +26,8 @@ import de.loskutov.fs.builder.FileSyncBuilder;
  * @author Andrei
  */
 public class ProjectHelper {
-    /**
-     * Will be run after workbench is started and w.window is opened
-     */
-    public ProjectHelper() {
+
+    private ProjectHelper() {
         super();
     }
 
@@ -42,7 +40,7 @@ public class ProjectHelper {
             desc = project.getDescription();
         } catch (CoreException e) {
             FileSyncPlugin.log("hasBuilder(): failed for project '"
-                + project.getName() + "'", e, IStatus.INFO);
+                    + project.getName() + "'", e, IStatus.INFO);
             return false;
         }
         ICommand[] commands = desc.getBuildSpec();
@@ -67,7 +65,7 @@ public class ProjectHelper {
             desc = project.getDescription();
         } catch (CoreException e) {
             FileSyncPlugin.log("addBuilder(): failed for project '"
-                + project.getName() + "'", e, IStatus.WARNING);
+                    + project.getName() + "'", e, IStatus.WARNING);
             return false;
         }
         return isBuilderDisabled(project, desc);
@@ -100,7 +98,7 @@ public class ProjectHelper {
              */
             Map<?, ?> arguments = command.getArguments();
             String externalLaunch = (String) arguments
-                    .get("LaunchConfigHandle"); // see BuilderUtils.LAUNCH_CONFIG_HANDLE);
+            .get("LaunchConfigHandle"); // see BuilderUtils.LAUNCH_CONFIG_HANDLE);
             if(externalLaunch != null
                     && externalLaunch.indexOf(FileSyncBuilder.BUILDER_ID) >=0){
                 return true;
@@ -122,7 +120,7 @@ public class ProjectHelper {
             desc = project.getDescription();
         } catch (CoreException e) {
             FileSyncPlugin.log("addBuilder(): failed for project '"
-                + project.getName() + "'", e, IStatus.WARNING);
+                    + project.getName() + "'", e, IStatus.WARNING);
             return false;
         }
 
@@ -179,7 +177,7 @@ public class ProjectHelper {
             desc = project.getDescription();
         } catch (CoreException e) {
             FileSyncPlugin.log("hasBuilder(): failed for project '"
-                + project.getName() + "'", e, IStatus.INFO);
+                    + project.getName() + "'", e, IStatus.INFO);
             return false;
         }
         if(isBuilderDisabled(project, desc)){

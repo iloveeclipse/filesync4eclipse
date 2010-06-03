@@ -13,12 +13,10 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 
-import org.eclipse.rse.services.clientserver.messages.SystemMessageException;
 import org.eclipse.rse.subsystems.files.core.subsystems.IRemoteFile;
 
 /**
@@ -115,14 +113,6 @@ public class RemoteFileImpl extends File {
         return remoteFile.getCanonicalPath();
     }
 
-    //    public long getFreeSpace() {
-    //        return remoteFile.getFreeSpace();
-    //    }
-
-    public InputStream getInputStream() throws SystemMessageException {
-        return remoteFile.getInputStream();
-    }
-
     @Override
     public String getName() {
         return remoteFile.getName();
@@ -215,10 +205,6 @@ public class RemoteFileImpl extends File {
         return remoteFile.listFiles(filter);
     }
 
-    public IRemoteFile[] listIRemoteFiles() {
-        return remoteFile.listIRemoteFiles();
-    }
-
     @Override
     public boolean mkdir() {
         return remoteFile.mkdir();
@@ -234,42 +220,14 @@ public class RemoteFileImpl extends File {
         return remoteFile.renameTo(dest);
     }
 
-    //    public boolean setExecutable(boolean executable, boolean ownerOnly) {
-    //        return remoteFile.setExecutable(executable, ownerOnly);
-    //    }
-
-    //    public boolean setExecutable(boolean executable) {
-    //        return remoteFile.setExecutable(executable);
-    //    }
-
     @Override
     public boolean setLastModified(long time) {
         return remoteFile.setLastModified(time);
     }
 
-    //    public boolean setReadable(boolean readable, boolean ownerOnly) {
-    //        return remoteFile.setReadable(readable, ownerOnly);
-    //    }
-
-    //    public boolean setReadable(boolean readable) {
-    //        return remoteFile.setReadable(readable);
-    //    }
-
     @Override
     public boolean setReadOnly() {
         return remoteFile.setReadOnly();
-    }
-
-    //    public boolean setWritable(boolean writable, boolean ownerOnly) {
-    //        return remoteFile.setWritable(writable, ownerOnly);
-    //    }
-
-    //    public boolean setWritable(boolean writable) {
-    //        return remoteFile.setWritable(writable);
-    //    }
-
-    public void synchRemoteFile() {
-        remoteFile.synchRemoteFile();
     }
 
     @Override

@@ -25,7 +25,7 @@ public class SelectionButtonDialogField extends DialogField {
 
     private Button fButton;
     private boolean fIsSelected;
-    private DialogField[] fAttachedDialogFields;
+    private final DialogField[] fAttachedDialogFields;
     private final int fButtonStyle;
 
 
@@ -39,41 +39,6 @@ public class SelectionButtonDialogField extends DialogField {
         fAttachedDialogFields= null;
         fButtonStyle= buttonStyle;
     }
-
-    /**
-     * Attaches a field to the selection state of the selection button.
-     * The attached field will be disabled if the selection button is not selected.
-     */
-    public void attachDialogField(DialogField dialogField) {
-        attachDialogFields(new DialogField[] { dialogField });
-    }
-
-    /**
-     * Attaches fields to the selection state of the selection button.
-     * The attached fields will be disabled if the selection button is not selected.
-     */
-    public void attachDialogFields(DialogField[] dialogFields) {
-        fAttachedDialogFields= dialogFields;
-        for (int i= 0; i < dialogFields.length; i++) {
-            dialogFields[i].setEnabled(fIsSelected);
-        }
-    }
-
-    /**
-     * Returns <code>true</code> is  teh gived field is attached to the selection button.
-     */
-    public boolean isAttached(DialogField editor) {
-        if (fAttachedDialogFields != null) {
-            for (int i=0; i < fAttachedDialogFields.length; i++) {
-                if (fAttachedDialogFields[i] == editor) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    // ------- layout helpers
 
     @Override
     public Control[] doFillIntoGrid(Composite parent, int nColumns) {
@@ -91,8 +56,6 @@ public class SelectionButtonDialogField extends DialogField {
 
         return new Control[] { button };
     }
-
-    // ------- ui creation
 
     /**
      * Returns the selection button widget. When called the first time, the widget will be created.

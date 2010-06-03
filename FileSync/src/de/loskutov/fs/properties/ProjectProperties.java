@@ -110,7 +110,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
      */
     public static final String KEY_PROJECT = "project";
 
-    private IProject project;
+    private final IProject project;
 
     private IEclipsePreferences preferences;
 
@@ -165,9 +165,6 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         return prefListeners;
     }
 
-    /**
-     * @param project
-     */
     protected ProjectProperties(IProject project) {
         this.project = project;
         initPreferencesStore();
@@ -215,9 +212,6 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         projectsToProps.remove(project);
     }
 
-    /**
-     * @param prefs
-     */
     private void buildPathMap(IEclipsePreferences prefs) {
         hashCode = null;
 
@@ -339,11 +333,6 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         }
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener#preferenceChange(org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent)
-     */
     public void preferenceChange(PreferenceChangeEvent event) {
         if (!isIgnorePreferenceListeners()) {
             buildPathMap(preferences);
@@ -362,9 +351,6 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         return preferences;
     }
 
-    /**
-     *
-     */
     public void refreshPreferences() {
         ignorePreferenceListeners = true;
         try {
@@ -389,26 +375,10 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
     }
 
     /**
-     * @param preferences
-     *            The preferences to set.
-     */
-    protected void setPreferences(IEclipsePreferences preferences) {
-        this.preferences = preferences;
-    }
-
-    /**
      * @return Returns the project.
      */
     public IProject getProject() {
         return project;
-    }
-
-    /**
-     * @param project
-     *            The project to set.
-     */
-    protected void setProject(IProject project) {
-        this.project = project;
     }
 
     /**
@@ -418,19 +388,6 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         return mappings;
     }
 
-    /**
-     * @param mappings
-     *            The mappings to set.
-     */
-    public void setMappings(FileMapping[] mappings) {
-        this.mappings = mappings;
-    }
-
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.eclipse.core.runtime.preferences.IEclipsePreferences.INodeChangeListener#added(org.eclipse.core.runtime.preferences.IEclipsePreferences.NodeChangeEvent)
-     */
     public void added(NodeChangeEvent event) {
         if (!isIgnorePreferenceListeners()) {
             buildPathMap(preferences);
@@ -439,11 +396,6 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         }
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.eclipse.core.runtime.preferences.IEclipsePreferences.INodeChangeListener#removed(org.eclipse.core.runtime.preferences.IEclipsePreferences.NodeChangeEvent)
-     */
     public void removed(NodeChangeEvent event) {
         if (!isIgnorePreferenceListeners()) {
             buildPathMap(preferences);

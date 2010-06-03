@@ -9,7 +9,6 @@
 
 package de.loskutov.fs.command;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -51,19 +50,11 @@ public class LineReader {
      * @param  in   An InputStream
      */
     public LineReader(InputStream in, String encoding)
-            throws UnsupportedEncodingException {
+    throws UnsupportedEncodingException {
         if (encoding != null) {
             inReader = new InputStreamReader(in, encoding);
         }
         charBuffer = new char[charBufferSize];
-    }
-
-    /**
-     * Create an InputStreamReader that uses the given charset.
-     * @param  in
-     */
-    public LineReader(String in, String encoding) throws UnsupportedEncodingException {
-        this(new ByteArrayInputStream(in.getBytes(encoding)), encoding);
     }
 
     /**
@@ -110,8 +101,8 @@ public class LineReader {
             if (newLineEndIdx >= 0) {
                 line = new StringBuffer(newLineEndIdx - lastLineEndIdx);
                 line
-                        .append(partOfArray(charBuffer, lastLineEndIdx + 1,
-                                newLineEndIdx + 1));
+                .append(partOfArray(charBuffer, lastLineEndIdx + 1,
+                        newLineEndIdx + 1));
                 lastLineEndIdx = newLineEndIdx;
                 return line;
             }

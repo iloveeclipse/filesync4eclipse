@@ -10,7 +10,6 @@
  *******************************************************************************/
 package de.loskutov.fs.properties;
 
-import java.net.URL;
 import java.util.ArrayList;
 
 import org.eclipse.core.resources.IProject;
@@ -212,10 +211,6 @@ public class PathListElement implements IPathListObject {
     }
     public static StringBuffer appendEncodePath(IPath path, StringBuffer buf) {
         return appendEncodeString(path==null?null:path.toString(), buf);
-    }
-
-    public static StringBuffer appendEncodedURL(URL url, StringBuffer buf) {
-        return appendEncodeString(url==null?null:url.toExternalForm(), buf);
     }
 
     public StringBuffer appendEncodedSettings(StringBuffer buf) {

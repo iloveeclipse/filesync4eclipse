@@ -38,7 +38,6 @@ public class FsUriPath extends Path {
     private static final int NOT_INITIALIZED = -1;
     public static final String FILE_SCHEME_TOKEN = "file";
     public static final String RSE_SCHEME_TOKEN = "rse";
-    public static final boolean OK = true;
     public static final Set<String> ALLOWED_SCHEMES;
     public static String DEFAULT_ENCODE_NAME = "UTF-8";
 

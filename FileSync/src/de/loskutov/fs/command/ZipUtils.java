@@ -12,7 +12,6 @@ package de.loskutov.fs.command;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -23,14 +22,7 @@ import java.util.zip.ZipOutputStream;
 
 public class ZipUtils {
 
-    public static final boolean USE_CURRENT_DATE_FOR_DESTINATION_FILES = true;
-    public static final boolean DEFAULT_USE_CURRENT_DATE_FOR_DESTINATION_FILES = !USE_CURRENT_DATE_FOR_DESTINATION_FILES;
-
     public static final int BUFFER_SIZE = 10240;
-
-    public static ZipOutputStream zipStream(OutputStream outputStream, FileRecord[] tobeJared) {
-        return zipStream(outputStream, tobeJared, DEFAULT_USE_CURRENT_DATE_FOR_DESTINATION_FILES);
-    }
 
     /**
      * The list of files is iterated in descending ordered. If a {@link FileRecord#getTargetName()}
@@ -90,14 +82,6 @@ public class ZipUtils {
         }
     }
 
-    public static void createZip(File archiveFile, FileRecord[] tobeJared) {
-        try {
-            zipStream(new FileOutputStream(archiveFile), tobeJared);
-        } catch (FileNotFoundException e) {
-            throw new IllegalArgumentException(e);
-        }
-    }
-
     public static class FileRecord implements Comparable<FileRecord> {
 
         private final File source;
@@ -106,10 +90,6 @@ public class ZipUtils {
 
         public String getTargetName() {
             return targetName;
-        }
-
-        public FileRecord(File source) {
-            this(source, source.getName());
         }
 
         public FileRecord(File source, String targetName) {
@@ -213,24 +193,12 @@ public class ZipUtils {
      */
     public static class LocalOutputStream extends OutputStream {
 
-        public static final boolean APPEND = true;
-        public static final boolean DEFAULT_APPEND = !APPEND;
-
         private final OutputStream outputStream;
         private final String toString;
 
         public LocalOutputStream(OutputStream outputStream, String toString) {
             this.outputStream = outputStream;
             this.toString = toString;
-
-        }
-
-        public LocalOutputStream(File file, boolean append) throws FileNotFoundException {
-            this(new FileOutputStream(file, append), file.toString());
-        }
-
-        public LocalOutputStream(File file) throws FileNotFoundException {
-            this(new FileOutputStream(file, DEFAULT_APPEND), file.toString());
         }
 
         @Override
