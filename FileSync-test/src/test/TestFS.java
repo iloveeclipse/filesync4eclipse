@@ -14,7 +14,7 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 import de.loskutov.fs.command.CopyDelegate;
-import de.loskutov.fs.command.CopyDelegate1;
+import de.loskutov.fs.command.CopyDelegate;
 import de.loskutov.fs.command.FS;
 
 public class TestFS extends TestCase {
@@ -253,110 +253,9 @@ public class TestFS extends TestCase {
     }
 
     public void testCopyDelegate2()  throws Exception {
-        CopyDelegate cd = new CopyDelegate1();
+        CopyDelegate cd = new CopyDelegate();
         cd.setUseCurrentDateForDestinationFiles(false);
         copyDelegateTest(cd);
-    }
-
-    public void testCopyDelegatePerformance() throws Exception {
-        CopyDelegate cd1 = new CopyDelegate1();
-        cd1.setUseCurrentDateForDestinationFiles(false);
-        CopyDelegate cd2 = new CopyDelegate2();
-        cd2.setUseCurrentDateForDestinationFiles(false);
-
-        URL resource = getClass().getResource("/variables.properties");
-        InputStream stream = resource.openStream();
-        Properties props = new Properties();
-        props.load(stream);
-        stream.close();
-
-        Properties props2 = new Properties();
-        props2.putAll(props);
-
-        byte[][] randomBytesArray = createRandomBytes(props, 2);
-
-        byte [] randomBytes = randomBytesArray[0];
-        byte [] randomBytesOrig = randomBytesArray[1];
-
-        File file1 = tempFile1;
-        FS.create(file1, true);
-        assertTrue(file1.isFile());
-
-        FileOutputStream fos1 = new FileOutputStream(file1, false);
-        fos1.write(randomBytes);
-        fos1.close();
-
-        File file3 = tempFile2;
-        FS.create(file3, true);
-        assertTrue(file3.isFile());
-
-        fos1 = new FileOutputStream(file3, false);
-        fos1.write(randomBytesOrig);
-        fos1.close();
-
-        file3.setLastModified(file1.lastModified());
-
-        assertEquals(file3.lastModified(), file1.lastModified());
-
-        File file2 = tempFile2;
-        FS.delete(file2, true);
-        assertFalse(file2.exists());
-        FS.create(file2, true);
-
-        // warm - up
-        for (int i = 0; i < 1; i++) {
-            cd1.setEncoding("ISO-8859-1");
-            cd1.setPropertiesMap(props);
-            boolean result = cd1.copy(file1, file2);
-            assertTrue(result);
-            assertTrue(file2.length() > 0);
-            assertTrue(isSame(file3, file2, true, true));
-            FS.delete(file2, true);
-            FS.create(file2, true);
-            cd2.setEncoding("ISO-8859-1");
-            cd2.setPropertiesMap(props);
-
-            result = cd2.copy(file1, file2);
-            assertTrue(result);
-            assertTrue(file2.length() > 0);
-            assertTrue(isSame(file3, file2, true, true));
-            FS.delete(file2, true);
-            FS.create(file2, true);
-        }
-
-        int runs = 350;
-
-        long start = System.currentTimeMillis();
-        for (int i = 0; i < runs; i++) {
-            cd1.setEncoding("ISO-8859-1");
-            cd1.setPropertiesMap(props);
-            boolean result = cd1.copy(file1, file2);
-            assertTrue(result);
-            assertTrue(file2.length() > 0);
-//            assertTrue(isSame(file3, file2, true, true));
-            FS.delete(file2, true);
-            FS.create(file2, true);
-        }
-        long stop = System.currentTimeMillis();
-        long time1 = stop - start;
-
-        start = System.currentTimeMillis();
-        for (int i = 0; i < runs; i++) {
-            cd2.setEncoding("ISO-8859-1");
-            cd2.setPropertiesMap(props);
-            boolean result = cd2.copy(file1, file2);
-            assertTrue(result);
-            assertTrue(file2.length() > 0);
-//            assertTrue(isSame(file3, file2, true, true));
-            FS.delete(file2, true);
-            FS.create(file2, true);
-        }
-        stop = System.currentTimeMillis();
-        long time2 = stop - start;
-
-        System.out.println("Copy1: " + time1);
-        System.out.println("Copy2: " + time2);
-        assertTrue(time2 < time1);
     }
 
     private void copyDelegateTest(CopyDelegate cd) throws Exception {

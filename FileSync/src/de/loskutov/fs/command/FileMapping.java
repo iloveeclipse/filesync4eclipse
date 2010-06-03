@@ -1,10 +1,13 @@
 /*******************************************************************************
- * Copyright (c) 2009 Andrei Loskutov.
  * All rights reserved. This program and the accompanying materials
+ * Copyright (c) 2009 Andrei Loskutov.
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * Contributor(s):
+ * 	Andrei Loskutov - initial API and implementation
+ * 	Stefan Flick - workspace relative paths idea/first implementation
+ * 	Volker Wandmaker - valid-field
  *******************************************************************************/
 package de.loskutov.fs.command;
 
@@ -27,8 +30,8 @@ import de.loskutov.fs.FileSyncPlugin;
 public class FileMapping {
 
     /**
-     * Common prefix to identify mappping props, usually should followed by a
-     * separator and then a number
+     * Common prefix to identify mappping props, usually should followed by a separator and then a
+     * number
      */
     public static final String MAP_PREFIX = "map";
 
@@ -80,7 +83,13 @@ public class FileMapping {
 
     private String encoding;
 
-    /** only temporary solution during copy of files*/
+    /**
+     * @link SyncWizard#begin() tries to create the targetFolder. If it's not possible, valid is set
+     *       to false.
+     */
+    private boolean valid = true;
+
+    /** only temporary solution during copy of files */
     private transient File currDestFile;
 
     /**
@@ -98,9 +107,8 @@ public class FileMapping {
      * @param inclusionPatterns
      * @param exclusionPatterns
      */
-    public FileMapping(IPath sourcePath, IPath destinationPath,
-            IPath variables, IPath[] inclusionPatterns, IPath[] exclusionPatterns,
-            IPath projectPath) {
+    public FileMapping(IPath sourcePath, IPath destinationPath, IPath variables,
+            IPath[] inclusionPatterns, IPath[] exclusionPatterns, IPath projectPath) {
         this();
         this.sourcePath = sourcePath;
         this.destinationPath = destinationPath;
@@ -109,13 +117,14 @@ public class FileMapping {
         this.projectPath = projectPath;
         this.variablesPath = getRelativePath(variables, projectPath);
         if (variables != null && variablesPath == null) {
-            FileSyncPlugin.log("Path is not relative and will be ignored: " + variables,
-                    null, IStatus.ERROR);
+            FileSyncPlugin.log("Path is not relative and will be ignored: " + variables, null,
+                    IStatus.ERROR);
         }
     }
 
     /**
-     * @param fullMapping all required properties for current object
+     * @param fullMapping
+     *            all required properties for current object
      * @see #encode()
      */
     public FileMapping(String fullMapping, IPath projectPath) {
@@ -125,7 +134,8 @@ public class FileMapping {
     }
 
     /**
-     * @param fullMapping all required properties for current object
+     * @param fullMapping
+     *            all required properties for current object
      * @see #encode()
      */
     private void decode(String fullMapping) {
@@ -136,8 +146,8 @@ public class FileMapping {
         }
         StringTokenizer st = new StringTokenizer(fullMapping, MAP_SEPARATOR);
         if (!st.hasMoreTokens()) {
-            FileSyncPlugin.log("Path map should contain at least source folder"
-                    + fullMapping, null, IStatus.WARNING);
+            FileSyncPlugin.log("Path map should contain at least source folder" + fullMapping,
+                    null, IStatus.WARNING);
             return;
         }
         String path = st.nextToken();
@@ -167,14 +177,14 @@ public class FileMapping {
                 setExclusionPatterns(decodePatterns(path));
             }
         }
-        if (st.hasMoreTokens()){
+        if (st.hasMoreTokens()) {
             path = st.nextToken();
             if (!isEmptyPath(path)) {
                 // should be project relative
                 variablesPath = getRelativePath(new Path(path), projectPath);
                 if (variablesPath == null) {
-                    FileSyncPlugin.log("Path is not relative and will be ignored: " + path,
-                            null, IStatus.ERROR);
+                    FileSyncPlugin.log("Path is not relative and will be ignored: " + path, null,
+                            IStatus.ERROR);
                 }
             }
         }
@@ -263,7 +273,8 @@ public class FileMapping {
     }
 
     /**
-     * @param destinationPath The destinationPath to set.
+     * @param destinationPath
+     *            The destinationPath to set.
      */
     public void setDestinationPath(IPath destinationPath) {
         this.destinationPath = destinationPath;
@@ -277,7 +288,8 @@ public class FileMapping {
     }
 
     /**
-     * @param exclusionPatterns The exclusionPatterns to set.
+     * @param exclusionPatterns
+     *            The exclusionPatterns to set.
      */
     public void setExclusionPatterns(IPath[] exclusionPatterns) {
         this.exclusionPatterns = exclusionPatterns;
@@ -292,7 +304,8 @@ public class FileMapping {
     }
 
     /**
-     * @param inclusionPatterns The inclusionPatterns to set.
+     * @param inclusionPatterns
+     *            The inclusionPatterns to set.
      */
     public void setInclusionPatterns(IPath[] inclusionPatterns) {
         this.inclusionPatterns = inclusionPatterns;
@@ -319,11 +332,10 @@ public class FileMapping {
             IPath prefixPath = sourcePath.removeTrailingSeparator();
             for (int i = 0; i < length; i++) {
                 if (!sourcePath.isRoot()) {
-                    fullCharExclusionPatterns[i] = prefixPath
-                    .append(exclusionPatterns[i]).toString().toCharArray();
+                    fullCharExclusionPatterns[i] = prefixPath.append(exclusionPatterns[i])
+                    .toString().toCharArray();
                 } else {
-                    fullCharExclusionPatterns[i] = exclusionPatterns[i].toString()
-                    .toCharArray();
+                    fullCharExclusionPatterns[i] = exclusionPatterns[i].toString().toCharArray();
                 }
             }
         }
@@ -343,18 +355,19 @@ public class FileMapping {
             IPath prefixPath = sourcePath.removeTrailingSeparator();
             for (int i = 0; i < length; i++) {
                 if (!sourcePath.isRoot()) {
-                    fullCharInclusionPatterns[i] = prefixPath
-                    .append(inclusionPatterns[i]).toString().toCharArray();
+                    fullCharInclusionPatterns[i] = prefixPath.append(inclusionPatterns[i])
+                    .toString().toCharArray();
                 } else {
-                    fullCharInclusionPatterns[i] = inclusionPatterns[i].toString()
-                    .toCharArray();
+                    fullCharInclusionPatterns[i] = inclusionPatterns[i].toString().toCharArray();
                 }
             }
         }
         return fullCharInclusionPatterns;
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#equals(java.lang.Object)
      */
     public boolean equals(Object obj) {
@@ -368,7 +381,9 @@ public class FileMapping {
         return mapAsString.equals(((FileMapping) obj).encode());
     }
 
-    /* (non-Javadoc)
+    /*
+     * (non-Javadoc)
+     * 
      * @see java.lang.Object#hashCode()
      */
     public int hashCode() {
@@ -377,7 +392,6 @@ public class FileMapping {
     }
 
     /**
-     *
      * @return may be empty array, if the destination path does not exist in the workspace
      */
     public IContainer[] getDestinationContainers() {
@@ -385,8 +399,7 @@ public class FileMapping {
         if (destination == null) {
             return new IContainer[0];
         }
-        return ResourcesPlugin.getWorkspace().getRoot().findContainersForLocation(
-                destination);
+        return ResourcesPlugin.getWorkspace().getRoot().findContainersForLocation(destination);
     }
 
     /**
@@ -397,13 +410,13 @@ public class FileMapping {
     }
 
     public IPath getFullVariablesPath() {
-        if(variablesPath == null){
+        if (variablesPath == null) {
             return null;
         }
         return projectPath.append(variablesPath);
     }
 
-    public Properties getVariables(){
+    public Properties getVariables() {
         return varProps;
     }
 
@@ -411,8 +424,8 @@ public class FileMapping {
         this.varProps = varProps;
     }
 
-    public static IPath getRelativePath(IPath filePath, IPath projectPath){
-        if(filePath == null){
+    public static IPath getRelativePath(IPath filePath, IPath projectPath) {
+        if (filePath == null) {
             return null;
         }
         if (filePath.isAbsolute()) {
@@ -426,15 +439,17 @@ public class FileMapping {
         return filePath;
     }
 
-    public File getCurrentDestFile(){
+    public File getCurrentDestFile() {
         return currDestFile;
     }
-    public void setCurrentDestFile(File currDestFile){
+
+    public void setCurrentDestFile(File currDestFile) {
         this.currDestFile = currDestFile;
     }
 
     /**
-     * @param encoding the encoding to set
+     * @param encoding
+     *            the encoding to set
      */
     public void setEncoding(String encoding) {
         this.encoding = encoding;
@@ -448,7 +463,8 @@ public class FileMapping {
     }
 
     /**
-     * @param projectPath the projectPath to set
+     * @param projectPath
+     *            the projectPath to set
      */
     public void setProjectPath(IPath projectPath) {
         this.projectPath = projectPath;
@@ -460,4 +476,13 @@ public class FileMapping {
     public IPath getProjectPath() {
         return projectPath;
     }
+
+    public boolean isValid() {
+        return valid;
+    }
+
+    public void setValid(boolean valid) {
+        this.valid = valid;
+    }
+
 }

@@ -149,7 +149,7 @@ public class InclusionExclusionDialog extends StatusDialog {
 
         IPath[] pattern = (IPath[]) entryToEdit.getAttribute(key);
 
-        ArrayList elements = new ArrayList(pattern.length);
+        ArrayList<String> elements = new ArrayList<String>(pattern.length);
         for (int i = 0; i < pattern.length; i++) {
             elements.add(pattern[i].toString());
         }

@@ -17,7 +17,12 @@ import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.Version;
 
+import de.loskutov.fs.builder.SyncWizard;
+import de.loskutov.fs.builder.SyncWizardFactory;
+import de.loskutov.fs.command.FsPathUtil;
 import de.loskutov.fs.preferences.FileSyncConstants;
 
 /**
@@ -27,14 +32,21 @@ public class FileSyncPlugin extends AbstractUIPlugin {
 
     private static FileSyncPlugin plugin;
 
+    public static final String RSE_SYMBOLIC_NAME = "org.eclipse.rse";
+    public static final Version RSE_MIN_VERSION = new Version("3.1.0");
+
     public static final String PLUGIN_ID = "de.loskutov.FileSync";
+
+    private Boolean rseAvailable = null;
+
+    private FsPathUtil fsPathUtil;
 
     /**
      * The constructor.
      */
     public FileSyncPlugin() {
         super();
-        if(plugin != null){
+        if (plugin != null) {
             throw new IllegalStateException("FileSync plugin is singleton!");
         }
         plugin = this;
@@ -49,7 +61,7 @@ public class FileSyncPlugin extends AbstractUIPlugin {
 
     public static void error(String message, Throwable error) {
         Shell shell = FileSyncPlugin.getShell();
-        if(message == null){
+        if (message == null) {
             message = "";
         }
         if (error != null) {
@@ -76,7 +88,7 @@ public class FileSyncPlugin extends AbstractUIPlugin {
         }
         Status status = new Status(statusID, PLUGIN_ID, 0, messageID, error);
         getDefault().getLog().log(status);
-        if(getDefault().isDebugging()){
+        if (getDefault().isDebugging()) {
             System.out.println(status);
         }
     }
@@ -86,8 +98,7 @@ public class FileSyncPlugin extends AbstractUIPlugin {
     }
 
     /**
-     * Returns an image descriptor for the image file at the given plug-in
-     * relative path.
+     * Returns an image descriptor for the image file at the given plug-in relative path.
      *
      * @param path
      *            the path
@@ -118,4 +129,32 @@ public class FileSyncPlugin extends AbstractUIPlugin {
         // TODO error message
         return null;
     }
+
+    public void start(BundleContext context) throws Exception {
+        super.start(context);
+    }
+
+    public boolean isRseAvailable() {
+        if (rseAvailable == null) {
+            rseAvailable = Boolean.valueOf(SyncWizardFactory.getInstance().createSyncWizard()
+                    .getClass() != SyncWizard.class);
+        }
+        return rseAvailable.booleanValue();
+    }
+
+    public String getRseRequirement() {
+        return RSE_SYMBOLIC_NAME + " >= " + RSE_MIN_VERSION;
+    }
+
+    public boolean isDefaultDelayedCopy() {
+        return SyncWizard.DEFAULT_DELAYED_COPY_DELETE;
+    }
+
+    public FsPathUtil getFsPathUtil() {
+        if (fsPathUtil == null) {
+            fsPathUtil = SyncWizardFactory.getInstance().createFsPathUtil();
+        }
+        return fsPathUtil;
+    }
+
 }

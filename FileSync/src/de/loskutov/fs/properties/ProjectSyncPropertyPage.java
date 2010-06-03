@@ -4,7 +4,9 @@
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * Contributor(s):
+ * 	Andrei Loskutov - initial API and implementation
+ * 	Volker Wandmaker - added delayedCopyDeleteField
  *******************************************************************************/
 package de.loskutov.fs.properties;
 
@@ -66,6 +68,7 @@ import de.loskutov.fs.FileSyncPlugin;
 import de.loskutov.fs.builder.CharOperation;
 import de.loskutov.fs.builder.FileSyncBuilder;
 import de.loskutov.fs.command.FileMapping;
+import de.loskutov.fs.command.FileSyncException;
 import de.loskutov.fs.command.PathVariableHelper;
 import de.loskutov.fs.dialogs.DialogField;
 import de.loskutov.fs.dialogs.IDialogFieldListener;
@@ -83,20 +86,18 @@ import de.loskutov.fs.dialogs.TreeListDialogField;
 import de.loskutov.fs.dialogs.TypedElementSelectionValidator;
 import de.loskutov.fs.dialogs.TypedViewerFilter;
 
-public class ProjectSyncPropertyPage extends PropertyPage implements
-IStatusChangeListener {
-    protected IStatus errorStatus = new StatusInfo(IStatus.ERROR,
-    "Please select one file");
+public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChangeListener {
 
+    protected IStatus errorStatus = new StatusInfo(IStatus.ERROR, "Please select one file");
     protected IStatus okStatus = new StatusInfo();
 
     /*
-     * OpenExternalFileAction -> external file dialog
-     * jdt ExclusionInclusionDialog -> select dialog relative to parent resource
+     * OpenExternalFileAction -> external file dialog jdt ExclusionInclusionDialog -> select dialog
+     * relative to parent resource
      */
     protected IWorkspaceRoot workspaceRoot;
 
-    protected List mappingList;
+    protected List<PathListElement> mappingList;
 
     protected StringButtonDialogField destPathDialogField;
 
@@ -124,6 +125,7 @@ IStatusChangeListener {
 
     protected SelectionButtonDialogField useCurrentDateField;
     protected SelectionButtonDialogField includeTeamFilesField;
+    protected SelectionButtonDialogField delayedCopyDeleteField;
 
     private SelectionButtonDialogField enableFileSyncField;
 
@@ -143,11 +145,13 @@ IStatusChangeListener {
         pathComparator = new PathListElementComparator();
 
         defVariablesCallback = new IValueCallback() {
+
             public Object getValue() {
                 return getDefaultVariablesPath();
             }
         };
         defPathCallback = new IValueCallback() {
+
             public Object getValue() {
                 return getDefaultDestinationPath();
             }
@@ -188,7 +192,7 @@ IStatusChangeListener {
         // ensure the page has no special buttons
         noDefaultAndApplyButton();
 
-        mappingList = new ArrayList();
+        mappingList = new ArrayList<PathListElement>();
 
         workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
 
@@ -209,7 +213,6 @@ IStatusChangeListener {
         project = (IProject) getElement();
         pathVariableHelper = new PathVariableHelper();
 
-
         ProjectProperties properties = ProjectProperties.getInstance(project);
         List listeners = properties.getProjectPreferenceChangeListeners();
         boolean noBuilderInstalled = listeners.isEmpty();
@@ -218,17 +221,14 @@ IStatusChangeListener {
         IPath destPath = null;
         IPath variables = null;
         try {
-            String defDest = preferences.get(ProjectProperties.KEY_DEFAULT_DESTINATION,
-            "");
+            String defDest = preferences.get(ProjectProperties.KEY_DEFAULT_DESTINATION, "");
             IPath projectPath = project.getLocation();
 
             destPath = pathVariableHelper.resolveVariable(defDest, projectPath);
             variables = readVariablesPath(preferences);
         } catch (IllegalStateException e) {
-            FileSyncPlugin
-            .log("FileSync project preferences (for project '"
-                    + project.getName() + "') error: " + e.getMessage(), e,
-                    IStatus.ERROR);
+            FileSyncPlugin.log("FileSync project preferences (for project '" + project.getName()
+                    + "') error: " + e.getMessage(), e, IStatus.ERROR);
         }
 
         init(destPath, variables, properties.getMappings());
@@ -276,6 +276,7 @@ IStatusChangeListener {
             updateUI();
         } else {
             Display.getDefault().asyncExec(new Runnable() {
+
                 public void run() {
                     updateUI();
                 }
@@ -303,16 +304,16 @@ IStatusChangeListener {
                 /* 2 = IDX_EDIT */"Edit...",
         /* 3 = IDX_REMOVE */"Remove"};
 
-        foldersList = new TreeListDialogField(adapter, buttonLabels,
-                new PathListLabelProvider());
+        foldersList = new TreeListDialogField(adapter, buttonLabels, new PathListLabelProvider());
         foldersList.setDialogFieldListener(adapter);
         foldersList.setLabelText("Available synchronization mappings:");
 
         /*
-         * the small hack to have all entries sorted in alphab. order except
-         * of "include/exclude" branches - they should be inversed
+         * the small hack to have all entries sorted in alphab. order except of "include/exclude"
+         * branches - they should be inversed
          */
         foldersList.setViewerSorter(new ViewerSorter(new Collator() {
+
             private final Collator delegate = Collator.getInstance();
 
             public int compare(String source, String target) {
@@ -334,10 +335,10 @@ IStatusChangeListener {
         useFolderOutputsField.setLabelText("Allow different target folders");
         useFolderOutputsField.setDialogFieldListener(adapter);
 
-        //        useVariablesField = new SelectionButtonDialogField(SWT.CHECK);
-        //        useVariablesField.setSelection(false);
-        //        useVariablesField.setLabelText("Allow different variables files");
-        //        useVariablesField.setDialogFieldListener(adapter);
+        // useVariablesField = new SelectionButtonDialogField(SWT.CHECK);
+        // useVariablesField.setSelection(false);
+        // useVariablesField.setLabelText("Allow different variables files");
+        // useVariablesField.setDialogFieldListener(adapter);
 
         useCurrentDateField = new SelectionButtonDialogField(SWT.CHECK);
         useCurrentDateField.setSelection(false);
@@ -349,24 +350,38 @@ IStatusChangeListener {
         includeTeamFilesField.setLabelText("Sync team private files (like .svn)");
         includeTeamFilesField.setDialogFieldListener(adapter);
 
+        delayedCopyDeleteField = new SelectionButtonDialogField(SWT.CHECK);
+        delayedCopyDeleteField.setSelection(FileSyncPlugin.getDefault().isDefaultDelayedCopy());
+        delayedCopyDeleteField
+        .setLabelText("delayed copy/delete (faster, especially on slow remote-connections)");
+        delayedCopyDeleteField.setDialogFieldListener(adapter);
+
+        if (!FileSyncPlugin.getDefault().isRseAvailable()) {
+            delayedCopyDeleteField.setToolTipText(FileSyncPlugin.getDefault().getRseRequirement()
+                    + " not available.");
+        } else {
+            delayedCopyDeleteField
+            .setToolTipText("collects the sync-information first, sends it compressed to the target system and execute it their.");
+        }
+
         enableInputControls(!disabled);
     }
 
     protected void init() {
         boolean useFolderOutputs = hasDifferentOutputFolders();
-        //        boolean useVariables = hasDifferentVasriables();
-        ArrayList folders = new ArrayList();
+        // boolean useVariables = hasDifferentVasriables();
+        ArrayList<PathListElement> folders = new ArrayList<PathListElement>();
         for (int i = 0; i < mappingList.size(); i++) {
-            PathListElement cpe = (PathListElement) mappingList.get(i);
+            PathListElement cpe = mappingList.get(i);
             folders.add(cpe);
         }
 
         foldersList.setElements(folders);
         useFolderOutputsField.setSelection(useFolderOutputs);
-        //        useVariablesField.setSelection(useVariables);
+        // useVariablesField.setSelection(useVariables);
 
         for (int i = 0; i < folders.size(); i++) {
-            PathListElement cpe = (PathListElement) folders.get(i);
+            PathListElement cpe = folders.get(i);
             IPath[] patterns = (IPath[]) cpe.getAttribute(PathListElement.EXCLUSION);
             boolean hasOutputFolder = (cpe.getAttribute(PathListElement.DESTINATION) != null);
             if (patterns.length > 0 || hasOutputFolder) {
@@ -375,40 +390,46 @@ IStatusChangeListener {
         }
 
         IEclipsePreferences preferences = getPreferences(false);
-        boolean useCurrentDate = preferences.getBoolean(
-                ProjectProperties.KEY_USE_CURRENT_DATE, false);
+        boolean useCurrentDate = preferences.getBoolean(ProjectProperties.KEY_USE_CURRENT_DATE,
+                false);
 
         useCurrentDateField.setSelection(useCurrentDate);
+
         boolean includeTeamFiles = preferences.getBoolean(
                 ProjectProperties.KEY_INCLUDE_TEAM_PRIVATE, false);
 
         includeTeamFilesField.setSelection(includeTeamFiles);
+
+        boolean delayedCopyDelete = preferences.getBoolean(
+                ProjectProperties.KEY_DELAYED_COPY_DELETE, FileSyncPlugin.getDefault()
+                .isDefaultDelayedCopy());
+
+        delayedCopyDeleteField.setSelection(delayedCopyDelete);
     }
 
     private IPath readVariablesPath(IEclipsePreferences preferences) {
         IPath variables = null;
         String vars = preferences.get(ProjectProperties.KEY_DEFAULT_VARIABLES, null);
         if (vars != null && vars.trim().length() > 0) {
-            variables = FileMapping
-            .getRelativePath(new Path(vars), project.getFullPath());
+            variables = FileMapping.getRelativePath(new Path(vars), project.getFullPath());
             if (variables == null) {
-                FileSyncPlugin.log("Path is not relative and will be ignored: " + vars,
-                        null, IStatus.ERROR);
+                FileSyncPlugin.log("Path is not relative and will be ignored: " + vars, null,
+                        IStatus.ERROR);
             }
         }
         return variables;
     }
 
     /**
-     * @return true, if any one of existing path mappings uses different
-     * output folder as default one
+     * @return true, if any one of existing path mappings uses different output folder as default
+     *         one
      */
     protected boolean hasDifferentOutputFolders() {
         if (mappingList == null) {
             return false;
         }
         for (int i = 0; i < mappingList.size(); i++) {
-            PathListElement cpe = (PathListElement) mappingList.get(i);
+            PathListElement cpe = mappingList.get(i);
             boolean hasOutputFolder = (cpe.getAttribute(PathListElement.DESTINATION) != null);
             if (hasOutputFolder) {
                 return true;
@@ -418,15 +439,14 @@ IStatusChangeListener {
     }
 
     /**
-     * @return true, if any one of existing path mappings uses the default
-     * output folder
+     * @return true, if any one of existing path mappings uses the default output folder
      */
     protected boolean usesDefaultOutputFolder() {
         if (mappingList == null) {
             return false;
         }
         for (int i = 0; i < mappingList.size(); i++) {
-            PathListElement cpe = (PathListElement) mappingList.get(i);
+            PathListElement cpe = mappingList.get(i);
             Object dest = cpe.getAttribute(PathListElement.DESTINATION);
             boolean hasDefFolder = dest == null || dest.toString().trim().length() == 0;
             if (hasDefFolder) {
@@ -442,10 +462,10 @@ IStatusChangeListener {
         GridLayout layout = new GridLayout();
         composite.setLayout(layout);
         composite.setLayoutData(new GridData(GridData.FILL_BOTH));
-        LayoutUtil.doDefaultLayout(composite, new DialogField[] { enableFileSyncField,
-                foldersList, useFolderOutputsField, /*useVariablesField,*/
-                includeTeamFilesField,
-                useCurrentDateField }, true, SWT.DEFAULT, SWT.DEFAULT);
+        LayoutUtil.doDefaultLayout(composite, new DialogField[] { enableFileSyncField, foldersList,
+                useFolderOutputsField, /* useVariablesField, */
+                includeTeamFilesField, useCurrentDateField, delayedCopyDeleteField }, true,
+                SWT.DEFAULT, SWT.DEFAULT);
 
         LayoutUtil.setHorizontalGrabbing(foldersList.getTreeControl(null));
 
@@ -456,13 +476,10 @@ IStatusChangeListener {
         List elements = foldersList.getElements();
         for (int i = 0; i < elements.size(); i++) {
             PathListElement elem = (PathListElement) elements.get(i);
-            IPath[] exclusionPatterns = (IPath[]) elem
-            .getAttribute(PathListElement.EXCLUSION);
-            IPath[] inclusionPatterns = (IPath[]) elem
-            .getAttribute(PathListElement.INCLUSION);
+            IPath[] exclusionPatterns = (IPath[]) elem.getAttribute(PathListElement.EXCLUSION);
+            IPath[] inclusionPatterns = (IPath[]) elem.getAttribute(PathListElement.INCLUSION);
             IPath output = (IPath) elem.getAttribute(PathListElement.DESTINATION);
-            if (exclusionPatterns.length > 0 || inclusionPatterns.length > 0
-                    || output != null) {
+            if (exclusionPatterns.length > 0 || inclusionPatterns.length > 0 || output != null) {
                 foldersList.expandElement(elem, 3);
             }
         }
@@ -516,7 +533,7 @@ IStatusChangeListener {
     }
 
     private void addEntry() {
-        List elementsToAdd = new ArrayList(10);
+        List<PathListElement> elementsToAdd = new ArrayList<PathListElement>(10);
         if (hasMembers(project)) {
             PathListElement[] srcentries = openFolderDialog(null);
             if (srcentries != null) {
@@ -527,7 +544,7 @@ IStatusChangeListener {
         } else {
             boolean addRoot = MessageDialog.openQuestion(getShell(), "Project has no folders",
             "Current project has no folders. Create mapping for project root?");
-            if(addRoot){
+            if (addRoot) {
                 PathListElement entry = newFolderElement(project);
                 elementsToAdd.add(entry);
             } else {
@@ -593,8 +610,8 @@ IStatusChangeListener {
             }
             String absPath = dialog.open();
             if (absPath != null) {
-                elem.getParent().setAttribute(PathListElement.DESTINATION,
-                        new Path(absPath), defPathCallback);
+                elem.getParent().setAttribute(PathListElement.DESTINATION, new Path(absPath),
+                        defPathCallback);
                 foldersList.refresh();
             }
             dialogFieldChanged(destPathDialogField);
@@ -609,7 +626,7 @@ IStatusChangeListener {
                         defVariablesCallback);
                 foldersList.refresh();
             }
-            //            destinationPathDialogFieldChanged();
+            // destinationPathDialogFieldChanged();
         } else if (key.equals(PathListElement.EXCLUSION)) {
             showExclusionInclusionDialog(elem.getParent(), true);
         } else if (key.equals(PathListElement.INCLUSION)) {
@@ -625,17 +642,14 @@ IStatusChangeListener {
         return FileMapping.getRelativePath(new Path(text), project.getFullPath());
     }
 
-    private void showExclusionInclusionDialog(PathListElement selElement,
-            boolean focusOnExclusion) {
-        InclusionExclusionDialog dialog = new InclusionExclusionDialog(getShell(),
-                selElement, focusOnExclusion);
+    private void showExclusionInclusionDialog(PathListElement selElement, boolean focusOnExclusion) {
+        InclusionExclusionDialog dialog = new InclusionExclusionDialog(getShell(), selElement,
+                focusOnExclusion);
         if (dialog.open() == Window.OK) {
-            selElement.setAttribute(PathListElement.INCLUSION, dialog
-                    .getInclusionPattern(), null);
-            selElement.setAttribute(PathListElement.EXCLUSION, dialog
-                    .getExclusionPattern(), null);
+            selElement.setAttribute(PathListElement.INCLUSION, dialog.getInclusionPattern(), null);
+            selElement.setAttribute(PathListElement.EXCLUSION, dialog.getExclusionPattern(), null);
             foldersList.refresh();
-            //            patternListCheckField.dialogFieldChanged(); // validate
+            // patternListCheckField.dialogFieldChanged(); // validate
         }
     }
 
@@ -669,8 +683,7 @@ IStatusChangeListener {
                 Object value = null;
                 // TODO null is ok?
                 Object defaultValue = null;
-                if (key.equals(PathListElement.EXCLUSION)
-                        || key.equals(PathListElement.INCLUSION)) {
+                if (key.equals(PathListElement.EXCLUSION) || key.equals(PathListElement.INCLUSION)) {
                     value = new Path[0];
                     defaultValue = value;
                 }
@@ -740,16 +753,12 @@ IStatusChangeListener {
                 }
             }
             foldersList.refresh();
-        } /*else if (field == useVariablesField) {
-         if (!useVariablesField.isSelected()) {
-         int nFolders = foldersList.getSize();
-         for (int i = 0; i < nFolders; i++) {
-         PathListElement cpe = (PathListElement) foldersList.getElement(i);
-         cpe.setAttribute(PathListElement.VARIABLES, null);
-         }
-         }
-         foldersList.refresh();
-         } */else if (field == foldersList) {
+        } /*
+         * else if (field == useVariablesField) { if (!useVariablesField.isSelected()) { int
+         * nFolders = foldersList.getSize(); for (int i = 0; i < nFolders; i++) { PathListElement
+         * cpe = (PathListElement) foldersList.getElement(i);
+         * cpe.setAttribute(PathListElement.VARIABLES, null); } } foldersList.refresh(); }
+         */else if (field == foldersList) {
              updatePatternList();
          } else if (field == enableFileSyncField) {
              boolean ok;
@@ -771,9 +780,12 @@ IStatusChangeListener {
 
     protected void enableInputControls(boolean selected) {
         useFolderOutputsField.setEnabled(selected);
-        //        useVariablesField.setEnabled(selected);
+        // useVariablesField.setEnabled(selected);
         useCurrentDateField.setEnabled(selected);
         includeTeamFilesField.setEnabled(selected);
+
+        delayedCopyDeleteField.setEnabled(FileSyncPlugin.getDefault().isRseAvailable() && selected);
+
         destPathDialogField.setEnabled(selected);
         variablesDialogField.setEnabled(selected);
         foldersList.setEnabled(selected);
@@ -785,13 +797,14 @@ IStatusChangeListener {
         statusChanged(destFolderStatus);
     }
 
+    @SuppressWarnings("unchecked")
     private void updatePatternList() {
-        List srcelements = foldersList.getElements();
+        List<PathListElement> srcelements = foldersList.getElements();
 
-        List oldmappings = mappingList;
-        List newMappings = new ArrayList(mappingList);
+        List<PathListElement> oldmappings = mappingList;
+        List<PathListElement> newMappings = new ArrayList<PathListElement>(mappingList);
         for (int i = 0; i < oldmappings.size(); i++) {
-            PathListElement cpe = (PathListElement) oldmappings.get(i);
+            PathListElement cpe = oldmappings.get(i);
             if (!srcelements.contains(cpe)) {
                 newMappings.remove(cpe);
             } else {
@@ -801,7 +814,7 @@ IStatusChangeListener {
         }
         if (!srcelements.isEmpty()) {
             for (int i = 0; i < srcelements.size(); i++) {
-                PathListElement cpe = (PathListElement) srcelements.get(i);
+                PathListElement cpe = srcelements.get(i);
                 if (!newMappings.contains(cpe)) {
                     newMappings.add(cpe);
                 }
@@ -831,19 +844,18 @@ IStatusChangeListener {
 
     private PathListElement[] openFolderDialog(PathListElement existing) {
 
-        Class[] acceptedClasses = new Class[] { IProject.class, IFolder.class };
-        List existingContainers = getExistingContainers(null);
+        Class<?>[] acceptedClasses = new Class<?>[] { IProject.class, IFolder.class };
+        List<IContainer> existingContainers = getExistingContainers(null);
 
         IProject[] allProjects = workspaceRoot.getProjects();
-        ArrayList rejectedElements = new ArrayList(allProjects.length);
+        ArrayList<IProject> rejectedElements = new ArrayList<IProject>(allProjects.length);
         IProject currProject = project;
         for (int i = 0; i < allProjects.length; i++) {
             if (!allProjects[i].equals(currProject)) {
                 rejectedElements.add(allProjects[i]);
             }
         }
-        ViewerFilter filter = new TypedViewerFilter(acceptedClasses, rejectedElements
-                .toArray());
+        ViewerFilter filter = new TypedViewerFilter(acceptedClasses, rejectedElements.toArray());
 
         ILabelProvider lp = new WorkbenchLabelProvider();
         ITreeContentProvider cp = new BaseWorkbenchContentProvider();
@@ -851,8 +863,7 @@ IStatusChangeListener {
         String title = "Folder Selection";
         String message = "&Choose folders to be added to the synchronization mapping:";
 
-        MultipleFolderSelectionDialog dialog = new MultipleFolderSelectionDialog(
-                getShell(), lp, cp);
+        MultipleFolderSelectionDialog dialog = new MultipleFolderSelectionDialog(getShell(), lp, cp);
         dialog.setExisting(existingContainers.toArray());
         dialog.setTitle(title);
         dialog.setMessage(message);
@@ -876,13 +887,12 @@ IStatusChangeListener {
     }
 
     private IPath openFileDialog(IPath path) {
-        Class[] acceptedClasses = new Class[] { IFile.class, IFolder.class,
-                IProject.class };
-        ISelectionStatusValidator validator = new TypedElementSelectionValidator(
-                acceptedClasses, false) {
+        Class[] acceptedClasses = new Class[] { IFile.class, IFolder.class, IProject.class };
+        ISelectionStatusValidator validator = new TypedElementSelectionValidator(acceptedClasses,
+                false) {
+
             public IStatus validate(Object[] elements) {
-                if (elements.length > 1 || elements.length == 0
-                        || !(elements[0] instanceof IFile)) {
+                if (elements.length > 1 || elements.length == 0 || !(elements[0] instanceof IFile)) {
                     return errorStatus;
                 }
                 return okStatus;
@@ -890,14 +900,13 @@ IStatusChangeListener {
         };
 
         IProject[] allProjects = workspaceRoot.getProjects();
-        ArrayList rejectedElements = new ArrayList(allProjects.length);
+        ArrayList<IContainer> rejectedElements = new ArrayList<IContainer>(allProjects.length);
         for (int i = 0; i < allProjects.length; i++) {
             if (!allProjects[i].equals(project)) {
                 rejectedElements.add(allProjects[i]);
             }
         }
-        ViewerFilter filter = new TypedViewerFilter(acceptedClasses, rejectedElements
-                .toArray());
+        ViewerFilter filter = new TypedViewerFilter(acceptedClasses, rejectedElements.toArray());
 
         ILabelProvider lp = new WorkbenchLabelProvider();
         ITreeContentProvider cp = new WorkbenchContentProvider();
@@ -907,8 +916,7 @@ IStatusChangeListener {
             initSelection = project.findMember(path);
         }
 
-        ElementTreeSelectionDialog dialog = new ElementTreeSelectionDialog(getShell(),
-                lp, cp);
+        ElementTreeSelectionDialog dialog = new ElementTreeSelectionDialog(getShell(), lp, cp);
         dialog.setTitle("Variables");
         dialog.setValidator(validator);
         dialog.setMessage("Select file with variables definition");
@@ -923,15 +931,15 @@ IStatusChangeListener {
         return null;
     }
 
-    private List getExistingContainers(PathListElement existing) {
-        List res = new ArrayList();
-        List cplist = foldersList.getElements();
+    private List<IContainer> getExistingContainers(PathListElement existing) {
+        List<IContainer> res = new ArrayList<IContainer>();
+        List<IContainer> cplist = foldersList.getElements();
         for (int i = 0; i < cplist.size(); i++) {
             PathListElement elem = (PathListElement) cplist.get(i);
             if (elem != existing) {
                 IResource resource = elem.getResource();
                 if (resource instanceof IContainer) { // defensive code
-                    res.add(resource);
+                    res.add((IContainer) resource);
                 }
             }
         }
@@ -969,8 +977,7 @@ IStatusChangeListener {
         setSelection(res);
     }
 
-    protected void fixNestingConflicts(List newEntries, List existing,
-            Set modifiedSourceEntries) {
+    protected void fixNestingConflicts(List newEntries, List existing, Set modifiedSourceEntries) {
         for (int i = 0; i < newEntries.size(); i++) {
             PathListElement curr = (PathListElement) newEntries.get(i);
             addExclusionPatterns(curr, existing, modifiedSourceEntries);
@@ -978,8 +985,7 @@ IStatusChangeListener {
         }
     }
 
-    private void addExclusionPatterns(PathListElement newEntry, List existing,
-            Set modifiedEntries) {
+    private void addExclusionPatterns(PathListElement newEntry, List existing, Set modifiedEntries) {
         IPath entryPath = newEntry.getPath();
         for (int i = 0; i < existing.size(); i++) {
             PathListElement curr = (PathListElement) existing.get(i);
@@ -990,14 +996,14 @@ IStatusChangeListener {
                     IPath[] exclusionFilters = (IPath[]) curr
                     .getAttribute(PathListElement.EXCLUSION);
                     if (!isExcludedPath(entryPath, exclusionFilters)) {
-                        IPath pathToExclude = entryPath.removeFirstSegments(
-                                currPath.segmentCount()).addTrailingSeparator();
+                        IPath pathToExclude = entryPath
+                        .removeFirstSegments(currPath.segmentCount())
+                        .addTrailingSeparator();
                         IPath[] newExclusionFilters = new IPath[exclusionFilters.length + 1];
                         System.arraycopy(exclusionFilters, 0, newExclusionFilters, 0,
                                 exclusionFilters.length);
                         newExclusionFilters[exclusionFilters.length] = pathToExclude;
-                        curr.setAttribute(PathListElement.EXCLUSION, newExclusionFilters,
-                                null);
+                        curr.setAttribute(PathListElement.EXCLUSION, newExclusionFilters, null);
                         modifiedEntries.add(curr);
                     }
                 } else if (entryPath.isPrefixOf(currPath)) {
@@ -1005,14 +1011,14 @@ IStatusChangeListener {
                     .getAttribute(PathListElement.EXCLUSION);
 
                     if (!isExcludedPath(currPath, exclusionFilters)) {
-                        IPath pathToExclude = currPath.removeFirstSegments(
-                                entryPath.segmentCount()).addTrailingSeparator();
+                        IPath pathToExclude = currPath
+                        .removeFirstSegments(entryPath.segmentCount())
+                        .addTrailingSeparator();
                         IPath[] newExclusionFilters = new IPath[exclusionFilters.length + 1];
                         System.arraycopy(exclusionFilters, 0, newExclusionFilters, 0,
                                 exclusionFilters.length);
                         newExclusionFilters[exclusionFilters.length] = pathToExclude;
-                        newEntry.setAttribute(PathListElement.EXCLUSION,
-                                newExclusionFilters, null);
+                        newEntry.setAttribute(PathListElement.EXCLUSION, newExclusionFilters, null);
                         modifiedEntries.add(newEntry);
                     }
                 }
@@ -1022,8 +1028,7 @@ IStatusChangeListener {
     }
 
     /**
-     * Copy from StatusUtil
-     * Applies the status to the status line of a dialog page.
+     * Copy from StatusUtil Applies the status to the status line of a dialog page.
      */
     public static void applyToStatusLine(DialogPage page, IStatus status) {
         String message = status.getMessage();
@@ -1052,6 +1057,7 @@ IStatusChangeListener {
 
     /**
      * copy from JavaModelUtils
+     *
      * @param resourcePath
      * @param exclusionPatterns
      */
@@ -1102,24 +1108,22 @@ IStatusChangeListener {
         try {
             preferences.clear();
         } catch (BackingStoreException e) {
-            FileSyncPlugin.log("Cannot clear preferences for project '"
-                    + project.getName() + "'", e, IStatus.ERROR);
+            FileSyncPlugin.log("Cannot clear preferences for project '" + project.getName() + "'",
+                    e, IStatus.ERROR);
         } catch (IllegalStateException e) {
-            FileSyncPlugin
-            .log("FileSync project preferences (for project '"
-                    + project.getName() + "') error: " + e.getMessage(), e,
-                    IStatus.ERROR);
+            FileSyncPlugin.log("FileSync project preferences (for project '" + project.getName()
+                    + "') error: " + e.getMessage(), e, IStatus.ERROR);
             return false;
         }
 
         for (int i = 0; i < mappingList.size(); i++) {
-            preferences.put(FileMapping.FULL_MAP_PREFIX + i,
-                    ((PathListElement) mappingList.get(i)).getMapping().encode());
+            preferences.put(FileMapping.FULL_MAP_PREFIX + i, (mappingList.get(i))
+                    .getMapping().encode());
         }
 
         IPath projectPath = project.getLocation();
-        String defPath = pathVariableHelper
-        .unResolveVariable(getDefaultDestinationPath(), projectPath);
+        String defPath = pathVariableHelper.unResolveVariable(getDefaultDestinationPath(),
+                projectPath);
         if (defPath == null) {
             defPath = "";
         }
@@ -1129,14 +1133,16 @@ IStatusChangeListener {
         if (defVars == null) {
             preferences.put(ProjectProperties.KEY_DEFAULT_VARIABLES, "");
         } else {
-            preferences.put(ProjectProperties.KEY_DEFAULT_VARIABLES, defVars
-                    .toPortableString());
+            preferences.put(ProjectProperties.KEY_DEFAULT_VARIABLES, defVars.toPortableString());
         }
 
         preferences.put(ProjectProperties.KEY_USE_CURRENT_DATE, ""
                 + useCurrentDateField.isSelected());
         preferences.put(ProjectProperties.KEY_INCLUDE_TEAM_PRIVATE, ""
                 + includeTeamFilesField.isSelected());
+        preferences.put(ProjectProperties.KEY_DELAYED_COPY_DELETE, ""
+                + delayedCopyDeleteField.isSelected());
+
         if (preferences.get("WARNING", null) == null) {
             preferences.put("WARNING", "DO NOT MODIFY THIS FILE IF YOU DON'T UNDERSTAND");
         }
@@ -1144,8 +1150,8 @@ IStatusChangeListener {
         try {
             preferences.flush();
         } catch (BackingStoreException e) {
-            FileSyncPlugin.log("Cannot store preferences for project '"
-                    + project.getName() + "'", e, IStatus.ERROR);
+            FileSyncPlugin.log("Cannot store preferences for project '" + project.getName() + "'",
+                    e, IStatus.ERROR);
         }
         return true;
     }
@@ -1156,22 +1162,22 @@ IStatusChangeListener {
     protected IEclipsePreferences getPreferences(boolean forceSync) {
         ProjectProperties properties = ProjectProperties.getInstance(project);
         boolean wasDisabled = true;
-        if(forceSync){
+        if (forceSync) {
             List listeners = properties.getProjectPreferenceChangeListeners();
             for (int i = 0; i < listeners.size(); i++) {
                 FileSyncBuilder b = (FileSyncBuilder) listeners.get(i);
                 wasDisabled = b.isDisabled();
-                if(!b.isDisabled()) {
+                if (!b.isDisabled()) {
                     b.setDisabled(true);
                 }
             }
         }
         IEclipsePreferences preferences = properties.getPreferences(forceSync);
-        if(forceSync){
+        if (forceSync) {
             List listeners = properties.getProjectPreferenceChangeListeners();
             for (int i = 0; i < listeners.size(); i++) {
                 FileSyncBuilder b = (FileSyncBuilder) listeners.get(i);
-                if(!wasDisabled) {
+                if (!wasDisabled) {
                     b.setDisabled(false);
                 }
             }
@@ -1207,7 +1213,12 @@ IStatusChangeListener {
         defDestinationPath = outputLocation;
         // inits the dialog field
         if (outputLocation != null) {
-            destPathDialogField.setText(outputLocation.toOSString());
+            if (FileSyncPlugin.getDefault().getFsPathUtil().isUriIncluded(outputLocation)) {
+                destPathDialogField.setText(FileSyncPlugin.getDefault().getFsPathUtil().getUri(
+                        outputLocation).toString());
+            } else {
+                destPathDialogField.setText(outputLocation.toOSString());
+            }
         }
         destPathDialogField.enableButton(true);
         if (variables != null) {
@@ -1226,13 +1237,16 @@ IStatusChangeListener {
 
     private String getEncodedSettings() {
         StringBuffer buf = new StringBuffer();
-        PathListElement.appendEncodePath(defDestinationPath, buf).append(';');
+        // the host or scheme can be different even if the path is the same
+        String fqString = FileSyncPlugin.getDefault().getFsPathUtil()
+        .toFqString(defDestinationPath);
+        PathListElement.appendEncodeString(fqString, buf).append(';');
         PathListElement.appendEncodePath(getDefaultVariablesPath(), buf).append(';');
 
         int nElements = mappingList.size();
         buf.append('[').append(nElements).append(']');
         for (int i = 0; i < nElements; i++) {
-            PathListElement elem = (PathListElement) mappingList.get(i);
+            PathListElement elem = mappingList.get(i);
             elem.appendEncodedSettings(buf);
         }
         return buf.toString();
@@ -1242,31 +1256,41 @@ IStatusChangeListener {
         String currSettings = getEncodedSettings();
         boolean b = !currSettings.equals(oldMappings);
 
-        if(b){
+        if (b) {
             return true;
         }
 
         IEclipsePreferences preferences = getPreferences(false);
-        boolean useCurrentDate = preferences.getBoolean(
-                ProjectProperties.KEY_USE_CURRENT_DATE, false);
+        boolean useCurrentDate = preferences.getBoolean(ProjectProperties.KEY_USE_CURRENT_DATE,
+                false);
         boolean useCurrentDateNew = useCurrentDateField.isSelected();
 
-        if (useCurrentDateNew != useCurrentDate){
+        if (useCurrentDateNew != useCurrentDate) {
             return true;
         }
 
         boolean includeTeamFiles = preferences.getBoolean(
                 ProjectProperties.KEY_INCLUDE_TEAM_PRIVATE, false);
+
         boolean includeTeamFilesNew = includeTeamFilesField.isSelected();
-        if (includeTeamFiles != includeTeamFilesNew){
+        if (includeTeamFiles != includeTeamFilesNew) {
             return true;
         }
+
+        boolean delayedCopyDelete = preferences.getBoolean(
+                ProjectProperties.KEY_DELAYED_COPY_DELETE, FileSyncPlugin.getDefault()
+                .isDefaultDelayedCopy());
+
+        boolean delayedCopyDeleteNew = delayedCopyDeleteField.isSelected();
+        if (delayedCopyDelete != delayedCopyDeleteNew) {
+            return true;
+        }
+
         return false;
     }
 
     /**
-     * @return Returns the Java project. Can return
-     *         <code>null<code> if the page has not
+     * @return Returns the Java project. Can return <code>null<code> if the page has not
      * been initialized.
      */
     public IProject getProject() {
@@ -1274,27 +1298,26 @@ IStatusChangeListener {
     }
 
     /**
-     * @return Returns the current output location. Note that the path returned
-     *         must not be valid.
+     * @return Returns the current output location. Note that the path returned must not be valid.
      */
     public IPath getDefaultDestinationPath() {
         String text = destPathDialogField.getText();
         if ((text == null || text.trim().length() == 0)) {
             return null;
         }
-        return new Path(text).makeAbsolute();
+        return FileSyncPlugin.getDefault().getFsPathUtil().create(text).makeAbsolute();
     }
 
     /**
-     * @return Returns the current class path (raw). Note that the entries
-     *         returned must not be valid.
+     * @return Returns the current class path (raw). Note that the entries returned must not be
+     *         valid.
      */
     public FileMapping[] getFileMappings() {
         int nElements = mappingList.size();
         FileMapping[] entries = new FileMapping[mappingList.size()];
 
         for (int i = 0; i < nElements; i++) {
-            PathListElement currElement = (PathListElement) mappingList.get(i);
+            PathListElement currElement = mappingList.get(i);
             entries[i] = currElement.getMapping();
         }
         return entries;
@@ -1335,7 +1358,7 @@ IStatusChangeListener {
             updateDefaultDestinationPathStatus();
             doStatusLineUpdate();
         } else if (field == variablesDialogField) {
-            if(foldersList != null) {
+            if (foldersList != null) {
                 foldersList.refresh();
             }
         }
@@ -1364,7 +1387,12 @@ IStatusChangeListener {
             return;
         }
 
-        defDestinationPath = getDefaultDestinationPath();
+        try {
+            defDestinationPath = getDefaultDestinationPath();
+        } catch (FileSyncException e) {
+            destFolderStatus.setError("Default target URI is invalid.");
+            return;
+        }
 
         File f = new File(defDestinationPath.toOSString());
         // if exists, must be a folder with read/write rights
@@ -1398,8 +1426,8 @@ IStatusChangeListener {
 
         public Object[] getChildren(TreeListDialogField field, Object element) {
             if (element instanceof PathListElement) {
-                return ((PathListElement) element).getChildren(!useFolderOutputsField
-                        .isSelected(), false /*!useVariablesField.isSelected()*/);
+                return ((PathListElement) element).getChildren(!useFolderOutputsField.isSelected(),
+                        false /* !useVariablesField.isSelected() */);
             }
             return EMPTY_ARR;
         }

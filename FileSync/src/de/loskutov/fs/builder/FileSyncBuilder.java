@@ -1,10 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2009 Andrei Loskutov.
  * All rights reserved. This program and the accompanying materials
+ * Copyright (c) 2009 Andrei Loskutov.
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * Contributor(s):
+ * 	Andrei Loskutov - initial API and implementation
+ * 	Volker Wandmaker - changed usage of SyncWizard (begin/commit)
  *******************************************************************************/
 package de.loskutov.fs.builder;
 
@@ -32,6 +34,7 @@ import org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChange
 
 import de.loskutov.fs.FileSyncPlugin;
 import de.loskutov.fs.command.FileMapping;
+import de.loskutov.fs.command.FileSyncException;
 import de.loskutov.fs.properties.ProjectProperties;
 
 /**
@@ -53,13 +56,11 @@ implements IPreferenceChangeListener {
      */
     public static final String SETTINGS_FILE = FileSyncPlugin.PLUGIN_ID + ".prefs";
 
-    private static final IPath SETTINGS_PATH = new Path(SETTINGS_DIR)
-    .append(SETTINGS_FILE);
+    private static final IPath SETTINGS_PATH = new Path(SETTINGS_DIR).append(SETTINGS_FILE);
 
     public static final int MAPPING_CHANGED_IN_GUI_BUILD = 999;
 
-    public static final Integer MAPPING_CHANGED_IN_GUI = new Integer(
-            MAPPING_CHANGED_IN_GUI_BUILD);
+    public static final Integer MAPPING_CHANGED_IN_GUI = new Integer(MAPPING_CHANGED_IN_GUI_BUILD);
 
     private boolean wizardNotAvailable;
 
@@ -111,7 +112,9 @@ implements IPreferenceChangeListener {
 
     /*
      * (non-Javadoc)
-     * @see org.eclipse.core.resources.IncrementalProjectBuilder#clean(org.eclipse.core.runtime.IProgressMonitor)
+     *
+     * @seeorg.eclipse.core.resources.IncrementalProjectBuilder#clean(org.eclipse.core.runtime.
+     * IProgressMonitor)
      */
     protected void clean(IProgressMonitor monitor) throws CoreException {
         build(CLEAN_BUILD, new HashMap(), monitor);
@@ -130,7 +133,7 @@ implements IPreferenceChangeListener {
         ProjectProperties props = ProjectProperties.getInstance(getProjectInternal());
         updateVisitorFlags(props);
 
-        SyncWizard wizard = new SyncWizard();
+        SyncWizard wizard = SyncWizardFactory.getInstance().createSyncWizard();
         IProject[] result = null;
         try {
             switch (kind) {
@@ -173,6 +176,10 @@ implements IPreferenceChangeListener {
                 wizardNotAvailable = true;
             }
             return null;
+        } catch (FileSyncException e) {
+            FileSyncPlugin.log("Couldn't run file sync for project '"
+                    + getProjectInternal().getName() + "': " + e.getMessage(), e, IStatus.ERROR);
+            return null;
         }
 
         return result;
@@ -180,9 +187,12 @@ implements IPreferenceChangeListener {
 
     /**
      * Automatic build
-     * @param args build parameters
+     *
+     * @param args
+     *            build parameters
      * @param wizard
-     * @param monitor progress indicator
+     * @param monitor
+     *            progress indicator
      * @return IProject[] related projects list
      */
     private IProject[] buildAuto(Map args, ProjectProperties props, SyncWizard wizard,
@@ -192,9 +202,12 @@ implements IPreferenceChangeListener {
 
     /**
      * Full build
-     * @param args build parameters
+     *
+     * @param args
+     *            build parameters
      * @param wizard
-     * @param monitor progress indicator
+     * @param monitor
+     *            progress indicator
      * @return IProject[] related projects list
      */
     private IProject[] buildFull(Map args, ProjectProperties props, SyncWizard wizard,
@@ -208,9 +221,12 @@ implements IPreferenceChangeListener {
 
     /**
      * Full build
-     * @param args build parameters
+     *
+     * @param args
+     *            build parameters
      * @param wizard
-     * @param monitor progress indicator
+     * @param monitor
+     *            progress indicator
      * @return IProject[] related projects list
      */
     private IProject[] buildClean(Map args, ProjectProperties props, SyncWizard wizard,
@@ -224,9 +240,12 @@ implements IPreferenceChangeListener {
 
     /**
      * Incremental build
-     * @param args build parameters
+     *
+     * @param args
+     *            build parameters
      * @param wizard
-     * @param monitor progress indicator
+     * @param monitor
+     *            progress indicator
      * @return IProject[] related projects list
      */
     private IProject[] buildIncremental(final Map args, final ProjectProperties props,
@@ -238,26 +257,25 @@ implements IPreferenceChangeListener {
             final IResourceDelta resourceDelta = getDelta(currentProject);
             if (resourceDelta == null) {
                 /*
-                 * Builder deltas may be null. If a builder has never been invoked before,
-                 * any request for deltas will return null. Also, if a builder is not run
-                 *  for a long time, the platform reserves the right to return a null delta
+                 * Builder deltas may be null. If a builder has never been invoked before, any
+                 * request for deltas will return null. Also, if a builder is not run for a long
+                 * time, the platform reserves the right to return a null delta
                  */
                 return buildFull(args, props, wizard, monitor);
             }
             if (resourceDelta.getAffectedChildren().length == 0) {
-                //                FileSyncPlugin.log("nothing happens because delta is empty", null, IStatus.INFO);
+                // FileSyncPlugin.log("nothing happens because delta is empty", null, IStatus.INFO);
             } else {
                 /*
-                 * check if my own props file is changed - before going to
-                 * synchronize all other files
+                 * check if my own props file is changed - before going to synchronize all other
+                 * files
                  */
                 FSPropsChecker propsChecker = new FSPropsChecker(monitor, props);
                 try {
                     resourceDelta.accept(propsChecker, false);
                 } catch (CoreException e) {
-                    FileSyncPlugin.log("Errors during sync of the resource delta:"
-                            + resourceDelta + " for project '" + currentProject.getName()
-                            + "'", e, IStatus.ERROR);
+                    FileSyncPlugin.log("Errors during sync of the resource delta:" + resourceDelta
+                            + " for project '" + currentProject.getName() + "'", e, IStatus.ERROR);
                 }
                 // props are in-sync now
                 wizard.setProjectProps(props);
@@ -268,6 +286,7 @@ implements IPreferenceChangeListener {
                     if (jobs.length == 0) {
                         // start full build (not clean!) because properties are changed!!!
                         Job job = new Job("Filesync") {
+
                             public boolean belongsTo(Object family) {
                                 return family == FileSyncBuilder.class;
                             }
@@ -279,25 +298,30 @@ implements IPreferenceChangeListener {
                         };
                         /*
                          * we starting the full build intensionally asynchron, because the current
-                         * build need to be finished first. The background is not completely clear for
-                         * me, but interrupting the build here lead to failures of "delete"
-                         * test case, if variables files are deleted too.
-                         * So let the current build finish and shedule another one to do
-                         * the full sync again, with changed preferences
+                         * build need to be finished first. The background is not completely clear
+                         * for me, but interrupting the build here lead to failures of "delete" test
+                         * case, if variables files are deleted too. So let the current build finish
+                         * and shedule another one to do the full sync again, with changed
+                         * preferences
                          */
                         job.setUser(false);
                         job.schedule(1000);
                     }
                 } else {
                     try {
-                        monitor.beginTask("Incremental file sync", elementCount);
-                        final FSDeltaVisitor visitor = new FSDeltaVisitor(monitor, wizard);
-                        resourceDelta.accept(visitor, visitorFlags);
+                        if (wizard.begin()) {
+                            monitor.beginTask("Incremental file sync", elementCount);
+                            final FSDeltaVisitor visitor = new FSDeltaVisitor(monitor, wizard);
+                            resourceDelta.accept(visitor, visitorFlags);
+                            wizard.commit();
+                        } else {
+                            FileSyncPlugin.log("No valid FileMapping for project '"
+                                    + currentProject + "'", null, IStatus.WARNING);
+                        }
                     } catch (CoreException e) {
-                        FileSyncPlugin.log(
-                                "Errors during sync of the resource delta:"
-                                + resourceDelta + " for project '"
-                                + currentProject + "'", e, IStatus.ERROR);
+                        FileSyncPlugin.log("Errors during sync of the resource delta:"
+                                + resourceDelta + " for project '" + currentProject + "'", e,
+                                IStatus.ERROR);
                     } finally {
                         wizard.cleanUp(monitor);
                         monitor.done();
@@ -311,26 +335,27 @@ implements IPreferenceChangeListener {
 
     /**
      * Process all files in the project
-     * @param project the project
-     * @param monitor a progress indicator
+     *
+     * @param project
+     *            the project
+     * @param monitor
+     *            a progress indicator
      * @param wizard
      */
-    protected void fullProjectBuild(Map args, final IProject project,
-            ProjectProperties props, SyncWizard wizard, final IProgressMonitor monitor,
-            boolean clean) {
+    protected void fullProjectBuild(Map args, final IProject project, ProjectProperties props,
+            SyncWizard wizard, final IProgressMonitor monitor, boolean clean) {
 
         if (!args.containsKey(MAPPING_CHANGED_IN_GUI) && wizard.getProjectProps() == null) {
             /*
-             * check if my own props file is changed - before going to
-             * synchronize all other files, but only if the build was *not*
-             * initiated by changing mapping in the GUI
+             * check if my own props file is changed - before going to synchronize all other files,
+             * but only if the build was *not* initiated by changing mapping in the GUI
              */
             FSPropsChecker propsChecker = new FSPropsChecker(monitor, props);
             try {
                 project.accept(propsChecker, IResource.DEPTH_INFINITE, false);
             } catch (CoreException e) {
-                FileSyncPlugin.log("Error during visiting project: " + project.getName(),
-                        e, IStatus.ERROR);
+                FileSyncPlugin.log("Error during visiting project: " + project.getName(), e,
+                        IStatus.ERROR);
             }
         }
         // props are in-sync now
@@ -343,9 +368,19 @@ implements IPreferenceChangeListener {
             } else {
                 monitor.beginTask("Full project sync", elementCount);
             }
-            final FSResourceVisitor visitor = new FSResourceVisitor(monitor, wizard,
-                    clean);
-            project.accept(visitor, IResource.DEPTH_INFINITE, visitorFlags);
+            if (wizard.begin()) {
+                final FSResourceVisitor visitor = new FSResourceVisitor(monitor, wizard, clean);
+                project.accept(visitor, IResource.DEPTH_INFINITE, visitorFlags);
+                boolean committed = wizard.commit();
+                if(!committed){
+                    FileSyncPlugin.log("Errors during commit of the resources in project '" + wizard.getProjectProps().getProject().getName() + "'", null,
+                            IStatus.WARNING);
+
+                }
+            } else {
+                FileSyncPlugin.log("No valid FileMapping for project '" + project.getName() + "'",
+                        null, IStatus.WARNING);
+            }
         } catch (CoreException e) {
             FileSyncPlugin.log("Error during visiting project: " + project.getName(), e,
                     IStatus.ERROR);
@@ -357,7 +392,9 @@ implements IPreferenceChangeListener {
 
     /**
      * Count the number of sub-resources of a project
-     * @param project a project
+     *
+     * @param project
+     *            a project
      * @return the element count
      */
     private int countProjectElements(IProject project) {
@@ -373,7 +410,9 @@ implements IPreferenceChangeListener {
 
     /**
      * Count the number of sub-resources of a delta
-     * @param delta a resource delta
+     *
+     * @param delta
+     *            a resource delta
      * @return the element count
      */
     private int countDeltaElement(IResourceDelta delta) {
@@ -402,11 +441,12 @@ implements IPreferenceChangeListener {
         IEclipsePreferences preferences = props.getPreferences(false);
         boolean includeTeamFiles = preferences.getBoolean(
                 ProjectProperties.KEY_INCLUDE_TEAM_PRIVATE, false);
-        visitorFlags = includeTeamFiles? IContainer.INCLUDE_TEAM_PRIVATE_MEMBERS : IResource.NONE;
+        visitorFlags = includeTeamFiles ? IContainer.INCLUDE_TEAM_PRIVATE_MEMBERS : IResource.NONE;
     }
 
     /**
      * remember the timestamp for the project settings file
+     *
      * @return true, if the timestamp was changed since first run
      */
     protected boolean checkSettingsTimestamp(IResource settingsFile) {
@@ -422,7 +462,7 @@ implements IPreferenceChangeListener {
     protected void checkCancel(IProgressMonitor monitor, SyncWizard wizard) {
         if (monitor.isCanceled()) {
             wizard.cleanUp(monitor);
-            //            forgetLastBuiltState();//not always necessary
+            // forgetLastBuiltState();//not always necessary
             throw new OperationCanceledException();
         }
     }
@@ -431,6 +471,7 @@ implements IPreferenceChangeListener {
      * @author Andrei
      */
     private class FSDeltaVisitor implements IResourceDeltaVisitor {
+
         private final IProgressMonitor monitor;
 
         private final SyncWizard wizard;
@@ -462,8 +503,8 @@ implements IPreferenceChangeListener {
             boolean ok = wizard.sync(delta, monitor);
             if (!ok) {
                 FileSyncPlugin.log("Errors during sync of the resource delta: '" + resStr
-                        + "' in project '" + delta.getResource().getProject().getName()
-                        + "'", null, IStatus.WARNING);
+                        + "' in project '" + delta.getResource().getProject().getName() + "'",
+                        null, IStatus.WARNING);
             }
             // always visit children
             return true;
@@ -474,6 +515,7 @@ implements IPreferenceChangeListener {
      * @author Andrei
      */
     private class FSResourceVisitor implements IResourceVisitor {
+
         private final IProgressMonitor monitor;
 
         private final SyncWizard wizard;
@@ -484,8 +526,7 @@ implements IPreferenceChangeListener {
          * @param monitor
          * @param clean
          */
-        public FSResourceVisitor(IProgressMonitor monitor, SyncWizard wizard,
-                boolean clean) {
+        public FSResourceVisitor(IProgressMonitor monitor, SyncWizard wizard, boolean clean) {
             this.monitor = monitor;
             this.wizard = wizard;
             this.clean = clean;
@@ -495,8 +536,11 @@ implements IPreferenceChangeListener {
             return monitor;
         }
 
-        /* (non-Javadoc)
-         * @see org.eclipse.core.resources.IResourceVisitor#visit(org.eclipse.core.resources.IResource)
+        /*
+         * (non-Javadoc)
+         *
+         * @see
+         * org.eclipse.core.resources.IResourceVisitor#visit(org.eclipse.core.resources.IResource)
          */
         public boolean visit(IResource resource) {
             monitor.worked(1);
@@ -532,6 +576,7 @@ implements IPreferenceChangeListener {
      * @author Andrei
      */
     private class FSPropsChecker implements IResourceVisitor, IResourceDeltaVisitor {
+
         private final IProgressMonitor monitor;
 
         private final ProjectProperties props;
@@ -551,8 +596,11 @@ implements IPreferenceChangeListener {
             return monitor;
         }
 
-        /* (non-Javadoc)
-         * @see org.eclipse.core.resources.IResourceVisitor#visit(org.eclipse.core.resources.IResource)
+        /*
+         * (non-Javadoc)
+         *
+         * @see
+         * org.eclipse.core.resources.IResourceVisitor#visit(org.eclipse.core.resources.IResource)
          */
         public boolean visit(IResource resource) {
             if (monitor.isCanceled()) {
@@ -563,8 +611,7 @@ implements IPreferenceChangeListener {
             }
 
             boolean continueVisit = isSettingsDir(resource);
-            if (continueVisit && isSettingsFile(resource)
-                    && checkSettingsTimestamp(resource)) {
+            if (continueVisit && isSettingsFile(resource) && checkSettingsTimestamp(resource)) {
                 // mappings changed
                 ignorePrefChange = true;
                 props.refreshPreferences();
@@ -583,13 +630,12 @@ implements IPreferenceChangeListener {
                 for (int i = 0; i < mappings.length; i++) {
                     IPath variablesPath = mappings[i].getVariablesPath();
                     if (variablesPath != null) {
-                        boolean match = variablesPath.equals(resource
-                                .getProjectRelativePath());
+                        boolean match = variablesPath.equals(resource.getProjectRelativePath());
                         if (match) {
                             Long time = (Long) pathToTimeStamp.get(variablesPath);
                             long newTime = resource.getLocation().toFile().lastModified();
                             if (time != null && time.longValue() != newTime) {
-                                time = new Long(newTime);
+                                time = Long.valueOf(newTime);
                                 pathToTimeStamp.put(variablesPath, time);
                                 // we could stop and do full build, because vars are changed
                                 props.refreshPathMap();
@@ -601,7 +647,7 @@ implements IPreferenceChangeListener {
                                     break;
                                 }
                             } else if (time == null) {
-                                time = new Long(newTime);
+                                time = Long.valueOf(newTime);
                                 pathToTimeStamp.put(variablesPath, time);
                             }
                         }
@@ -639,16 +685,23 @@ implements IPreferenceChangeListener {
             return SETTINGS_DIR.equals(relativePath.segment(0));
         }
 
-        /* (non-Javadoc)
-         * @see org.eclipse.core.resources.IResourceDeltaVisitor#visit(org.eclipse.core.resources.IResourceDelta)
+        /*
+         * (non-Javadoc)
+         *
+         * @seeorg.eclipse.core.resources.IResourceDeltaVisitor#visit(org.eclipse.core.resources.
+         * IResourceDelta)
          */
         public boolean visit(IResourceDelta delta) {
             return visit(delta.getResource());
         }
     }
 
-    /* (non-Javadoc)
-     * @see org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener#preferenceChange(org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent)
+    /*
+     * (non-Javadoc)
+     *
+     * @seeorg.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener#
+     * preferenceChange
+     * (org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent)
      */
     public void preferenceChange(PreferenceChangeEvent event) {
         if (ignorePrefChange) {
@@ -661,13 +714,14 @@ implements IPreferenceChangeListener {
         Job[] jobs = Job.getJobManager().find(getClass());
         if (jobs.length == 0) {
             final Job myJob = new Job("Mapping is changed => full project sync") {
+
                 public boolean belongsTo(Object family) {
                     return family == FileSyncBuilder.class;
                 }
 
                 public IStatus run(IProgressMonitor monitor) {
                     build(MAPPING_CHANGED_IN_GUI_BUILD, monitor);
-                    return Status.OK_STATUS;//new JobStatus(IStatus.INFO, 0, this, "", null);
+                    return Status.OK_STATUS;// new JobStatus(IStatus.INFO, 0, this, "", null);
                 }
             };
             myJob.setUser(false);
@@ -677,10 +731,11 @@ implements IPreferenceChangeListener {
 
     /**
      * Visitor which only counts visited resources
+     *
      * @author Andrei
      */
-    protected final static class CountVisitor implements IResourceDeltaVisitor,
-    IResourceVisitor {
+    protected final static class CountVisitor implements IResourceDeltaVisitor, IResourceVisitor {
+
         public int count = 0;
 
         public boolean visit(IResourceDelta delta) {

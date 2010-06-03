@@ -51,7 +51,7 @@ public class MultipleFolderSelectionDialog extends SelectionStatusDialog impleme
 
     private final ILabelProvider fLabelProvider;
     private final ITreeContentProvider fContentProvider;
-    private List fFilters;
+    private List<ViewerFilter> fFilters;
 
     private Object fInput;
     private Button fNewFolderButton;
@@ -96,7 +96,7 @@ public class MultipleFolderSelectionDialog extends SelectionStatusDialog impleme
      */
     public void addFilter(ViewerFilter filter) {
         if (fFilters == null) {
-            fFilters = new ArrayList(4);
+            fFilters = new ArrayList<ViewerFilter>(4);
         }
 
         fFilters.add(filter);
@@ -182,7 +182,7 @@ public class MultipleFolderSelectionDialog extends SelectionStatusDialog impleme
         fViewer.setComparator(new ResourceComparator(ResourceComparator.NAME));
         if (fFilters != null) {
             for (int i = 0; i != fFilters.size(); i++) {
-                fViewer.addFilter((ViewerFilter) fFilters.get(i));
+                fViewer.addFilter(fFilters.get(i));
             }
         }
 

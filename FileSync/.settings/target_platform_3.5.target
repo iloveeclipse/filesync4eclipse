@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.6"?>
+
+<target includeMode="feature" name="NO PDT but with RSE">
+<locations>
+<location id="org.eclipse.equinox.p2.user.ui.source" path="D:\java\eclipse35_template" type="Feature"/>
+<location id="org.eclipse.equinox.p2.user.ui" path="D:\java\eclipse35_template" type="Feature"/>
+<location id="org.eclipse.help.source" path="D:\java\eclipse35_template" type="Feature"/>
+<location id="org.eclipse.help" path="D:\java\eclipse35_template" type="Feature"/>
+<location id="org.eclipse.platform.source" path="D:\java\eclipse35_template" type="Feature"/>
+<location id="org.eclipse.platform" path="D:\java\eclipse35_template" type="Feature"/>
+<location id="org.eclipse.rcp.source" path="D:\java\eclipse35_template" type="Feature"/>
+<location id="org.eclipse.rcp" path="D:\java\eclipse35_template" type="Feature"/>
+<location id="org.eclipse.sdk" path="D:\java\eclipse35_template" type="Feature"/>
+<location id="org.eclipse.rse.core.source" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.rse.core" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.rse.dstore.source" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.rse.dstore" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.rse.ftp.source" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.rse.ftp" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.rse.local.source" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.rse.local" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.rse.sdk" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.rse.ssh.source" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.rse.ssh" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.rse.telnet.source" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.rse.telnet" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.rse.terminals.source" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.rse.terminals" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.rse" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.tm.terminal" path="D:\java\RSE_3.1.2\eclipse" type="Feature"/>
+<location id="org.eclipse.jdt.source" path="D:\java\eclipse35_template" type="Feature"/>
+<location id="org.eclipse.jdt" path="D:\java\eclipse35_template" type="Feature"/>
+</locations>
+<targetJRE path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/J2SE-1.5"/>
+</target>

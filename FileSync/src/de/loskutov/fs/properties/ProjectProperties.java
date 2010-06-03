@@ -24,11 +24,11 @@ import org.eclipse.core.resources.ProjectScope;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
-import org.eclipse.core.runtime.preferences.IScopeContext;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.INodeChangeListener;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.NodeChangeEvent;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent;
+import org.eclipse.core.runtime.preferences.IScopeContext;
 import org.osgi.service.prefs.BackingStoreException;
 
 import de.loskutov.fs.FileSyncPlugin;
@@ -78,6 +78,8 @@ import de.loskutov.fs.command.FileMapping;
  */
 public class ProjectProperties implements IPreferenceChangeListener, INodeChangeListener {
 
+    private static final String EMPTY_STRING = "";
+
     /**
      * Any valid file path for the default synchronizing target
      */
@@ -99,6 +101,9 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
 
     /** synchronize team private data too (like .svn shit) */
     public static final String KEY_INCLUDE_TEAM_PRIVATE = "includeTeamPrivateFiles";
+
+    /** delayed copy/delete (faster, especially on slow remote-connections.) */
+    public static final String KEY_DELAYED_COPY_DELETE = "delayedCopyDelete";
 
     /**
      * not for mappings props but only for even notifications use
@@ -125,9 +130,9 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
     /**
      * key is IProject, value is corresponding ProjectProperties
      */
-    private static Map projectsToProps = new HashMap();
+    private static Map<IProject, ProjectProperties> projectsToProps = new HashMap<IProject, ProjectProperties>();
 
-    private final List prefListeners;
+    private final List<FileSyncBuilder> prefListeners;
 
     private Long hashCode;
 
@@ -142,9 +147,9 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
          * for the same project.
          */
         String projName = listener.getProject().getName();
-        ArrayList oldBuilders = new ArrayList();
+        ArrayList<FileSyncBuilder> oldBuilders = new ArrayList<FileSyncBuilder>();
         for (int i = 0; i < prefListeners.size(); i++) {
-            FileSyncBuilder ib = (FileSyncBuilder) prefListeners.get(i);
+            FileSyncBuilder ib = prefListeners.get(i);
             if (projName.equals(ib.getProject().getName())) {
                 ib.setDisabled(true);
                 oldBuilders.add(ib);
@@ -156,7 +161,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         prefListeners.add(listener);
     }
 
-    public List getProjectPreferenceChangeListeners() {
+    public List<FileSyncBuilder> getProjectPreferenceChangeListeners() {
         return prefListeners;
     }
 
@@ -166,7 +171,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
     protected ProjectProperties(IProject project) {
         this.project = project;
         initPreferencesStore();
-        prefListeners = new ArrayList();
+        prefListeners = new ArrayList<FileSyncBuilder>();
     }
 
     private void initPreferencesStore() {
@@ -179,11 +184,11 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
 
     public static ProjectProperties getInstance(IResource resource) {
         // sanity check
-        List projects = new ArrayList(projectsToProps.keySet());
+        List<IProject> projects = new ArrayList<IProject>(projectsToProps.keySet());
         for (int i = 0; i < projects.size(); i++) {
-            IProject project = (IProject) projects.get(i);
+            IProject project = projects.get(i);
             if (project == null || !project.isAccessible()) {
-                ProjectProperties props = (ProjectProperties) projectsToProps
+                ProjectProperties props = projectsToProps
                 .get(project);
                 props.prefListeners.clear();
                 projectsToProps.remove(project);
@@ -197,7 +202,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         if (project == null) {
             return null;
         }
-        ProjectProperties props = (ProjectProperties) projectsToProps.get(project);
+        ProjectProperties props = projectsToProps.get(project);
         if (props != null) {
             return props;
         }
@@ -224,9 +229,9 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
                     + project.getName() + "'", e, IStatus.ERROR);
             return;
         }
-        this.ignorePreferenceListeners = true;
+        ignorePreferenceListeners = true;
 
-        ArrayList mappingList = new ArrayList(keys.length);
+        ArrayList<FileMapping> mappingList = new ArrayList<FileMapping>(keys.length);
         for (int i = 0; i < keys.length; i++) {
             if (keys[i].startsWith(FileMapping.FULL_MAP_PREFIX)) {
                 FileMapping mapping = new FileMapping(prefs.get(keys[i], null), project
@@ -243,15 +248,15 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
                 }
             }
         }
-        ArrayList mappingList1 = new ArrayList(mappingList.size());
+        ArrayList<FileMapping> mappingList1 = new ArrayList<FileMapping>(mappingList.size());
 
         while (mappingList.size() > 0) {
-            FileMapping fm1 = (FileMapping) mappingList.get(0);
+            FileMapping fm1 = mappingList.get(0);
             IPath sourcePath = fm1.getSourcePath();
             IPath destinationPath = fm1.getDestinationPath();
             boolean duplicate = false;
             for (int i = 1; i < mappingList.size(); i++) {
-                FileMapping fm2 = (FileMapping) mappingList.get(i);
+                FileMapping fm2 = mappingList.get(i);
                 if (sourcePath.equals(fm2.getSourcePath())) {
                     if ((destinationPath != null && destinationPath.equals(fm2
                             .getDestinationPath()))
@@ -276,7 +281,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
                     Properties props = new Properties();
                     String defPath = prefs.get(KEY_DEFAULT_VARIABLES, null);
                     File varFile = varPath.toFile();
-                    if (defPath != null) {
+                    if (defPath != null && !defPath.equals(EMPTY_STRING)) {
                         File defFile = new File(fm1.getProjectPath().append(defPath)
                                 .toOSString());
                         if (!varFile.equals(defFile)) {
@@ -308,11 +313,11 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
             mappingList.remove(0);
         }
 
-        mappings = (FileMapping[]) mappingList1.toArray(new FileMapping[mappingList1
-                                                                        .size()]);
+        mappings = mappingList1.toArray(new FileMapping[mappingList1
+                                                        .size()]);
 
-        this.ignorePreferenceListeners = false;
-        this.rebuildPathMap = false;
+        ignorePreferenceListeners = false;
+        rebuildPathMap = false;
     }
 
     private void loadProps(File file, Properties props) {
@@ -361,7 +366,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
      *
      */
     public void refreshPreferences() {
-        this.ignorePreferenceListeners = true;
+        ignorePreferenceListeners = true;
         try {
             hashCode = null;
             preferences.clear();
@@ -374,13 +379,13 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
             // settings deleted?
             initPreferencesStore();
         }
-        this.ignorePreferenceListeners = false;
+        ignorePreferenceListeners = false;
     }
 
     public void refreshPathMap() {
-        this.ignorePreferenceListeners = true;
+        ignorePreferenceListeners = true;
         buildPathMap(preferences);
-        this.ignorePreferenceListeners = false;
+        ignorePreferenceListeners = false;
     }
 
     /**
@@ -464,7 +469,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
             buildPathMap(preferences);
             rebuildPathMap = false;
             for (int i = 0; i < prefListeners.size(); i++) {
-                IPreferenceChangeListener listener = (IPreferenceChangeListener) prefListeners
+                IPreferenceChangeListener listener = prefListeners
                 .get(i);
                 IEclipsePreferences.PreferenceChangeEvent event = new IEclipsePreferences.PreferenceChangeEvent(
                         preferences, KEY_PROJECT, project, project);
@@ -478,17 +483,17 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
             return hashCode;
         }
         long code = 31;
-        code += preferences.get(KEY_CLEAN_ON_CLEAN_BUILD, "").hashCode();
-        code += preferences.get(KEY_DEFAULT_DESTINATION, "").hashCode();
-        code += preferences.get(KEY_DEFAULT_VARIABLES, "").hashCode();
-        code += preferences.get(KEY_USE_CURRENT_DATE, "").hashCode();
-        code += preferences.get(KEY_INCLUDE_TEAM_PRIVATE, "").hashCode();
+        code += preferences.get(KEY_CLEAN_ON_CLEAN_BUILD, EMPTY_STRING).hashCode();
+        code += preferences.get(KEY_DEFAULT_DESTINATION, EMPTY_STRING).hashCode();
+        code += preferences.get(KEY_DEFAULT_VARIABLES, EMPTY_STRING).hashCode();
+        code += preferences.get(KEY_USE_CURRENT_DATE, EMPTY_STRING).hashCode();
+        code += preferences.get(KEY_INCLUDE_TEAM_PRIVATE, EMPTY_STRING).hashCode();
         if(mappings != null){
-            for (int i = 0; i < mappings.length; i++) {
-                code += mappings[i].hashCode();
+            for (FileMapping mapping : mappings) {
+                code += mapping.hashCode();
             }
         }
-        hashCode = new Long(code);
+        hashCode = Long.valueOf(code);
         return hashCode;
     }
 

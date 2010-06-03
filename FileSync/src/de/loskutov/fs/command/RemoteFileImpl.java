@@ -1,0 +1,252 @@
+/*******************************************************************************
+ * Copyright (c) 2010 Volker Wandmaker.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ * Contributor(s):
+ * 	Volker Wandmaker - initial API and implementation
+ *******************************************************************************/
+package de.loskutov.fs.command;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URL;
+
+import org.eclipse.rse.services.clientserver.messages.SystemMessageException;
+import org.eclipse.rse.subsystems.files.core.subsystems.IRemoteFile;
+
+/**
+ * Nearly the same as {@link UniFilePlus}. Differences are in the Methods: {@link #delete()} ( this
+ * implemention is according the Description of {@link File#delete()} {@link #isDirectory()} ( this
+ * implemention is according the Description of {@link File#isDirectory()} {@link #isFile()} ( this
+ * implemention is according the Description of {@link File#isFile()}
+ *
+ * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=310172 Take a look into these methods to see
+ *      the differences in detail.
+ * @author Volker
+ */
+public class RemoteFileImpl extends File {
+
+    private static final long serialVersionUID = 1L;
+
+    private final UniFilePlus remoteFile;
+
+    public RemoteFileImpl(IRemoteFile remoteFile) {
+        this(new UniFilePlus(remoteFile));
+    }
+
+    public RemoteFileImpl(UniFilePlus remoteFile) {
+        super(remoteFile.getRemoteFile().getAbsolutePath());
+        this.remoteFile = remoteFile;
+    }
+
+    //    public boolean canExecute() {
+    //        return remoteFile.canExecute();
+    //    }
+
+    public boolean canRead() {
+        return remoteFile.canRead();
+    }
+
+    public boolean canWrite() {
+        return remoteFile.canWrite();
+    }
+
+    public int compareTo(File pathname) {
+        return remoteFile.compareTo(pathname);
+    }
+
+    public boolean createNewFile() throws IOException {
+        return remoteFile.createNewFile();
+    }
+
+    public boolean delete() {
+        if (isDirectory() && list().length > 0) {
+            return false;
+        }
+        return remoteFile.delete();
+    }
+
+    public void deleteOnExit() {
+        remoteFile.deleteOnExit();
+    }
+
+    public boolean equals(Object obj) {
+        return remoteFile.equals(obj);
+    }
+
+    public boolean exists() {
+        return remoteFile.exists();
+    }
+
+    public File getAbsoluteFile() {
+        return remoteFile.getAbsoluteFile();
+    }
+
+    public String getAbsolutePath() {
+        return remoteFile.getAbsolutePath();
+    }
+
+    public File getCanonicalFile() {
+        return remoteFile.getCanonicalFile();
+    }
+
+    public String getCanonicalPath() {
+        return remoteFile.getCanonicalPath();
+    }
+
+    //    public long getFreeSpace() {
+    //        return remoteFile.getFreeSpace();
+    //    }
+
+    public InputStream getInputStream() throws SystemMessageException {
+        return remoteFile.getInputStream();
+    }
+
+    public String getName() {
+        return remoteFile.getName();
+    }
+
+    public String getParent() {
+        return remoteFile.getParent();
+    }
+
+    public File getParentFile() {
+        return remoteFile.getParentFile();
+    }
+
+    public String getPath() {
+        return remoteFile.getPath();
+    }
+
+    public IRemoteFile getRemoteFile() {
+        return remoteFile.getRemoteFile();
+    }
+
+    //    public long getTotalSpace() {
+    //        return remoteFile.getTotalSpace();
+    //    }
+
+    //    public long getUsableSpace() {
+    //        return remoteFile.getUsableSpace();
+    //    }
+
+    public int hashCode() {
+        return remoteFile.hashCode();
+    }
+
+    public boolean isAbsolute() {
+        return remoteFile.isAbsolute();
+    }
+
+    public boolean isDirectory() {
+        return exists() && remoteFile.isDirectory();
+    }
+
+    public boolean isFile() {
+        return exists() && remoteFile.isFile();
+    }
+
+    public boolean isHidden() {
+        return remoteFile.isHidden();
+    }
+
+    public long lastModified() {
+        return remoteFile.lastModified();
+    }
+
+    public long length() {
+        return remoteFile.length();
+    }
+
+    public String[] list() {
+        return remoteFile.list();
+    }
+
+    public String[] list(FilenameFilter filter) {
+        return remoteFile.list(filter);
+    }
+
+    public File[] listFiles() {
+        return remoteFile.listFiles();
+    }
+
+    public File[] listFiles(FileFilter filter) {
+        return remoteFile.listFiles(filter);
+    }
+
+    public File[] listFiles(FilenameFilter filter) {
+        return remoteFile.listFiles(filter);
+    }
+
+    public IRemoteFile[] listIRemoteFiles() {
+        return remoteFile.listIRemoteFiles();
+    }
+
+    public boolean mkdir() {
+        return remoteFile.mkdir();
+    }
+
+    public boolean mkdirs() {
+        return remoteFile.mkdirs();
+    }
+
+    public boolean renameTo(File dest) {
+        return remoteFile.renameTo(dest);
+    }
+
+    //    public boolean setExecutable(boolean executable, boolean ownerOnly) {
+    //        return remoteFile.setExecutable(executable, ownerOnly);
+    //    }
+
+    //    public boolean setExecutable(boolean executable) {
+    //        return remoteFile.setExecutable(executable);
+    //    }
+
+    public boolean setLastModified(long time) {
+        return remoteFile.setLastModified(time);
+    }
+
+    //    public boolean setReadable(boolean readable, boolean ownerOnly) {
+    //        return remoteFile.setReadable(readable, ownerOnly);
+    //    }
+
+    //    public boolean setReadable(boolean readable) {
+    //        return remoteFile.setReadable(readable);
+    //    }
+
+    public boolean setReadOnly() {
+        return remoteFile.setReadOnly();
+    }
+
+    //    public boolean setWritable(boolean writable, boolean ownerOnly) {
+    //        return remoteFile.setWritable(writable, ownerOnly);
+    //    }
+
+    //    public boolean setWritable(boolean writable) {
+    //        return remoteFile.setWritable(writable);
+    //    }
+
+    public void synchRemoteFile() {
+        remoteFile.synchRemoteFile();
+    }
+
+    public String toString() {
+        return remoteFile.toString();
+    }
+
+    public URI toURI() {
+        return remoteFile.toURI();
+    }
+
+    public URL toURL() throws MalformedURLException {
+        return remoteFile.toURL();
+    }
+
+}
