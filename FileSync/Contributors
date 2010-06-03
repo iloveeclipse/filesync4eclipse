@@ -1,0 +1,11 @@
+FileSync Eclipse Plugin
+
+Here is a list of people that has been contributing to this project
+if you supply a patch please dont forget to patch this file also add
+your name, a few lines about yourself and if you want an email.
+
+Contributors: (In order of appearance)
+
+Andrei Loskutov     - Creator of this nice piece of software.
+Stefan Flick        - Contributor of workspace relative mappings feature
+Volker Wandmaker    - Contributor of Remote System Explorer support
