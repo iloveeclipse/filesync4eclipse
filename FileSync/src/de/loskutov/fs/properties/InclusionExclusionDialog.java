@@ -54,9 +54,9 @@ import de.loskutov.fs.dialogs.TypedViewerFilter;
 
 public class InclusionExclusionDialog extends StatusDialog {
 
-    private final ListDialogField inclPatternList;
+    private final ListDialogField<String> inclPatternList;
 
-    private final ListDialogField exclPatternList;
+    private final ListDialogField<String> exclPatternList;
 
     private final PathListElement currElement;
 
@@ -82,10 +82,12 @@ public class InclusionExclusionDialog extends StatusDialog {
             elementImage = registry.get(key);
         }
 
+        @Override
         public Image getImage(Object element) {
             return elementImage;
         }
 
+        @Override
         public String getText(Object element) {
             return (String) element;
         }
@@ -136,11 +138,11 @@ public class InclusionExclusionDialog extends StatusDialog {
         }
     }
 
-    private ListDialogField createListContents(PathListElement entryToEdit, String key,
+    private ListDialogField<String> createListContents(PathListElement entryToEdit, String key,
             String label, ImageDescriptor descriptor, String[] buttonLabels) {
         ExclusionPatternAdapter adapter = new ExclusionPatternAdapter();
 
-        ListDialogField patternList = new ListDialogField(adapter, buttonLabels,
+        ListDialogField<String> patternList = new ListDialogField<String>(adapter, buttonLabels,
                 new ExclusionInclusionLabelProvider(key, descriptor));
         patternList.setDialogFieldListener(adapter);
         patternList.setLabelText(label);
@@ -160,6 +162,7 @@ public class InclusionExclusionDialog extends StatusDialog {
         return patternList;
     }
 
+    @Override
     protected Control createDialogArea(Composite parent) {
         Composite composite = (Composite) super.createDialogArea(parent);
 
@@ -189,7 +192,7 @@ public class InclusionExclusionDialog extends StatusDialog {
         return composite;
     }
 
-    protected void doCustomButtonPressed(ListDialogField field, int index) {
+    protected void doCustomButtonPressed(ListDialogField<String> field, int index) {
         if (index == IDX_ADD) {
             addEntry(field);
         } else if (index == IDX_EDIT) {
@@ -199,27 +202,27 @@ public class InclusionExclusionDialog extends StatusDialog {
         }
     }
 
-    protected void doDoubleClicked(ListDialogField field) {
+    protected void doDoubleClicked(ListDialogField<String> field) {
         editEntry(field);
     }
 
-    protected void doSelectionChanged(ListDialogField field) {
-        List selected = field.getSelectedElements();
+    protected void doSelectionChanged(ListDialogField<?> field) {
+        List<?> selected = field.getSelectedElements();
         field.enableButton(IDX_EDIT, canEdit(selected));
     }
 
-    private boolean canEdit(List selected) {
+    private boolean canEdit(List<?> selected) {
         return selected.size() == 1;
     }
 
-    private void editEntry(ListDialogField field) {
+    private void editEntry(ListDialogField<String> field) {
 
-        List selElements = field.getSelectedElements();
+        List<String> selElements = field.getSelectedElements();
         if (selElements.size() != 1) {
             return;
         }
-        List existing = field.getElements();
-        String entry = (String) selElements.get(0);
+        List<String> existing = field.getElements();
+        String entry = selElements.get(0);
         InclusionExclusionEntryDialog dialog = new InclusionExclusionEntryDialog(
                 getShell(), isExclusion(field), entry, existing, currElement);
         if (dialog.open() == Window.OK) {
@@ -227,12 +230,12 @@ public class InclusionExclusionDialog extends StatusDialog {
         }
     }
 
-    private boolean isExclusion(ListDialogField field) {
+    private boolean isExclusion(ListDialogField<String> field) {
         return field == exclPatternList;
     }
 
-    private void addEntry(ListDialogField field) {
-        List existing = field.getElements();
+    private void addEntry(ListDialogField<String> field) {
+        List<String> existing = field.getElements();
         InclusionExclusionEntryDialog dialog = new InclusionExclusionEntryDialog(
                 getShell(), isExclusion(field), null, existing, currElement);
         if (dialog.open() == Window.OK) {
@@ -240,17 +243,17 @@ public class InclusionExclusionDialog extends StatusDialog {
         }
     }
 
-    class ExclusionPatternAdapter implements IListAdapter, IDialogFieldListener {
+    class ExclusionPatternAdapter implements IListAdapter<String>, IDialogFieldListener {
 
-        public void customButtonPressed(ListDialogField field, int index) {
+        public void customButtonPressed(ListDialogField<String> field, int index) {
             doCustomButtonPressed(field, index);
         }
 
-        public void selectionChanged(ListDialogField field) {
+        public void selectionChanged(ListDialogField<String> field) {
             doSelectionChanged(field);
         }
 
-        public void doubleClicked(ListDialogField field) {
+        public void doubleClicked(ListDialogField<String> field) {
             doDoubleClicked(field);
         }
 
@@ -260,7 +263,7 @@ public class InclusionExclusionDialog extends StatusDialog {
 
     }
 
-    private IPath[] getPattern(ListDialogField field) {
+    private IPath[] getPattern(ListDialogField<String> field) {
         Object[] arr = field.getElements().toArray();
         Arrays.sort(arr);
         IPath[] res = new IPath[arr.length];
@@ -278,8 +281,8 @@ public class InclusionExclusionDialog extends StatusDialog {
         return getPattern(inclPatternList);
     }
 
-    private void addMultipleEntries(ListDialogField field) {
-        Class[] acceptedClasses = new Class[] { IFolder.class, IFile.class };
+    private void addMultipleEntries(ListDialogField<String> field) {
+        Class<?>[] acceptedClasses = new Class[] { IFolder.class, IFile.class };
         ISelectionStatusValidator validator = new TypedElementSelectionValidator(
                 acceptedClasses, true);
         ViewerFilter filter = new TypedViewerFilter(acceptedClasses);

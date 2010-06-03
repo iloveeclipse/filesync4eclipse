@@ -358,7 +358,7 @@ public class DelayedSyncWizard extends SyncWizard {
     }
 
     /**
-     * @see http://support.microsoft.com/kb/156276/en
+     * @see <a href="http://support.microsoft.com/kb/156276/en">issue 156276</a>
      * @param path
      * @return
      */

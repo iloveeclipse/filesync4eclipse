@@ -15,6 +15,7 @@ import java.io.File;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
+import org.eclipse.core.filesystem.URIUtil;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
@@ -22,6 +23,7 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 
 import de.loskutov.fs.FileSyncPlugin;
+import de.loskutov.fs.builder.SyncWizard;
 
 /**
  * @author Andrei
@@ -84,8 +86,8 @@ public class FileMapping {
     private String encoding;
 
     /**
-     * @link SyncWizard#begin() tries to create the targetFolder. If it's not possible, valid is set
-     *       to false.
+     * {@link SyncWizard#begin()} tries to create the targetFolder. If it's not possible, valid is set to
+     * false.
      */
     private boolean valid = true;
 
@@ -261,6 +263,7 @@ public class FileMapping {
         return sb.toString();
     }
 
+    @Override
     public String toString() {
         return encode();
     }
@@ -367,9 +370,10 @@ public class FileMapping {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#equals(java.lang.Object)
      */
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
@@ -383,9 +387,10 @@ public class FileMapping {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see java.lang.Object#hashCode()
      */
+    @Override
     public int hashCode() {
         String mapAsString = encode();
         return mapAsString.hashCode();
@@ -399,7 +404,8 @@ public class FileMapping {
         if (destination == null) {
             return new IContainer[0];
         }
-        return ResourcesPlugin.getWorkspace().getRoot().findContainersForLocation(destination);
+        return ResourcesPlugin.getWorkspace().getRoot()
+        .findContainersForLocationURI(URIUtil.toURI(destination.makeAbsolute()));
     }
 
     /**

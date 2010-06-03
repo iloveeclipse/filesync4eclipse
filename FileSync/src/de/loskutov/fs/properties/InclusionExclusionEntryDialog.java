@@ -20,6 +20,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.jface.dialogs.StatusDialog;
 import org.eclipse.jface.viewers.ILabelProvider;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.ViewerFilter;
@@ -46,8 +47,7 @@ import de.loskutov.fs.dialogs.StringButtonDialogField;
 import de.loskutov.fs.dialogs.TypedElementSelectionValidator;
 import de.loskutov.fs.dialogs.TypedViewerFilter;
 
-public class InclusionExclusionEntryDialog extends
-org.eclipse.jface.dialogs.StatusDialog {
+public class InclusionExclusionEntryDialog extends StatusDialog {
 
     private final StringButtonDialogField exclPatternDialog;
 
@@ -57,12 +57,12 @@ org.eclipse.jface.dialogs.StatusDialog {
 
     private String exclPattern;
 
-    private final List existingPatterns;
+    private final List<String> existingPatterns;
 
     private final boolean isExclusion;
 
     public InclusionExclusionEntryDialog(Shell parent, boolean isExclusion,
-            String patternToEdit, List existingPatterns,
+            String patternToEdit, List<String> existingPatterns,
             PathListElement entryToEdit) {
         super(parent);
         this.isExclusion = isExclusion;
@@ -117,6 +117,7 @@ org.eclipse.jface.dialogs.StatusDialog {
         }
     }
 
+    @Override
     protected Control createDialogArea(Composite parent) {
         Composite composite = (Composite) super.createDialogArea(parent);
 
@@ -220,7 +221,7 @@ org.eclipse.jface.dialogs.StatusDialog {
     }
 
     private IPath chooseExclusionPattern() {
-        Class[] acceptedClasses = new Class[] { IFolder.class, IFile.class };
+        Class<?>[] acceptedClasses = new Class[] { IFolder.class, IFile.class };
         ISelectionStatusValidator validator = new TypedElementSelectionValidator(
                 acceptedClasses, false);
         ViewerFilter filter = new TypedViewerFilter(acceptedClasses);

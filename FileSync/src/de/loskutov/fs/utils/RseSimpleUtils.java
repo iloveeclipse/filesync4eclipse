@@ -42,7 +42,7 @@ public class RseSimpleUtils {
 
     /**
      * copied and modified from java.io.File.generateFile
-     * 
+     *
      * @param prefix
      * @param suffix
      * @return

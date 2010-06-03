@@ -18,9 +18,7 @@ import de.loskutov.fs.FileSyncPlugin;
  */
 public class PreferencesInitializer extends AbstractPreferenceInitializer {
 
-    /* (non-Javadoc)
-     * @see org.eclipse.core.runtime.preferences.AbstractPreferenceInitializer#initializeDefaultPreferences()
-     */
+    @Override
     public void initializeDefaultPreferences() {
         IPreferenceStore store = FileSyncPlugin.getDefault().getPreferenceStore();
         store.setDefault(FileSyncConstants.KEY_ASK_USER, true);

@@ -30,7 +30,7 @@ import de.loskutov.fs.FileSyncPlugin;
  * http://forums.java.net/jive/thread.jspa?messageID=215672
  * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=5086147
  * http://wiki.eclipse.org/Eclipse/UNC_Paths
- * 
+ *
  * @author Volker
  */
 public class FsUriPath extends Path {

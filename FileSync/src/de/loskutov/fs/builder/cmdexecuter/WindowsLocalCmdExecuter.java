@@ -33,13 +33,13 @@ public class WindowsLocalCmdExecuter extends RseWindowsCmdExecuter {
         super(workingDirectory);
     }
 
+    @Override
     public boolean execute(String[] commands) {
         for (int i = 0; i < commands.length; i++) {
 
             // ProcessBuilder builder = new ProcessBuilder( "cmd", "/c", commands[i] );
             // builder.directory( new File(workingDirectory.getAbsolutePath()) );
             try {
-
                 Process p = Runtime.getRuntime().exec(commands[i],
                         RseSimpleUtils.toEnvArray(System.getenv()),
                         new File(workingDirectory.getAbsolutePath()));
@@ -53,6 +53,8 @@ public class WindowsLocalCmdExecuter extends RseWindowsCmdExecuter {
                         new FileOutputStream(tmpStdErr), FS.CLOSE_WHEN_DONE);
                 RedirectInputStream redirectIn = new RedirectInputStream(p.getInputStream(),
                         new FileOutputStream(tmpStdOut), FS.CLOSE_WHEN_DONE);
+
+                // XXX should try to use jobs instead. Too many threads may cause OOME
                 Thread t1 = new Thread(redirectErr);
                 t1.start();
                 Thread t2 = new Thread(redirectIn);
@@ -62,8 +64,8 @@ public class WindowsLocalCmdExecuter extends RseWindowsCmdExecuter {
                 t1.join();
                 t2.join();
                 if (errorCode == 0 && tmpStdErr.length() == 0) {
-                    tmpStdErr.delete();
-                    tmpStdOut.delete();
+                    FS.delete(tmpStdErr, false);
+                    FS.delete(tmpStdOut, false);
                 } else {
                     FileSyncPlugin.log("exitCode " + errorCode + " != 0 or stderr of command '"
                             + commands[i] + "'. See details in '" + tmpStdErr.toString() + "' or '"
@@ -84,6 +86,7 @@ public class WindowsLocalCmdExecuter extends RseWindowsCmdExecuter {
         return true;
     }
 
+    @Override
     public String[] getUnzipCommands(File zipFile) {
         String[] ret = new String[] { "cmd /c " + getUnzipCmd() + " " + quote(zipFile.getAbsolutePath()) };
         return ret;

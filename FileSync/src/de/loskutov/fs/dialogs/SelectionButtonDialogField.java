@@ -23,189 +23,181 @@ import org.eclipse.swt.widgets.Control;
  */
 public class SelectionButtonDialogField extends DialogField {
 
-	private Button fButton;
-	private boolean fIsSelected;
-	private DialogField[] fAttachedDialogFields;
-	private final int fButtonStyle;
+    private Button fButton;
+    private boolean fIsSelected;
+    private DialogField[] fAttachedDialogFields;
+    private final int fButtonStyle;
 
 
-	/**
-	 * Creates a selection button.
-	 * Allowed button styles: SWT.RADIO, SWT.CHECK, SWT.TOGGLE, SWT.PUSH
-	 */
-	public SelectionButtonDialogField(int buttonStyle) {
-		super();
-		fIsSelected= false;
-		fAttachedDialogFields= null;
-		fButtonStyle= buttonStyle;
-	}
+    /**
+     * Creates a selection button.
+     * Allowed button styles: SWT.RADIO, SWT.CHECK, SWT.TOGGLE, SWT.PUSH
+     */
+    public SelectionButtonDialogField(int buttonStyle) {
+        super();
+        fIsSelected= false;
+        fAttachedDialogFields= null;
+        fButtonStyle= buttonStyle;
+    }
 
-	/**
-	 * Attaches a field to the selection state of the selection button.
-	 * The attached field will be disabled if the selection button is not selected.
-	 */
-	public void attachDialogField(DialogField dialogField) {
-		attachDialogFields(new DialogField[] { dialogField });
-	}
+    /**
+     * Attaches a field to the selection state of the selection button.
+     * The attached field will be disabled if the selection button is not selected.
+     */
+    public void attachDialogField(DialogField dialogField) {
+        attachDialogFields(new DialogField[] { dialogField });
+    }
 
-	/**
-	 * Attaches fields to the selection state of the selection button.
-	 * The attached fields will be disabled if the selection button is not selected.
-	 */
-	public void attachDialogFields(DialogField[] dialogFields) {
-		fAttachedDialogFields= dialogFields;
-		for (int i= 0; i < dialogFields.length; i++) {
-			dialogFields[i].setEnabled(fIsSelected);
-		}
-	}
+    /**
+     * Attaches fields to the selection state of the selection button.
+     * The attached fields will be disabled if the selection button is not selected.
+     */
+    public void attachDialogFields(DialogField[] dialogFields) {
+        fAttachedDialogFields= dialogFields;
+        for (int i= 0; i < dialogFields.length; i++) {
+            dialogFields[i].setEnabled(fIsSelected);
+        }
+    }
 
-	/**
-	 * Returns <code>true</code> is  teh gived field is attached to the selection button.
-	 */
-	public boolean isAttached(DialogField editor) {
-		if (fAttachedDialogFields != null) {
-			for (int i=0; i < fAttachedDialogFields.length; i++) {
-				if (fAttachedDialogFields[i] == editor) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
+    /**
+     * Returns <code>true</code> is  teh gived field is attached to the selection button.
+     */
+    public boolean isAttached(DialogField editor) {
+        if (fAttachedDialogFields != null) {
+            for (int i=0; i < fAttachedDialogFields.length; i++) {
+                if (fAttachedDialogFields[i] == editor) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
-	// ------- layout helpers
+    // ------- layout helpers
 
-	/*
-	 * @see DialogField#doFillIntoGrid
-	 */
-	public Control[] doFillIntoGrid(Composite parent, int nColumns) {
-		assertEnoughColumns(nColumns);
+    @Override
+    public Control[] doFillIntoGrid(Composite parent, int nColumns) {
+        assertEnoughColumns(nColumns);
 
-		Button button= getSelectionButton(parent);
-		GridData gd= new GridData();
-		gd.horizontalSpan= nColumns;
-		gd.horizontalAlignment= GridData.FILL;
-		if (fButtonStyle == SWT.PUSH) {
-			gd.widthHint = LayoutUtil.getButtonWidthHint(button);
-		}
+        Button button= getSelectionButton(parent);
+        GridData gd= new GridData();
+        gd.horizontalSpan= nColumns;
+        gd.horizontalAlignment= GridData.FILL;
+        if (fButtonStyle == SWT.PUSH) {
+            gd.widthHint = LayoutUtil.getButtonWidthHint(button);
+        }
 
-		button.setLayoutData(gd);
+        button.setLayoutData(gd);
 
-		return new Control[] { button };
-	}
+        return new Control[] { button };
+    }
 
-	// ------- ui creation
+    // ------- ui creation
 
-	/**
-	 * Returns the selection button widget. When called the first time, the widget will be created.
-	 * @param group The parent composite when called the first time, or <code>null</code>
-	 * after.
-	 */
-	public Button getSelectionButton(Composite group) {
-		if (fButton == null) {
-			assertCompositeNotNull(group);
+    /**
+     * Returns the selection button widget. When called the first time, the widget will be created.
+     * @param group The parent composite when called the first time, or <code>null</code>
+     * after.
+     */
+    public Button getSelectionButton(Composite group) {
+        if (fButton == null) {
+            assertCompositeNotNull(group);
 
-			fButton= new Button(group, fButtonStyle);
-			fButton.setFont(group.getFont());
-			fButton.setText(fLabelText);
-			fButton.setToolTipText(fToolTipText);
-			fButton.setEnabled(isEnabled());
-			fButton.setSelection(fIsSelected);
-			fButton.addSelectionListener(new SelectionListener() {
-				public void widgetDefaultSelected(SelectionEvent e) {
-					doWidgetSelected(e);
-				}
-				public void widgetSelected(SelectionEvent e) {
-					doWidgetSelected(e);
-				}
-			});
-		}
-		return fButton;
-	}
+            fButton= new Button(group, fButtonStyle);
+            fButton.setFont(group.getFont());
+            fButton.setText(fLabelText);
+            fButton.setToolTipText(fToolTipText);
+            fButton.setEnabled(isEnabled());
+            fButton.setSelection(fIsSelected);
+            fButton.addSelectionListener(new SelectionListener() {
+                public void widgetDefaultSelected(SelectionEvent e) {
+                    doWidgetSelected(e);
+                }
+                public void widgetSelected(SelectionEvent e) {
+                    doWidgetSelected(e);
+                }
+            });
+        }
+        return fButton;
+    }
 
-	protected void doWidgetSelected(SelectionEvent e) {
-		if (isOkToUse(fButton)) {
-			changeValue(fButton.getSelection());
-		}
-	}
+    protected void doWidgetSelected(SelectionEvent e) {
+        if (isOkToUse(fButton)) {
+            changeValue(fButton.getSelection());
+        }
+    }
 
-	private void changeValue(boolean newState) {
-		if (fIsSelected != newState) {
-			fIsSelected= newState;
-			if (fAttachedDialogFields != null) {
-				boolean focusSet= false;
-				for (int i= 0; i < fAttachedDialogFields.length; i++) {
-					fAttachedDialogFields[i].setEnabled(fIsSelected);
-					if (fIsSelected && !focusSet) {
-						focusSet= fAttachedDialogFields[i].setFocus();
-					}
-				}
-			}
-			dialogFieldChanged();
-		} else if (fButtonStyle == SWT.PUSH) {
-			dialogFieldChanged();
-		}
-	}
+    private void changeValue(boolean newState) {
+        if (fIsSelected != newState) {
+            fIsSelected= newState;
+            if (fAttachedDialogFields != null) {
+                boolean focusSet= false;
+                for (int i= 0; i < fAttachedDialogFields.length; i++) {
+                    fAttachedDialogFields[i].setEnabled(fIsSelected);
+                    if (fIsSelected && !focusSet) {
+                        focusSet= fAttachedDialogFields[i].setFocus();
+                    }
+                }
+            }
+            dialogFieldChanged();
+        } else if (fButtonStyle == SWT.PUSH) {
+            dialogFieldChanged();
+        }
+    }
 
-	/* (non-Javadoc)
-	 * @see org.eclipse.jdt.internal.ui.wizards.dialogfields.DialogField#setLabelText(java.lang.String)
-	 */
-	public void setLabelText(String labeltext) {
-		fLabelText= labeltext;
-		if (isOkToUse(fButton)) {
-			fButton.setText(labeltext);
-		}
-	}
-	public void setToolTipText(String text) {
-		fToolTipText = text;
-		if (isOkToUse(fButton)) {
-			fButton.setToolTipText(fToolTipText);
+    @Override
+    public void setLabelText(String labeltext) {
+        fLabelText= labeltext;
+        if (isOkToUse(fButton)) {
+            fButton.setText(labeltext);
+        }
+    }
+    public void setToolTipText(String text) {
+        fToolTipText = text;
+        if (isOkToUse(fButton)) {
+            fButton.setToolTipText(fToolTipText);
 
-		}
-	}
+        }
+    }
 
 
 
-	// ------ model access
+    // ------ model access
 
-	/**
-	 * Returns the selection state of the button.
-	 */
-	public boolean isSelected() {
-		return fIsSelected;
-	}
+    /**
+     * Returns the selection state of the button.
+     */
+    public boolean isSelected() {
+        return fIsSelected;
+    }
 
-	/**
-	 * Sets the selection state of the button.
-	 */
-	public void setSelection(boolean selected) {
-		changeValue(selected);
-		if (isOkToUse(fButton)) {
-			fButton.setSelection(selected);
-		}
-	}
+    /**
+     * Sets the selection state of the button.
+     */
+    public void setSelection(boolean selected) {
+        changeValue(selected);
+        if (isOkToUse(fButton)) {
+            fButton.setSelection(selected);
+        }
+    }
 
-	// ------ enable / disable management
+    // ------ enable / disable management
 
-	/*
-	 * @see DialogField#updateEnableState
-	 */
-	protected void updateEnableState() {
-		super.updateEnableState();
-		if (isOkToUse(fButton)) {
-			fButton.setEnabled(isEnabled());
-		}
-	}
+    @Override
+    protected void updateEnableState() {
+        super.updateEnableState();
+        if (isOkToUse(fButton)) {
+            fButton.setEnabled(isEnabled());
+        }
+    }
 
-	/*(non-Javadoc)
-	 * @see org.eclipse.jdt.internal.ui.wizards.dialogfields.DialogField#refresh()
-	 */
-	public void refresh() {
-		super.refresh();
-		if (isOkToUse(fButton)) {
-			fButton.setSelection(fIsSelected);
-		}
-	}
+    @Override
+    public void refresh() {
+        super.refresh();
+        if (isOkToUse(fButton)) {
+            fButton.setSelection(fIsSelected);
+        }
+    }
 
 
 }

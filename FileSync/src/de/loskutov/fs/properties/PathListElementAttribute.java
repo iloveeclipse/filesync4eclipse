@@ -9,10 +9,10 @@
 package de.loskutov.fs.properties;
 
 
-public class PathListElementAttribute {
+public class PathListElementAttribute implements IPathListObject {
 
-    private PathListElement parent;
-    private String key;
+    private final PathListElement parent;
+    private final String key;
     private Object value;
     private Object defaultValue;
 

@@ -35,6 +35,7 @@ public class PathListLabelProvider extends LabelProvider {
         super();
     }
 
+    @Override
     public String getText(Object element) {
         if (element instanceof PathListElement) {
             return getPathListElementText((PathListElement) element);
@@ -143,6 +144,7 @@ public class PathListLabelProvider extends LabelProvider {
     }
 
 
+    @Override
     public Image getImage(Object element) {
         if (element instanceof PathListElement) {
             PathListElement cpentry = (PathListElement) element;

@@ -41,11 +41,13 @@ public class ForceFileSyncActionDelegate extends ActionDelegate {
         super();
     }
 
+    @Override
     public void dispose() {
         project = null;
         super.dispose();
     }
 
+    @Override
     public void run(IAction action) {
         FileSyncBuilder builder = getOrCreateBuilder();
         if(builder != null){
@@ -95,6 +97,7 @@ public class ForceFileSyncActionDelegate extends ActionDelegate {
         final FileSyncBuilder finalBuilder = builder;
 
         final Job myJob = new Job("Full project sync") {
+            @Override
             public IStatus run(IProgressMonitor monitor) {
                 finalBuilder.build(IncrementalProjectBuilder.FULL_BUILD, monitor);
                 return Status.OK_STATUS;//new JobStatus(IStatus.INFO, 0, this, "", null);
@@ -134,10 +137,12 @@ public class ForceFileSyncActionDelegate extends ActionDelegate {
     //        //        return builder;
     //    }
 
+    @Override
     public void runWithEvent(IAction action, Event event) {
         run(action);
     }
 
+    @Override
     public void selectionChanged(IAction action, ISelection selection) {
         if (!(selection instanceof IStructuredSelection)) {
             project = null;

@@ -42,6 +42,8 @@ public class RseWindowsCmdExecuter extends RseUnixCmdExecuter {
     public String getFilesToDeleteSuffix(){
         return ".bat";
     }
+
+    @Override
     public String getFileQuote(){
         return RseUnixCmdExecuter.DOUBLE_QUOTE;
     }

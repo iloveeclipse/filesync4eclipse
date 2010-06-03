@@ -52,7 +52,7 @@ import org.eclipse.swt.widgets.TableColumn;
  * List model is independend of widget creation.
  * DialogFields controls are: Label, List and Composite containing buttons.
  */
-public class ListDialogField extends DialogField {
+public class ListDialogField<T> extends DialogField {
 
     public static class ColumnsDescription {
         protected ColumnLayoutData[] columns;
@@ -86,7 +86,7 @@ public class ListDialogField extends DialogField {
     protected Control fTableControl;
     protected ILabelProvider fLabelProvider;
     protected ListViewerAdapter fListViewerAdapter;
-    protected List fElements;
+    protected List<T> fElements;
     protected ViewerSorter fViewerSorter;
 
     protected String[] fButtonLabels;
@@ -104,7 +104,7 @@ public class ListDialogField extends DialogField {
     private Composite fButtonsControl;
     private ISelection fSelectionWhenEnabled;
 
-    private final IListAdapter fListAdapter;
+    private final IListAdapter<T> fListAdapter;
 
     private final Object fParentElement;
 
@@ -119,7 +119,7 @@ public class ListDialogField extends DialogField {
      * marks a separator.
      * @param lprovider The label provider to render the table entries
      */
-    public ListDialogField(IListAdapter adapter, String[] buttonLabels, ILabelProvider lprovider) {
+    public ListDialogField(IListAdapter<T> adapter, String[] buttonLabels, ILabelProvider lprovider) {
         super();
         fListAdapter= adapter;
 
@@ -127,7 +127,7 @@ public class ListDialogField extends DialogField {
         fListViewerAdapter= new ListViewerAdapter();
         fParentElement= this;
 
-        fElements= new ArrayList(10);
+        fElements= new ArrayList<T>(10);
 
         fButtonLabels= buttonLabels;
         if (fButtonLabels != null) {
@@ -226,9 +226,7 @@ public class ListDialogField extends DialogField {
 
     // ------ layout helpers
 
-    /*
-     * @see DialogField#doFillIntoGrid
-     */
+    @Override
     public Control[] doFillIntoGrid(Composite parent, int nColumns) {
         PixelConverter converter= new PixelConverter(parent);
 
@@ -263,9 +261,7 @@ public class ListDialogField extends DialogField {
         return new Control[] { label, list, buttons };
     }
 
-    /*
-     * @see DialogField#getNumberOfControls
-     */
+    @Override
     public int getNumberOfControls() {
         return 3;
     }
@@ -319,6 +315,7 @@ public class ListDialogField extends DialogField {
             }
 
             fTable.getTable().addKeyListener(new KeyAdapter() {
+                @Override
                 public void keyPressed(KeyEvent e) {
                     handleKeyPressed(e);
                 }
@@ -471,9 +468,7 @@ public class ListDialogField extends DialogField {
 
     // ------ enable / disable management
 
-    /*
-     * @see DialogField#dialogFieldChanged
-     */
+    @Override
     public void dialogFieldChanged() {
         super.dialogFieldChanged();
         updateButtonState();
@@ -505,9 +500,7 @@ public class ListDialogField extends DialogField {
         return true;
     }
 
-    /*
-     * @see DialogField#updateEnableState
-     */
+    @Override
     protected void updateEnableState() {
         super.updateEnableState();
 
@@ -546,8 +539,8 @@ public class ListDialogField extends DialogField {
     /**
      * Sets the elements shown in the list.
      */
-    public void setElements(Collection elements) {
-        fElements= new ArrayList(elements);
+    public void setElements(Collection<T> elements) {
+        fElements= new ArrayList<T>(elements);
         if (isOkToUse(fTableControl)) {
             fTable.refresh();
         }
@@ -558,8 +551,8 @@ public class ListDialogField extends DialogField {
      * Gets the elements shown in the list.
      * The list returned is a copy, so it can be modified by the user.
      */
-    public List getElements() {
-        return new ArrayList(fElements);
+    public List<T> getElements() {
+        return new ArrayList<T>(fElements);
     }
 
     /**
@@ -570,8 +563,8 @@ public class ListDialogField extends DialogField {
     }
 
     /**
-    * Gets the index of an element in the list or -1 if element is not in list.
-    */
+     * Gets the index of an element in the list or -1 if element is not in list.
+     */
     public int getIndexOfElement(Object elem) {
         return fElements.indexOf(elem);
     }
@@ -579,12 +572,12 @@ public class ListDialogField extends DialogField {
     /**
      * Replaces an element.
      */
-    public void replaceElement(Object oldElement, Object newElement) throws IllegalArgumentException {
+    public void replaceElement(T oldElement, T newElement) throws IllegalArgumentException {
         int idx= fElements.indexOf(oldElement);
         if (idx != -1) {
             fElements.set(idx, newElement);
             if (isOkToUse(fTableControl)) {
-                List selected= getSelectedElements();
+                List<T> selected= getSelectedElements();
                 if (selected.remove(oldElement)) {
                     selected.add(newElement);
                 }
@@ -614,14 +607,14 @@ public class ListDialogField extends DialogField {
     /**
      * Adds an element at the end of the list.
      */
-    public void addElement(Object element) {
+    public void addElement(T element) {
         addElement(element, fElements.size());
     }
 
     /**
      * Adds an element at a position.
      */
-    public void addElement(Object element, int index) {
+    public void addElement(T element, int index) {
         if (fElements.contains(element)) {
             return;
         }
@@ -637,15 +630,15 @@ public class ListDialogField extends DialogField {
     /**
      * Adds elements at the end of the list.
      */
-    public void addElements(List elements) {
+    public void addElements(List<T> elements) {
         int nElements= elements.size();
 
         if (nElements > 0) {
             // filter duplicated
-            ArrayList elementsToAdd= new ArrayList(nElements);
+            ArrayList<T> elementsToAdd= new ArrayList<T>(nElements);
 
             for (int i= 0; i < nElements; i++) {
-                Object elem= elements.get(i);
+                T elem= elements.get(i);
                 if (!fElements.contains(elem)) {
                     elementsToAdd.add(elem);
                 }
@@ -691,7 +684,7 @@ public class ListDialogField extends DialogField {
     /**
      * Removes elements from the list.
      */
-    public void removeElements(List elements) {
+    public void removeElements(List<T> elements) {
         if (elements.size() > 0) {
             fElements.removeAll(elements);
             if (isOkToUse(fTableControl)) {
@@ -751,6 +744,7 @@ public class ListDialogField extends DialogField {
     /**
      * Refreshes the table.
      */
+    @Override
     public void refresh() {
         super.refresh();
         if (isOkToUse(fTableControl)) {
@@ -760,12 +754,12 @@ public class ListDialogField extends DialogField {
 
     // ------- list maintenance
 
-    private List moveUp(List elements, List move) {
+    private List<T> moveUp(List<T> elements, List<T> move) {
         int nElements= elements.size();
-        List res= new ArrayList(nElements);
-        Object floating= null;
+        List<T> res= new ArrayList<T>(nElements);
+        T floating= null;
         for (int i= 0; i < nElements; i++) {
-            Object curr= elements.get(i);
+            T curr= elements.get(i);
             if (move.contains(curr)) {
                 res.add(curr);
             } else {
@@ -781,22 +775,22 @@ public class ListDialogField extends DialogField {
         return res;
     }
 
-    private void moveUp(List toMoveUp) {
+    private void moveUp(List<T> toMoveUp) {
         if (toMoveUp.size() > 0) {
             setElements(moveUp(fElements, toMoveUp));
             fTable.reveal(toMoveUp.get(0));
         }
     }
 
-    private void moveDown(List toMoveDown) {
+    private void moveDown(List<T> toMoveDown) {
         if (toMoveDown.size() > 0) {
             setElements(reverse(moveUp(reverse(fElements), toMoveDown)));
             fTable.reveal(toMoveDown.get(toMoveDown.size() - 1));
         }
     }
 
-    private List reverse(List p) {
-        List reverse= new ArrayList(p.size());
+    private List<T> reverse(List<T> p) {
+        List<T> reverse= new ArrayList<T>(p.size());
         for (int i= p.size()-1; i >= 0; i--) {
             reverse.add(p.get(i));
         }
@@ -844,14 +838,15 @@ public class ListDialogField extends DialogField {
     /**
      * Returns the selected elements.
      */
-    public List getSelectedElements() {
-        List result= new ArrayList();
+    @SuppressWarnings("unchecked")
+    public List<T> getSelectedElements() {
+        List<T> result= new ArrayList<T>();
         if (isOkToUse(fTableControl)) {
             ISelection selection= fTable.getSelection();
             if (selection instanceof IStructuredSelection) {
-                Iterator iter= ((IStructuredSelection)selection).iterator();
+                Iterator<?> iter= ((IStructuredSelection)selection).iterator();
                 while (iter.hasNext()) {
-                    result.add(iter.next());
+                    result.add((T) iter.next());
                 }
             }
         }
@@ -886,9 +881,6 @@ public class ListDialogField extends DialogField {
             doListSelected(event);
         }
 
-        /* (non-Javadoc)
-         * @see org.eclipse.jface.viewers.IDoubleClickListener#doubleClick(org.eclipse.jface.viewers.DoubleClickEvent)
-         */
         public void doubleClick(DoubleClickEvent event) {
             doDoubleClick(event);
         }
@@ -908,7 +900,5 @@ public class ListDialogField extends DialogField {
             fListAdapter.doubleClicked(this);
         }
     }
-
-
 
 }

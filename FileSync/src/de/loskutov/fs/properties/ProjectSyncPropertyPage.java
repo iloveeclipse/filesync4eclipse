@@ -16,7 +16,6 @@ import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -101,7 +100,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
 
     protected StringButtonDialogField destPathDialogField;
 
-    protected TreeListDialogField foldersList;
+    protected TreeListDialogField<IPathListObject> foldersList;
 
     protected StringDialogField outputLocationField;
 
@@ -174,6 +173,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
     /**
      * @see PreferencePage#createContents(Composite)
      */
+    @Override
     protected Control createContents(Composite parent) {
         TabFolder tabFolder = new TabFolder(parent, SWT.TOP);
         tabFolder.setLayout(new GridLayout(1, true));
@@ -214,7 +214,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         pathVariableHelper = new PathVariableHelper();
 
         ProjectProperties properties = ProjectProperties.getInstance(project);
-        List listeners = properties.getProjectPreferenceChangeListeners();
+        List<FileSyncBuilder> listeners = properties.getProjectPreferenceChangeListeners();
         boolean noBuilderInstalled = listeners.isEmpty();
 
         IEclipsePreferences preferences = getPreferences(noBuilderInstalled);
@@ -304,7 +304,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
                 /* 2 = IDX_EDIT */"Edit...",
         /* 3 = IDX_REMOVE */"Remove"};
 
-        foldersList = new TreeListDialogField(adapter, buttonLabels, new PathListLabelProvider());
+        foldersList = new TreeListDialogField<IPathListObject>(adapter, buttonLabels, new PathListLabelProvider());
         foldersList.setDialogFieldListener(adapter);
         foldersList.setLabelText("Available synchronization mappings:");
 
@@ -316,14 +316,17 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
 
             private final Collator delegate = Collator.getInstance();
 
+            @Override
             public int compare(String source, String target) {
                 return PathListLabelProvider.compare(source, target);
             }
 
+            @Override
             public CollationKey getCollationKey(String source) {
                 return delegate.getCollationKey(source);
             }
 
+            @Override
             public int hashCode() {
                 return delegate.hashCode();
             }
@@ -370,7 +373,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
     protected void init() {
         boolean useFolderOutputs = hasDifferentOutputFolders();
         // boolean useVariables = hasDifferentVasriables();
-        ArrayList<PathListElement> folders = new ArrayList<PathListElement>();
+        ArrayList<IPathListObject> folders = new ArrayList<IPathListObject>();
         for (int i = 0; i < mappingList.size(); i++) {
             PathListElement cpe = mappingList.get(i);
             folders.add(cpe);
@@ -381,7 +384,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         // useVariablesField.setSelection(useVariables);
 
         for (int i = 0; i < folders.size(); i++) {
-            PathListElement cpe = folders.get(i);
+            PathListElement cpe = (PathListElement) folders.get(i);
             IPath[] patterns = (IPath[]) cpe.getAttribute(PathListElement.EXCLUSION);
             boolean hasOutputFolder = (cpe.getAttribute(PathListElement.DESTINATION) != null);
             if (patterns.length > 0 || hasOutputFolder) {
@@ -473,7 +476,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         foldersList.setButtonsMinWidth(buttonBarWidth);
 
         // expand
-        List elements = foldersList.getElements();
+        List<IPathListObject> elements = foldersList.getElements();
         for (int i = 0; i < elements.size(); i++) {
             PathListElement elem = (PathListElement) elements.get(i);
             IPath[] exclusionPatterns = (IPath[]) elem.getAttribute(PathListElement.EXCLUSION);
@@ -485,10 +488,10 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         }
     }
 
-    protected void pathListKeyPressed(TreeListDialogField field, KeyEvent event) {
+    protected void pathListKeyPressed(TreeListDialogField<IPathListObject> field, KeyEvent event) {
         if (field == foldersList) {
             if (event.character == SWT.DEL && event.stateMask == 0) {
-                List selection = field.getSelectedElements();
+                List<IPathListObject> selection = field.getSelectedElements();
                 if (canRemove(selection)) {
                     removeEntry();
                 }
@@ -496,9 +499,9 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         }
     }
 
-    protected void pathListDoubleClicked(TreeListDialogField field) {
+    protected void pathListDoubleClicked(TreeListDialogField<IPathListObject> field) {
         if (field == foldersList) {
-            List selection = field.getSelectedElements();
+            List<IPathListObject> selection = field.getSelectedElements();
             if (canEdit(selection)) {
                 editEntry();
             }
@@ -533,7 +536,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
     }
 
     private void addEntry() {
-        List<PathListElement> elementsToAdd = new ArrayList<PathListElement>(10);
+        List<IPathListObject> elementsToAdd = new ArrayList<IPathListObject>(10);
         if (hasMembers(project)) {
             PathListElement[] srcentries = openFolderDialog(null);
             if (srcentries != null) {
@@ -556,15 +559,14 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         }
         if (!elementsToAdd.isEmpty()) {
 
-            HashSet modifiedElements = new HashSet();
+            HashSet<IPathListObject> modifiedElements = new HashSet<IPathListObject>();
             askForAddingExclusionPatternsDialog(elementsToAdd, modifiedElements);
 
             foldersList.addElements(elementsToAdd);
             foldersList.postSetSelection(new StructuredSelection(elementsToAdd));
 
             if (!modifiedElements.isEmpty()) {
-                for (Iterator iter = modifiedElements.iterator(); iter.hasNext();) {
-                    Object elem = iter.next();
+                for (Object elem : modifiedElements) {
                     foldersList.refresh(elem);
                     foldersList.expandElement(elem, 3);
                 }
@@ -574,7 +576,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
     }
 
     private void editEntry() {
-        List selElements = foldersList.getSelectedElements();
+        List<IPathListObject> selElements = foldersList.getSelectedElements();
         if (selElements.size() != 1) {
             return;
         }
@@ -654,14 +656,14 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
     }
 
     protected void pathListSelectionChanged(DialogField field) {
-        List selected = foldersList.getSelectedElements();
+        List<IPathListObject> selected = foldersList.getSelectedElements();
         foldersList.enableButton(IDX_EDIT, canEdit(selected));
         foldersList.enableButton(IDX_REMOVE, canRemove(selected));
         boolean noAttributes = !hasAttributes(selected);
         foldersList.enableButton(IDX_ADD, noAttributes);
     }
 
-    private boolean hasAttributes(List selElements) {
+    private boolean hasAttributes(List<IPathListObject> selElements) {
         if (selElements.size() == 0) {
             return false;
         }
@@ -674,7 +676,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
     }
 
     private void removeEntry() {
-        List selElements = foldersList.getSelectedElements();
+        List<IPathListObject> selElements = foldersList.getSelectedElements();
         for (int i = selElements.size() - 1; i >= 0; i--) {
             Object elem = selElements.get(i);
             if (elem instanceof PathListElementAttribute) {
@@ -699,7 +701,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         dialogFieldChanged(destPathDialogField);
     }
 
-    private boolean canRemove(List selElements) {
+    private boolean canRemove(List<IPathListObject> selElements) {
         if (selElements.size() == 0) {
             return false;
         }
@@ -724,7 +726,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         return true;
     }
 
-    private boolean canEdit(List selElements) {
+    private boolean canEdit(List<IPathListObject> selElements) {
         if (selElements.size() != 1) {
             return false;
         }
@@ -797,9 +799,8 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         statusChanged(destFolderStatus);
     }
 
-    @SuppressWarnings("unchecked")
     private void updatePatternList() {
-        List<PathListElement> srcelements = foldersList.getElements();
+        List<IPathListObject> srcelements = foldersList.getElements();
 
         List<PathListElement> oldmappings = mappingList;
         List<PathListElement> newMappings = new ArrayList<PathListElement>(mappingList);
@@ -814,7 +815,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         }
         if (!srcelements.isEmpty()) {
             for (int i = 0; i < srcelements.size(); i++) {
-                PathListElement cpe = srcelements.get(i);
+                PathListElement cpe = (PathListElement) srcelements.get(i);
                 if (!newMappings.contains(cpe)) {
                     newMappings.add(cpe);
                 }
@@ -833,7 +834,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         return null;
     }
 
-    private void askForAddingExclusionPatternsDialog(List newEntries, Set modifiedEntries) {
+    private void askForAddingExclusionPatternsDialog(List<IPathListObject> newEntries, Set<IPathListObject> modifiedEntries) {
         fixNestingConflicts(newEntries, foldersList.getElements(), modifiedEntries);
         if (!modifiedEntries.isEmpty()) {
             String title = "Folder added";
@@ -887,10 +888,11 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
     }
 
     private IPath openFileDialog(IPath path) {
-        Class[] acceptedClasses = new Class[] { IFile.class, IFolder.class, IProject.class };
+        Class<?>[] acceptedClasses = new Class[] { IFile.class, IFolder.class, IProject.class };
         ISelectionStatusValidator validator = new TypedElementSelectionValidator(acceptedClasses,
                 false) {
 
+            @Override
             public IStatus validate(Object[] elements) {
                 if (elements.length > 1 || elements.length == 0 || !(elements[0] instanceof IFile)) {
                     return errorStatus;
@@ -933,7 +935,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
 
     private List<IContainer> getExistingContainers(PathListElement existing) {
         List<IContainer> res = new ArrayList<IContainer>();
-        List<IContainer> cplist = foldersList.getElements();
+        List<IPathListObject> cplist = foldersList.getElements();
         for (int i = 0; i < cplist.size(); i++) {
             PathListElement elem = (PathListElement) cplist.get(i);
             if (elem != existing) {
@@ -952,32 +954,15 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
                 defVariablesCallback);
     }
 
-    /*
-     * @see BuildPathBasePage#getSelection
-     */
-    public List getSelection() {
+    public List<IPathListObject> getSelection() {
         return foldersList.getSelectedElements();
     }
 
-    /*
-     * @see BuildPathBasePage#setSelection
-     */
-    public void setSelection(List selElements) {
+    public void setSelection(List<IPathListObject> selElements) {
         foldersList.selectElements(new StructuredSelection(selElements));
     }
 
-    protected void filterAndSetSelection(List list) {
-        ArrayList res = new ArrayList(list.size());
-        for (int i = list.size() - 1; i >= 0; i--) {
-            Object curr = list.get(i);
-            if (curr instanceof PathListElement) {
-                res.add(curr);
-            }
-        }
-        setSelection(res);
-    }
-
-    protected void fixNestingConflicts(List newEntries, List existing, Set modifiedSourceEntries) {
+    protected void fixNestingConflicts(List<IPathListObject> newEntries, List<IPathListObject> existing, Set<IPathListObject> modifiedSourceEntries) {
         for (int i = 0; i < newEntries.size(); i++) {
             PathListElement curr = (PathListElement) newEntries.get(i);
             addExclusionPatterns(curr, existing, modifiedSourceEntries);
@@ -985,7 +970,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         }
     }
 
-    private void addExclusionPatterns(PathListElement newEntry, List existing, Set modifiedEntries) {
+    private void addExclusionPatterns(PathListElement newEntry, List<IPathListObject> existing, Set<IPathListObject> modifiedEntries) {
         IPath entryPath = newEntry.getPath();
         for (int i = 0; i < existing.size(); i++) {
             PathListElement curr = (PathListElement) existing.get(i);
@@ -1072,6 +1057,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         return false;
     }
 
+    @Override
     protected void performDefaults() {
         IEclipsePreferences preferences = getPreferences(false);
         String defPath = preferences.get(ProjectProperties.KEY_DEFAULT_DESTINATION, "");
@@ -1091,6 +1077,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         }
     }
 
+    @Override
     public boolean performOk() {
         if (!destFolderStatus.isOK()) {
             return false;
@@ -1163,9 +1150,9 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         ProjectProperties properties = ProjectProperties.getInstance(project);
         boolean wasDisabled = true;
         if (forceSync) {
-            List listeners = properties.getProjectPreferenceChangeListeners();
+            List<FileSyncBuilder> listeners = properties.getProjectPreferenceChangeListeners();
             for (int i = 0; i < listeners.size(); i++) {
-                FileSyncBuilder b = (FileSyncBuilder) listeners.get(i);
+                FileSyncBuilder b = listeners.get(i);
                 wasDisabled = b.isDisabled();
                 if (!b.isDisabled()) {
                     b.setDisabled(true);
@@ -1174,9 +1161,9 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         }
         IEclipsePreferences preferences = properties.getPreferences(forceSync);
         if (forceSync) {
-            List listeners = properties.getProjectPreferenceChangeListeners();
+            List<FileSyncBuilder> listeners = properties.getProjectPreferenceChangeListeners();
             for (int i = 0; i < listeners.size(); i++) {
-                FileSyncBuilder b = (FileSyncBuilder) listeners.get(i);
+                FileSyncBuilder b = listeners.get(i);
                 if (!wasDisabled) {
                     b.setDisabled(false);
                 }
@@ -1185,18 +1172,13 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         return preferences;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see IStatusChangeListener#statusChanged
-     */
     public void statusChanged(IStatus status) {
         setValid(!status.matches(IStatus.ERROR));
         applyToStatusLine(this, status);
     }
 
     protected void init(IPath outputLocation, IPath variables, FileMapping[] mappings) {
-        List newClassPath = new ArrayList();
+        List<PathListElement> newClassPath = new ArrayList<PathListElement>();
         for (int i = 0; i < mappings.length; i++) {
             newClassPath.add(new PathListElement(project, mappings[i], defPathCallback,
                     defVariablesCallback));
@@ -1204,9 +1186,9 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
 
         Collections.sort(newClassPath, pathComparator);
 
-        List exportedEntries = new ArrayList();
+        List<PathListElement> exportedEntries = new ArrayList<PathListElement>();
         for (int i = 0; i < newClassPath.size(); i++) {
-            PathListElement curr = (PathListElement) newClassPath.get(i);
+            PathListElement curr = newClassPath.get(i);
             exportedEntries.add(curr);
         }
         mappingList = newClassPath;
@@ -1238,9 +1220,11 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
     private String getEncodedSettings() {
         StringBuffer buf = new StringBuffer();
         // the host or scheme can be different even if the path is the same
-        String fqString = FileSyncPlugin.getDefault().getFsPathUtil()
-        .toFqString(defDestinationPath);
-        PathListElement.appendEncodeString(fqString, buf).append(';');
+        if(defDestinationPath != null){
+            String fqString = FileSyncPlugin.getDefault().getFsPathUtil()
+            .toFqString(defDestinationPath);
+            PathListElement.appendEncodeString(fqString, buf).append(';');
+        }
         PathListElement.appendEncodePath(getDefaultVariablesPath(), buf).append(';');
 
         int nElements = mappingList.size();
@@ -1404,27 +1388,27 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
     }
 
 
-    class PathContainerAdapter implements ITreeListAdapter, IDialogFieldListener {
+    class PathContainerAdapter implements ITreeListAdapter<IPathListObject>, IDialogFieldListener {
 
         private final Object[] EMPTY_ARR = new Object[0];
 
-        public void customButtonPressed(TreeListDialogField field, int index) {
+        public void customButtonPressed(TreeListDialogField<IPathListObject> field, int index) {
             pathListButtonPressed(field, index);
         }
 
-        public void selectionChanged(TreeListDialogField field) {
+        public void selectionChanged(TreeListDialogField<IPathListObject> field) {
             pathListSelectionChanged(field);
         }
 
-        public void doubleClicked(TreeListDialogField field) {
+        public void doubleClicked(TreeListDialogField<IPathListObject> field) {
             pathListDoubleClicked(field);
         }
 
-        public void keyPressed(TreeListDialogField field, KeyEvent event) {
+        public void keyPressed(TreeListDialogField<IPathListObject> field, KeyEvent event) {
             pathListKeyPressed(field, event);
         }
 
-        public Object[] getChildren(TreeListDialogField field, Object element) {
+        public Object[] getChildren(TreeListDialogField<IPathListObject> field, Object element) {
             if (element instanceof PathListElement) {
                 return ((PathListElement) element).getChildren(!useFolderOutputsField.isSelected(),
                         false /* !useVariablesField.isSelected() */);
@@ -1432,14 +1416,14 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
             return EMPTY_ARR;
         }
 
-        public Object getParent(TreeListDialogField field, Object element) {
+        public Object getParent(TreeListDialogField<IPathListObject> field, Object element) {
             if (element instanceof PathListElementAttribute) {
                 return ((PathListElementAttribute) element).getParent();
             }
             return null;
         }
 
-        public boolean hasChildren(TreeListDialogField field, Object element) {
+        public boolean hasChildren(TreeListDialogField<IPathListObject> field, Object element) {
             return (element instanceof PathListElement);
         }
 

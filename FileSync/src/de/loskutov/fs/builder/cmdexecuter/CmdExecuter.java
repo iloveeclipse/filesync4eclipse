@@ -23,29 +23,29 @@ public interface CmdExecuter {
      * can't be distinguished easily So this String should be added to a cmd in a way like
      * "cmd || echo " + ERROR_SIGNAL //TODO: I didn't tested ssh to a windows-remote-system
      */
-    public static final String ERROR_SIGNAL = "errorOfRseCommandWhichShouldBeAFairlyUniqueString";
+    String ERROR_SIGNAL = "errorOfRseCommandWhichShouldBeAFairlyUniqueString";
 
-    public boolean execute(String[] commands);
+    boolean execute(String[] commands);
 
-    public String[] getDeleteCommands(File contentFile);
+    String[] getDeleteCommands(File contentFile);
 
-    public String[] getUnzipCommands(File zipFile);
+    String[] getUnzipCommands(File zipFile);
 
-    public String getLineSeparator();
+    String getLineSeparator();
 
     /**
-     * this is used in {@link DelayedSyncWizard#commitDeletes()}.
-     * 
-     * @param file
+     * this is used in {@link DelayedSyncWizard#commit()}.
+     *
+     * @param fileRecord
      * @return a String-representation of the file. On Default it's the
      *         {@link File#getAbsolutePath()}.
      */
-    public String toStringForDelete(DeleteFileRecord fileRecord);
-    public List<String> toStringsForDelete(Collection<DeleteFileRecord> fileNames);
+    String toStringForDelete(DeleteFileRecord fileRecord);
+    List<String> toStringsForDelete(Collection<DeleteFileRecord> fileNames);
     /**
      * @return ".txt" if it is just a list of files. ".bat" on Windows as it is a list of commands
      */
-    public String getFilesToDeleteSuffix();
-    public String getFileQuote();
-    public String quote(String stringToQuote);
+    String getFilesToDeleteSuffix();
+    String getFileQuote();
+    String quote(String stringToQuote);
 }

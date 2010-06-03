@@ -27,7 +27,7 @@ public class StringButtonDialogField extends StringDialogField {
 
     private Button fBrowseButton;
     private String fBrowseButtonLabel;
-    private IStringButtonAdapter fStringButtonAdapter;
+    private final IStringButtonAdapter fStringButtonAdapter;
 
     private boolean fButtonEnabled;
 
@@ -56,9 +56,7 @@ public class StringButtonDialogField extends StringDialogField {
 
     // ------- layout helpers
 
-    /*
-     * @see DialogField#doFillIntoGrid
-     */
+    @Override
     public Control[] doFillIntoGrid(Composite parent, int nColumns) {
         assertEnoughColumns(nColumns);
 
@@ -72,9 +70,7 @@ public class StringButtonDialogField extends StringDialogField {
         return new Control[] { label, text, button };
     }
 
-    /*
-     * @see DialogField#getNumberOfControls
-     */
+    @Override
     public int getNumberOfControls() {
         return 3;
     }
@@ -128,9 +124,7 @@ public class StringButtonDialogField extends StringDialogField {
         fButtonEnabled= enable;
     }
 
-    /*
-     * @see DialogField#updateEnableState
-     */
+    @Override
     protected void updateEnableState() {
         super.updateEnableState();
         if (isOkToUse(fBrowseButton)) {

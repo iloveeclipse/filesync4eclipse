@@ -27,8 +27,10 @@ import org.eclipse.rse.subsystems.files.core.subsystems.IRemoteFile;
  * implemention is according the Description of {@link File#isDirectory()} {@link #isFile()} ( this
  * implemention is according the Description of {@link File#isFile()}
  *
- * @see https://bugs.eclipse.org/bugs/show_bug.cgi?id=310172 Take a look into these methods to see
- *      the differences in detail.
+ * <p>
+ * See https://bugs.eclipse.org/bugs/show_bug.cgi?id=310172
+ * Take a look into these methods to see the differences in detail.
+ *
  * @author Volker
  */
 public class RemoteFileImpl extends File {
@@ -50,22 +52,27 @@ public class RemoteFileImpl extends File {
     //        return remoteFile.canExecute();
     //    }
 
+    @Override
     public boolean canRead() {
         return remoteFile.canRead();
     }
 
+    @Override
     public boolean canWrite() {
         return remoteFile.canWrite();
     }
 
+    @Override
     public int compareTo(File pathname) {
         return remoteFile.compareTo(pathname);
     }
 
+    @Override
     public boolean createNewFile() throws IOException {
         return remoteFile.createNewFile();
     }
 
+    @Override
     public boolean delete() {
         if (isDirectory() && list().length > 0) {
             return false;
@@ -73,30 +80,37 @@ public class RemoteFileImpl extends File {
         return remoteFile.delete();
     }
 
+    @Override
     public void deleteOnExit() {
-        remoteFile.deleteOnExit();
+        throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean equals(Object obj) {
         return remoteFile.equals(obj);
     }
 
+    @Override
     public boolean exists() {
         return remoteFile.exists();
     }
 
+    @Override
     public File getAbsoluteFile() {
         return remoteFile.getAbsoluteFile();
     }
 
+    @Override
     public String getAbsolutePath() {
         return remoteFile.getAbsolutePath();
     }
 
+    @Override
     public File getCanonicalFile() {
         return remoteFile.getCanonicalFile();
     }
 
+    @Override
     public String getCanonicalPath() {
         return remoteFile.getCanonicalPath();
     }
@@ -109,18 +123,22 @@ public class RemoteFileImpl extends File {
         return remoteFile.getInputStream();
     }
 
+    @Override
     public String getName() {
         return remoteFile.getName();
     }
 
+    @Override
     public String getParent() {
         return remoteFile.getParent();
     }
 
+    @Override
     public File getParentFile() {
         return remoteFile.getParentFile();
     }
 
+    @Override
     public String getPath() {
         return remoteFile.getPath();
     }
@@ -137,50 +155,62 @@ public class RemoteFileImpl extends File {
     //        return remoteFile.getUsableSpace();
     //    }
 
+    @Override
     public int hashCode() {
         return remoteFile.hashCode();
     }
 
+    @Override
     public boolean isAbsolute() {
         return remoteFile.isAbsolute();
     }
 
+    @Override
     public boolean isDirectory() {
         return exists() && remoteFile.isDirectory();
     }
 
+    @Override
     public boolean isFile() {
         return exists() && remoteFile.isFile();
     }
 
+    @Override
     public boolean isHidden() {
         return remoteFile.isHidden();
     }
 
+    @Override
     public long lastModified() {
         return remoteFile.lastModified();
     }
 
+    @Override
     public long length() {
         return remoteFile.length();
     }
 
+    @Override
     public String[] list() {
         return remoteFile.list();
     }
 
+    @Override
     public String[] list(FilenameFilter filter) {
         return remoteFile.list(filter);
     }
 
+    @Override
     public File[] listFiles() {
         return remoteFile.listFiles();
     }
 
+    @Override
     public File[] listFiles(FileFilter filter) {
         return remoteFile.listFiles(filter);
     }
 
+    @Override
     public File[] listFiles(FilenameFilter filter) {
         return remoteFile.listFiles(filter);
     }
@@ -189,14 +219,17 @@ public class RemoteFileImpl extends File {
         return remoteFile.listIRemoteFiles();
     }
 
+    @Override
     public boolean mkdir() {
         return remoteFile.mkdir();
     }
 
+    @Override
     public boolean mkdirs() {
         return remoteFile.mkdirs();
     }
 
+    @Override
     public boolean renameTo(File dest) {
         return remoteFile.renameTo(dest);
     }
@@ -209,6 +242,7 @@ public class RemoteFileImpl extends File {
     //        return remoteFile.setExecutable(executable);
     //    }
 
+    @Override
     public boolean setLastModified(long time) {
         return remoteFile.setLastModified(time);
     }
@@ -221,6 +255,7 @@ public class RemoteFileImpl extends File {
     //        return remoteFile.setReadable(readable);
     //    }
 
+    @Override
     public boolean setReadOnly() {
         return remoteFile.setReadOnly();
     }
@@ -237,14 +272,17 @@ public class RemoteFileImpl extends File {
         remoteFile.synchRemoteFile();
     }
 
+    @Override
     public String toString() {
         return remoteFile.toString();
     }
 
+    @Override
     public URI toURI() {
         return remoteFile.toURI();
     }
 
+    @Override
     public URL toURL() throws MalformedURLException {
         return remoteFile.toURL();
     }

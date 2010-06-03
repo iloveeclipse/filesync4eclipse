@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import org.eclipse.core.filesystem.URIUtil;
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IPathVariableManager;
@@ -300,7 +301,7 @@ public class SyncWizard {
         }
         if (usesDefaultOutputFolder() && rootPath != null && rootPath.toFile() != null) {
             IContainer[] containers = ResourcesPlugin.getWorkspace().getRoot()
-            .findContainersForLocation(rootPath);
+            .findContainersForLocationURI(URIUtil.toURI(rootPath.makeAbsolute()));
             if (containers.length > 0) {
                 for (int i = 0; i < containers.length; i++) {
                     if (!list.contains(containers[i])) {

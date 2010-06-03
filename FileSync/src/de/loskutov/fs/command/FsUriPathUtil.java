@@ -21,15 +21,12 @@ import de.loskutov.fs.utils.RseUtils;
 
 public class FsUriPathUtil extends FsPathUtilImpl {
 
+    @Override
     public OutputStream getOutputStream(File file) throws FileNotFoundException {
         return RseUtils.getOutputStream(file);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
-     * @see de.loskutov.fs.command.FsPathUtilImpl#toFile(org.eclipse.core.runtime.IPath)
-     */
+    @Override
     public File toFile(IPath path) {
         if (path == null) {
             return null;

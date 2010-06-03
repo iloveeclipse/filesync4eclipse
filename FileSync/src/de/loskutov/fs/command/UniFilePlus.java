@@ -7,15 +7,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.rse.services.clientserver.messages.SystemMessageException;
 import org.eclipse.rse.services.files.RemoteFileException;
 import org.eclipse.rse.services.files.RemoteFileSecurityException;
 import org.eclipse.rse.subsystems.files.core.subsystems.IRemoteFile;
 import org.eclipse.rse.ui.SystemBasePlugin;
+
+import de.loskutov.fs.FileSyncPlugin;
 
 /**
  * This is a copy of @link org.eclipse.rse.internal.importexport.files.UniFilePlus of
@@ -28,11 +31,8 @@ import org.eclipse.rse.ui.SystemBasePlugin;
  */
 public class UniFilePlus extends File {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = -1717648997950319457L;
-    public IRemoteFile remoteFile = null;
+    private IRemoteFile remoteFile;
 
     /**
      * Constructor. There is only one way to construct this object, and that is by giving an
@@ -44,14 +44,17 @@ public class UniFilePlus extends File {
         this.remoteFile = remoteFile;
     }
 
+    @Override
     public boolean canRead() {
         return remoteFile.canRead();
     }
 
+    @Override
     public boolean canWrite() {
         return remoteFile.canWrite();
     }
 
+    @Override
     public int compareTo(File pathname) {
         if (pathname instanceof UniFilePlus) {
             return remoteFile.compareTo(pathname);
@@ -59,9 +62,7 @@ public class UniFilePlus extends File {
         return super.compareTo(pathname);
     }
 
-    /*
-     * public int compareTo(Object o) { return remoteFile.compareTo(o); }
-     */
+    @Override
     public boolean createNewFile() throws IOException {
         IRemoteFile newFile = null;
         try {
@@ -90,6 +91,7 @@ public class UniFilePlus extends File {
         return false;
     }
 
+    @Override
     public boolean delete() {
         boolean ok = true;
         try {
@@ -112,44 +114,54 @@ public class UniFilePlus extends File {
     /**
      * NOT SUPPORTED!
      */
+    @Override
     public void deleteOnExit() {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public boolean equals(Object obj) {
         return remoteFile.equals(obj);
     }
 
+    @Override
     public boolean exists() {
         return remoteFile.exists();
     }
 
+    @Override
     public File getAbsoluteFile() {
         return this; // Remote File objects are always absolute!
     }
 
+    @Override
     public String getAbsolutePath() {
         return remoteFile.getAbsolutePath();
     }
 
+    @Override
     public File getCanonicalFile() {
         // hmm, maybe we should equal getAbsolutePathPlusConnection as
         // canonical!
         return this;
     }
 
+    @Override
     public String getCanonicalPath() {
         return remoteFile.getAbsolutePathPlusConnection();
     }
 
+    @Override
     public String getName() {
         return remoteFile.getName();
     }
 
+    @Override
     public String getParent() {
         return remoteFile.getParentPath();
     }
 
+    @Override
     public File getParentFile() {
         IRemoteFile parentFolder = remoteFile.getParentRemoteFileSubSystem().getParentFolder(
                 remoteFile, null);
@@ -160,34 +172,42 @@ public class UniFilePlus extends File {
         return null;
     }
 
+    @Override
     public String getPath() {
         return remoteFile.getAbsolutePath();
     }
 
+    @Override
     public int hashCode() {
         return remoteFile.getAbsolutePathPlusConnection().hashCode();
     }
 
+    @Override
     public boolean isAbsolute() {
         return true;
     }
 
+    @Override
     public boolean isDirectory() {
         return remoteFile.isDirectory();
     }
 
+    @Override
     public boolean isFile() {
         return remoteFile.isFile();
     }
 
+    @Override
     public boolean isHidden() {
         return remoteFile.isHidden();
     }
 
+    @Override
     public long lastModified() {
         return remoteFile.getLastModified();
     }
 
+    @Override
     public long length() {
         return remoteFile.getLength();
     }
@@ -208,6 +228,7 @@ public class UniFilePlus extends File {
         return result;
     }
 
+    @Override
     public String[] list() {
         IRemoteFile[] files = null;
         try {
@@ -225,6 +246,7 @@ public class UniFilePlus extends File {
         return null;
     }
 
+    @Override
     public File[] listFiles() {
         IRemoteFile[] files = null;
 
@@ -235,11 +257,11 @@ public class UniFilePlus extends File {
             SystemBasePlugin.logError("unexpected exception", e); //$NON-NLS-1$
         }
         if (files != null) {
-            Vector<UniFilePlus> children = new Vector<UniFilePlus> ();
+            ArrayList<UniFilePlus> children = new ArrayList<UniFilePlus> ();
             for (int i = 0; i < files.length; i++) {
                 // fileName = files[idx].getName();
                 UniFilePlus fileObj = new UniFilePlus(files[i]);
-                children.addElement(fileObj);
+                children.add(fileObj);
             }
             UniFilePlus[] fileObjs = new UniFilePlus[children.size()];
             // for (int i = 0; i < children.size(); i++)
@@ -250,6 +272,7 @@ public class UniFilePlus extends File {
         return null;
     }
 
+    @Override
     public String[] list(FilenameFilter filter) {
         IRemoteFile[] files = null;
         try {
@@ -258,23 +281,24 @@ public class UniFilePlus extends File {
             SystemBasePlugin.logError("unexpected exception", e); //$NON-NLS-1$
         }
         if (files != null) {
-            Vector v = new Vector();
+            ArrayList<String> v = new ArrayList<String>();
             String fileName = null;
             for (int idx = 0; idx < files.length; idx++) {
                 fileName = files[idx].getName();
                 if ((fileName != null) && (filter.accept(this, fileName))) {
-                    v.addElement(fileName);
+                    v.add(fileName);
                 }
             }
             String[] fileNames = new String[v.size()];
             for (int idx = 0; idx < v.size(); idx++) {
-                fileNames[idx] = (String) v.elementAt(idx);
+                fileNames[idx] = v.get(idx);
             }
             return fileNames;
         }
         return null;
     }
 
+    @Override
     public File[] listFiles(FileFilter filter) {
         IRemoteFile[] files = null;
         try {
@@ -283,23 +307,24 @@ public class UniFilePlus extends File {
             SystemBasePlugin.logError("unexpected exception", e); //$NON-NLS-1$
         }
         if (files != null) {
-            Vector v = new Vector();
+            ArrayList<File> v = new ArrayList<File>();
             for (int idx = 0; idx < files.length; idx++) {
                 // fileName = files[idx].getName();
                 File fileObj = new File(files[idx].getAbsolutePath());
                 if (filter.accept(fileObj)) {
-                    v.addElement(fileObj);
+                    v.add(fileObj);
                 }
             }
             File[] fileObjs = new File[v.size()];
             for (int idx = 0; idx < v.size(); idx++) {
-                fileObjs[idx] = (File) v.elementAt(idx);
+                fileObjs[idx] = v.get(idx);
             }
             return fileObjs;
         }
         return null;
     }
 
+    @Override
     public File[] listFiles(FilenameFilter filter) {
         IRemoteFile[] files = null;
         try {
@@ -308,23 +333,24 @@ public class UniFilePlus extends File {
             SystemBasePlugin.logError("unexpected exception", e); //$NON-NLS-1$
         }
         if (files != null) {
-            Vector v = new Vector();
+            ArrayList<IRemoteFile> v = new ArrayList<IRemoteFile>();
             String fileName = null;
             for (int idx = 0; idx < files.length; idx++) {
                 fileName = files[idx].getName();
                 if ((fileName != null) && (filter.accept(this, fileName))) {
-                    v.addElement(files[idx]);
+                    v.add(files[idx]);
                 }
             }
             File[] fileObjs = new File[v.size()];
             for (int idx = 0; idx < v.size(); idx++) {
-                fileObjs[idx] = new File(((IRemoteFile) v.elementAt(idx)).getAbsolutePath());
+                fileObjs[idx] = new File(v.get(idx).getAbsolutePath());
             }
             return fileObjs;
         }
         return null;
     }
 
+    @Override
     public boolean mkdir() {
         IRemoteFile dir = null;
         try {
@@ -348,6 +374,7 @@ public class UniFilePlus extends File {
         return (dir != null);
     }
 
+    @Override
     public boolean mkdirs() {
         IRemoteFile dir = null;
         try {
@@ -371,6 +398,7 @@ public class UniFilePlus extends File {
         return (dir != null);
     }
 
+    @Override
     public boolean renameTo(File dest) {
         boolean ok = false;
         try {
@@ -390,6 +418,7 @@ public class UniFilePlus extends File {
         return ok;
     }
 
+    @Override
     public boolean setLastModified(long time) {
         boolean ok = false;
         if (time < 0) {
@@ -412,6 +441,7 @@ public class UniFilePlus extends File {
         return ok;
     }
 
+    @Override
     public boolean setReadOnly() {
         boolean ok = false;
         try {
@@ -431,10 +461,12 @@ public class UniFilePlus extends File {
         return ok;
     }
 
+    @Override
     public String toString() {
         return getPath();
     }
 
+    @Override
     public URL toURL() throws MalformedURLException {
         String urlName = "file://" + remoteFile.getAbsolutePathPlusConnection().replace('\\', '/'); //$NON-NLS-1$
         if (remoteFile.isDirectory() && !urlName.endsWith("/")) {
@@ -464,7 +496,9 @@ public class UniFilePlus extends File {
         try {
             remoteFile = remoteFile.getParentRemoteFileSubSystem().getRemoteFileObject(
                     remoteFile.getAbsolutePath(), new NullProgressMonitor());
-        } catch (Exception e) {/**/
+        } catch (SystemMessageException e) {
+            FileSyncPlugin.log("Error while syncing with remote file " + remoteFile, e,
+                    IStatus.WARNING);
         }
     }
 }

@@ -34,7 +34,7 @@ public interface FsPathUtil {
 
     /**
      * rse://local//UncServer//UncName//path did copy it to c:\UncServer\UncName\path under windows
-     * 
+     *
      * @param path
      * @return true if rse-uri and isUnc(). false otherwiser
      */
@@ -42,7 +42,7 @@ public interface FsPathUtil {
 
     /**
      * to fully qualified String
-     * 
+     *
      * @param path
      * @return the uri if path instanceof FSUriPath. path.toString() otherwise.
      */

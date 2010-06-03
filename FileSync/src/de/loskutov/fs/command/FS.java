@@ -24,7 +24,7 @@ import de.loskutov.fs.utils.RseSimpleUtils;
 
 /**
  * Utility class for file system related operations.
- * 
+ *
  * @author Andrei
  */
 public final class FS {
@@ -46,7 +46,7 @@ public final class FS {
 
     /**
      * Single file/directory create operation.
-     * 
+     *
      * @param destination
      * @param isFile
      * @return true if source was successfully created or if it was already existing
@@ -97,7 +97,7 @@ public final class FS {
      * If "recursive" is false, then this is a single file/directory delete operation. Directory
      * should be empty before it can be deleted. If "recursive" is true, then all children will be
      * deleted too.
-     * 
+     *
      * @param source
      * @return true if source was successfully deleted or if it was not existing
      */
@@ -131,7 +131,7 @@ public final class FS {
 
     /**
      * Single file copy operation.
-     * 
+     *
      * @param source
      *            - should be file only
      * @param destination

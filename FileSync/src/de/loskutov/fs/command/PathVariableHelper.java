@@ -28,7 +28,7 @@ import de.loskutov.fs.FileSyncPlugin;
  * one single path entry, because it maintains a list of resolved variables for this path and their
  * substitutes. Using same helper for different paths can lead to unexpected issues if at least one
  * of the paths contains a variable part.
- * 
+ *
  * @author Andrei
  */
 public class PathVariableHelper {
@@ -118,7 +118,7 @@ public class PathVariableHelper {
      * "Window ->Preferences ->General ->Workspace->Linked resources-> Defined path variables".
      * Usage is restricted to the first path segment only, see Javadoc for
      * {@link IPathVariableManager#resolvePath(org.eclipse.core.runtime.IPath)}.
-     * 
+     *
      * @param path
      */
     public IPath resolveVariable(String path, IPath projectPath) {
@@ -241,7 +241,7 @@ public class PathVariableHelper {
     /**
      * Removes count segments *WITH* the device id. This is different to implementation from Path
      * class.
-     * 
+     *
      * @param path
      * @param segmentCount
      */

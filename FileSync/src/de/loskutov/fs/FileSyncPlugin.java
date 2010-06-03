@@ -17,7 +17,6 @@ import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
-import org.osgi.framework.BundleContext;
 import org.osgi.framework.Version;
 
 import de.loskutov.fs.builder.SyncWizard;
@@ -128,10 +127,6 @@ public class FileSyncPlugin extends AbstractUIPlugin {
         }
         // TODO error message
         return null;
-    }
-
-    public void start(BundleContext context) throws Exception {
-        super.start(context);
     }
 
     public boolean isRseAvailable() {

@@ -26,16 +26,16 @@ public class TypedElementSelectionValidator implements ISelectionStatusValidator
     private final IStatus fgErrorStatus= new StatusInfo(IStatus.ERROR, ""); //$NON-NLS-1$
     private final IStatus fgOKStatus= new StatusInfo();
 
-    private final Class[] fAcceptedTypes;
+    private final Class<?>[] fAcceptedTypes;
     private final boolean fAllowMultipleSelection;
-    private final Collection fRejectedElements;
+    private final Collection<?> fRejectedElements;
 
     /**
      * @param acceptedTypes The types accepted by the validator
      * @param allowMultipleSelection If set to <code>true</code>, the validator
      * allows multiple selection.
      */
-    public TypedElementSelectionValidator(Class[] acceptedTypes, boolean allowMultipleSelection) {
+    public TypedElementSelectionValidator(Class<?>[] acceptedTypes, boolean allowMultipleSelection) {
         this(acceptedTypes, allowMultipleSelection, null);
     }
 
@@ -45,16 +45,13 @@ public class TypedElementSelectionValidator implements ISelectionStatusValidator
      * allows multiple selection.
      * @param rejectedElements A list of elements that are not accepted
      */
-    public TypedElementSelectionValidator(Class[] acceptedTypes, boolean allowMultipleSelection, Collection rejectedElements) {
+    public TypedElementSelectionValidator(Class<?>[] acceptedTypes, boolean allowMultipleSelection, Collection<?> rejectedElements) {
         Assert.isNotNull(acceptedTypes);
         fAcceptedTypes= acceptedTypes;
         fAllowMultipleSelection= allowMultipleSelection;
         fRejectedElements= rejectedElements;
     }
 
-    /*
-     * @see org.eclipse.ui.dialogs.ISelectionValidator#isValid(java.lang.Object)
-     */
     public IStatus validate(Object[] elements) {
         if (isValid(elements)) {
             return fgOKStatus;

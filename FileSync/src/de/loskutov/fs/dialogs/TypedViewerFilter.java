@@ -19,14 +19,14 @@ import org.eclipse.jface.viewers.ViewerFilter;
  */
 public class TypedViewerFilter extends ViewerFilter {
 
-    private final Class[] fAcceptedTypes;
+    private final Class<?>[] fAcceptedTypes;
     private final Object[] fRejectedElements;
 
     /**
      * Creates a filter that only allows elements of gives types.
      * @param acceptedTypes The types of accepted elements
      */
-    public TypedViewerFilter(Class[] acceptedTypes) {
+    public TypedViewerFilter(Class<?>[] acceptedTypes) {
         this(acceptedTypes, null);
     }
 
@@ -37,15 +37,13 @@ public class TypedViewerFilter extends ViewerFilter {
      * @param rejectedElements Element equals to the rejected elements are
      * filtered out
      */
-    public TypedViewerFilter(Class[] acceptedTypes, Object[] rejectedElements) {
+    public TypedViewerFilter(Class<?>[] acceptedTypes, Object[] rejectedElements) {
         Assert.isNotNull(acceptedTypes);
         fAcceptedTypes= acceptedTypes;
         fRejectedElements= rejectedElements;
     }
 
-    /**
-     * @see ViewerFilter#select(org.eclipse.jface.viewers.Viewer, java.lang.Object, java.lang.Object)
-     */
+    @Override
     public boolean select(Viewer viewer, Object parentElement, Object element) {
         if (fRejectedElements != null) {
             for (int i= 0; i < fRejectedElements.length; i++) {

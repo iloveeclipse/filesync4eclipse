@@ -14,22 +14,14 @@ import java.util.Comparator;
 /**
  * @author Andrei
  */
-public class PathListElementComparator implements Comparator, Serializable {
+public class PathListElementComparator implements Comparator<PathListElement>, Serializable {
 
-    /**
-     * default
-     */
     private static final long serialVersionUID = -6143935945692635274L;
 
-    /* (non-Javadoc)
-     * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
-     */
-    public int compare(Object o1, Object o2) {
-        if(!(o1 instanceof PathListElement) || !(o2 instanceof PathListElement)){
+    public int compare(PathListElement path1, PathListElement path2) {
+        if((path1 == null) || (path2 == null)){
             return 0;
         }
-        PathListElement path1 = (PathListElement) o1;
-        PathListElement path2 = (PathListElement) o2;
         if(path1.getPath() != null && path2.getPath() != null){
             return path1.getPath().toString().compareTo(path2.getPath().toString());
         }

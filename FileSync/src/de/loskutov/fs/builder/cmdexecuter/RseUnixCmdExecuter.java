@@ -164,12 +164,12 @@ public class RseUnixCmdExecuter implements CmdExecuter {
     }
 
     /**
-     * @link {@link DelayedSyncWizard#ERROR_SIGNAL}
      * @param cmdShell
      * @param searchedLine
      * @param timeOutInMillis
      * @param maxLines
      * @return
+     * @see CmdExecuter#ERROR_SIGNAL
      */
     private static List<String> getOutputUntil(IRemoteCommandShell cmdShell,
             String searchedLine, long timeOutInMillis, int maxLines) {
