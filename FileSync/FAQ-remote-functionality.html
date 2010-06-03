@@ -38,42 +38,39 @@ RSE-eclipse-view "remote systems".</li>
   <li>Go to the FileSync-properties of your
 eclipse-project.</li>
   <li>Enter a valid remote-location-URI in
-the field "default target folder:"</li>
+the field "default target folder:"
   <ul>
-    <li>Examples of valid URIs:</li>
+    <li>Examples of valid URIs:
     <ul>
       <li>rse://RSE-connection-linux/home/username/remotefolder/for/filesync</li>
       <li>rse://RSE-connection-windows/c:/remotefolder/for/filesync</li>
     </ul>
+    </li>
     <li>"rse"
 is a fix prefix that tells FileSync to use the remote functionality.</li>
     <li>The
 "host" (RSE-connection-linux/RSE-connection-windows) is the connection
 entered at step 2.</li>
   </ul>
+  </li>
   <li>If you have many files in a
 project and the connection to the remote system is slow, it can help to
 enable the "delayed copy/delete"-property.</li>
 </ol>
 <h4><a class="mozTocH4" name="How_to_change_the_unzip-command"></a>How to change the unzip-command?</h4>
 <ol>
-  <li>Open the rse-eclipse-view "remote
-systems".</li>
+  <li>Open the rse-eclipse-view "remote systems".</li>
   <li>Unfold the specific rse-connection.</li>
-  <li>Right-click on the "*Shells"-label
-(e.g. "Ssh shells" or "Local shells")</li>
-  <li>Choose Properties from the
-context-menu.</li>
-  <li>Add the environment variable
-"FILESYNC_UNZIP_CMD" with the new unzip-command as value.</li>
-</ol>
+  <li>Right-click on the "*Shells"-label (e.g. "Ssh shells" or "Local shells")</li>
+  <li>Choose Properties from the context-menu.</li>
+  <li>Add the environment variable "FILESYNC_UNZIP_CMD" with the new unzip-command as value.
 <ul>
-  <ul>
     <li>Examples: "unzip -o", "jar -xfv"</li>
     <li>Important:&nbsp;The command <span style="font-weight: bold;">must not</span> prompt for
 user-input as FileSync can't provide this.</li>
   </ul>
-</ul>
+  </li>
+</ol>
 <h4><a class="mozTocH4" name="Delayed_copydelete_fails._Why"></a>Delayed copy/delete fails. Why?</h4>
 A delayed copy requires a program to
 decompress a zip-file. The default-command for linux on the remote-site
