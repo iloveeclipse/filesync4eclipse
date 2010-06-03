@@ -36,7 +36,7 @@ public class FileSyncPlugin extends AbstractUIPlugin {
 
     public static final String PLUGIN_ID = "de.loskutov.FileSync";
 
-    private Boolean rseAvailable = null;
+    private volatile Boolean rseAvailable;
 
     private FsPathUtil fsPathUtil;
 

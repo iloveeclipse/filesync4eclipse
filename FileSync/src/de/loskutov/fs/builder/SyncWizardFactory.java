@@ -9,9 +9,6 @@
  *******************************************************************************/
 package de.loskutov.fs.builder;
 
-import org.eclipse.core.runtime.IStatus;
-
-import de.loskutov.fs.FileSyncPlugin;
 import de.loskutov.fs.command.FsPathUtil;
 import de.loskutov.fs.command.FsPathUtilImpl;
 
@@ -22,9 +19,9 @@ public class SyncWizardFactory {
 
     private static SyncWizardFactory instance;
 
-    private boolean errorOnLoadOfDelayedSyncWizard = false;
+    private boolean errorOnLoadOfDelayedSyncWizard;
 
-    private boolean errorOnLoadOfFsPathUtil = false;
+    private boolean errorOnLoadOfFsPathUtil;
 
     private SyncWizardFactory() {
         /* singleton with access via #getInstance() */
@@ -39,28 +36,13 @@ public class SyncWizardFactory {
 
     public SyncWizard createSyncWizard() {
         if (!errorOnLoadOfDelayedSyncWizard && !errorOnLoadOfFsPathUtil) {
-            boolean error = false;
             try {
                 Class<?> wizardClass = Class.forName(DELAYEDSYNCWIZARD_CLASS_NAME, true, getClass()
                         .getClassLoader());
-                SyncWizard w = (SyncWizard) wizardClass.newInstance();
-                return w;
-            } catch (NoClassDefFoundError e) {
-                FileSyncPlugin.log("Wizard not found: ", e, IStatus.WARNING);
-                error = true;
-            } catch (ClassNotFoundException e) {
-                FileSyncPlugin.log("Wizard not found: ", e, IStatus.WARNING);
-                error = true;
+                return (SyncWizard) wizardClass.newInstance();
             } catch (Throwable e) {
-                FileSyncPlugin.log("Wizard: ", e, IStatus.WARNING);
-                error = true;
+                errorOnLoadOfDelayedSyncWizard = true;
             }
-            if (error == true) {
-                FileSyncPlugin.log("Wizard '" + DELAYEDSYNCWIZARD_CLASS_NAME
-                        + "' not loaded. Load '" + SyncWizard.class.getCanonicalName(), null,
-                        IStatus.INFO);
-            }
-            errorOnLoadOfDelayedSyncWizard = error;
         }
         return new SyncWizard();
     }
@@ -68,28 +50,13 @@ public class SyncWizardFactory {
     @SuppressWarnings("unchecked")
     public FsPathUtil createFsPathUtil() {
         if (!errorOnLoadOfDelayedSyncWizard && !errorOnLoadOfFsPathUtil) {
-            boolean error = false;
             try {
                 Class<FsPathUtil> wizardClass = (Class<FsPathUtil>) Class.forName(
                         FS_PATH_UTIL_CLASS_NAME, true, getClass().getClassLoader());
-                FsPathUtil w = wizardClass.newInstance();
-                return w;
-            } catch (NoClassDefFoundError e) {
-                FileSyncPlugin.log("FsPathUtil not found: ", e, IStatus.WARNING);
-                error = true;
-            } catch (ClassNotFoundException e) {
-                FileSyncPlugin.log("FsPathUtil not found: ", e, IStatus.WARNING);
-                error = true;
+                return wizardClass.newInstance();
             } catch (Throwable e) {
-                FileSyncPlugin.log("FsPathUtil: ", e, IStatus.WARNING);
-                error = true;
+                errorOnLoadOfFsPathUtil = true;
             }
-            if (error == true) {
-                FileSyncPlugin.log("FsPathUtil '" + FS_PATH_UTIL_CLASS_NAME
-                        + "' not loaded. Load '" + FsPathUtil.class.getCanonicalName(), null,
-                        IStatus.INFO);
-            }
-            errorOnLoadOfFsPathUtil = error;
         }
         return new FsPathUtilImpl();
     }
