@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -64,7 +63,6 @@ public class BulkSyncWizard extends SyncWizard {
     private final Map<IPath, Set<DeleteFileRecord>> filesToDelete;
     protected boolean delayedCopyDelete;
 
-
     /**
      * Used via reflection
      */
@@ -78,9 +76,7 @@ public class BulkSyncWizard extends SyncWizard {
     public void setProjectProps(ProjectProperties props) throws IllegalArgumentException {
         super.setProjectProps(props);
         IEclipsePreferences preferences = props.getPreferences(false);
-        delayedCopyDelete = preferences.getBoolean(ProjectProperties.KEY_DELAYED_COPY_DELETE,
-                true);
-
+        delayedCopyDelete = preferences.getBoolean(ProjectProperties.KEY_DELAYED_COPY_DELETE, true);
     }
 
     @Override
@@ -99,19 +95,17 @@ public class BulkSyncWizard extends SyncWizard {
             logUncRseMsg(rootPath);
         }
 
-        for (int i = 0; i < mappings.length; i++) {
-            FileMapping fm = mappings[i];
+        for (FileMapping fm : mappings) {
             IPath destinationPath = getDestinationRootPath(fm);
             if (!destinationPath.equals(rootPath)) {
                 if (isDelayedCopyDelete() && isWindowsUncIssue(destinationPath)) {
                     FileSyncPlugin
-                    .log(
-                            "Delayed-FileSync-Option for project '"
-                            + projectProps.getProject().getName()
-                            + "' and FileMapping '"
-                            + fm
-                            + "'ignored. @see http://support.microsoft.com/kb/156276/en for details.",
-                            null, IStatus.INFO);
+                            .log("Bulk-FileSync-Option for project '"
+                                    + projectProps.getProject().getName()
+                                    + "' and FileMapping '"
+                                    + fm
+                                    + "'ignored. @see http://support.microsoft.com/kb/156276/en for details.",
+                                    null, IStatus.INFO);
                 }
                 if (DefaultPathHelper.getPathHelper().isRseUnc(destinationPath)) {
                     logUncRseMsg(destinationPath);
@@ -127,42 +121,37 @@ public class BulkSyncWizard extends SyncWizard {
 
     private void logUncRseMsg(IPath destinationPath) {
         String msg = "UNC via RSE is not supported yet (Path '"
-            + DefaultPathHelper.getPathHelper().toFqString(
-                    destinationPath) + "') in Project '"
-                    + projectProps.getProject().getName() + "'.";
+                + DefaultPathHelper.getPathHelper().toFqString(destinationPath) + "') in Project '"
+                + projectProps.getProject().getName() + "'.";
         FileSyncPlugin.log(msg, null, IStatus.WARNING);
     }
 
     @Override
-    public boolean commit() {
+    public boolean commit(IProgressMonitor monitor) {
 
         boolean deleteOk = true;
-        for (Iterator<Entry<IPath, Set<DeleteFileRecord>>> iterator = filesToDelete.entrySet().iterator(); iterator.hasNext();) {
-            Entry<IPath, Set<DeleteFileRecord>> e = iterator.next();
-            IPath destinationRoot = e.getKey();
-            Set<DeleteFileRecord> filesToDeleteSet = e.getValue();
-            deleteOk = commitDeletes(destinationRoot, filesToDeleteSet) && deleteOk;
+        for (Entry<IPath, Set<DeleteFileRecord>> entry : filesToDelete.entrySet()) {
+            IPath destinationRoot = entry.getKey();
+            Set<DeleteFileRecord> filesToDeleteSet = entry.getValue();
+            deleteOk = commitDeletes(destinationRoot, filesToDeleteSet, monitor) && deleteOk;
         }
 
         boolean copyOk = deleteOk;
-        for (Iterator<Entry<IPath, Set<FileRecord>>> iterator = sourceFiles.entrySet().iterator(); iterator.hasNext();) {
-            Entry<IPath, Set<FileRecord>> e = iterator.next();
-            IPath destinationRoot = e.getKey();
-            Set<FileRecord> sourceFilesSet = e.getValue();
-            copyOk = commitFiles(destinationRoot, sourceFilesSet) && copyOk;
+        for (Entry<IPath, Set<FileRecord>> entry : sourceFiles.entrySet()) {
+            IPath destinationRoot = entry.getKey();
+            Set<FileRecord> sourceFilesSet = entry.getValue();
+            copyOk = commitFiles(destinationRoot, sourceFilesSet, monitor) && copyOk;
         }
         return copyOk;
     }
 
-    private boolean commitDeletes(IPath destinationRoot, Set<DeleteFileRecord> filesToDeleteSet) {
+    private boolean commitDeletes(IPath destinationRoot, Set<DeleteFileRecord> filesToDeleteSet,
+            IProgressMonitor monitor) {
         if (filesToDeleteSet.size() == 0) {
             return true;
         }
-        CmdExecuter cmdExecuter = getCmdExecuter(destinationRoot);
-
-
+        ICommandExecutor cmdExecuter = getCmdExecuter(destinationRoot);
         try {
-
             String delPrefix = FILE_PREFIX + "filesToDeleteSet";
             String delSuffix = cmdExecuter.getFilesToDeleteSuffix();
             String randomName = RseSimpleUtils.getRandomName(delPrefix, delSuffix);
@@ -173,22 +162,22 @@ public class BulkSyncWizard extends SyncWizard {
             }
 
             OutputStream out = RseUtils.getOutputStream(destinationFile);
-            RseSimpleUtils.write(out, cmdExecuter.toStringsForDelete(filesToDeleteSet), cmdExecuter
-                    .getLineSeparator(), FS.CLOSE_WHEN_DONE);
+            RseSimpleUtils.write(out, cmdExecuter.toStringsForDelete(filesToDeleteSet),
+                    cmdExecuter.getLineSeparator(), FS.CLOSE_WHEN_DONE);
 
             if (DEBUG) {
-
                 File tmpFile = File.createTempFile(delPrefix, delSuffix);
                 tmpFile.deleteOnExit();
 
                 FileOutputStream outF = new FileOutputStream(tmpFile);
-                RseSimpleUtils.write(outF, cmdExecuter.toStringsForDelete(filesToDeleteSet), cmdExecuter
-                        .getLineSeparator(), FS.CLOSE_WHEN_DONE);
+                RseSimpleUtils.write(outF, cmdExecuter.toStringsForDelete(filesToDeleteSet),
+                        cmdExecuter.getLineSeparator(), FS.CLOSE_WHEN_DONE);
                 FileSyncPlugin.log(tmpFile + " created for Debug-Delete-Output for destination: '"
                         + destinationRoot.toString() + "'", null, IStatus.OK);
             }
 
-            boolean executed = cmdExecuter.execute(cmdExecuter.getDeleteCommands(destinationFile));
+            boolean executed = cmdExecuter.execute(cmdExecuter.getDeleteCommand(destinationFile),
+                    monitor);
 
             boolean result = FS.delete(destinationFile, false);
             if (!result && destinationFile.isFile()) {
@@ -202,10 +191,10 @@ public class BulkSyncWizard extends SyncWizard {
         }
     }
 
-    private boolean commitFiles(IPath destinationRoot, Set<FileRecord> sourceFilesSet) {
+    private boolean commitFiles(IPath destinationRoot, Set<FileRecord> sourceFilesSet,
+            IProgressMonitor monitor) {
         try {
-
-            if (sourceFilesSet.size() == 0) {
+            if (sourceFilesSet.isEmpty()) {
                 return true;
             }
 
@@ -219,9 +208,9 @@ public class BulkSyncWizard extends SyncWizard {
 
             if (!created) {
                 FileSyncPlugin
-                .log("Failed to create new external resource '" + destinationFile
-                        + "', for destinationRoot '" + destinationRoot + "'", null,
-                        IStatus.WARNING);
+                        .log("Failed to create new external resource '" + destinationFile
+                                + "', for destinationRoot '" + destinationRoot + "'", null,
+                                IStatus.WARNING);
                 return created;
             }
 
@@ -238,9 +227,9 @@ public class BulkSyncWizard extends SyncWizard {
                         + destinationRoot.toString() + "' and project '"
                         + projectProps.getProject().getName() + "'", null, IStatus.OK);
             }
-            CmdExecuter cmdExecuter = getCmdExecuter(destinationRoot);
-            boolean executedSuccessful = cmdExecuter.execute(cmdExecuter
-                    .getUnzipCommands(destinationFile));
+            ICommandExecutor cmdExecuter = getCmdExecuter(destinationRoot);
+            boolean executedSuccessful = cmdExecuter.execute(
+                    cmdExecuter.getUnzipCommand(destinationFile), monitor);
 
             boolean result = FS.delete(destinationFile, false);
             if (!result && destinationFile.isFile()) {
@@ -268,18 +257,18 @@ public class BulkSyncWizard extends SyncWizard {
         File rootFile = rootPath == null ? null : rootPath.toFile();
 
         boolean commonState = true;
-        for (int i = 0; i < mappingList.size(); i++) {
-            FileMapping fm = mappingList.get(i);
+        for (FileMapping fm : mappingList) {
             IPath relativePath = getRelativePath(sourceRoot, fm);
             if (isDelayedCopyDelete(fm)) {
                 Set<DeleteFileRecord> deleteFilesSet = getDeleteFilesSet(getDestinationRootPath(fm));
-                deleteFilesSet.add(new DeleteFileRecord(getDestinationFile(
-                        sourceRoot, relativePath, fm).getAbsolutePath(), isContainer(sourceRoot)))
-                        ;
+                File destinationFile = getDestinationFile(sourceRoot, relativePath, fm);
+                DeleteFileRecord deleteFileRecord = new DeleteFileRecord(
+                        destinationFile.getAbsolutePath(), isContainer(sourceRoot));
+                deleteFilesSet.add(deleteFileRecord);
             } else {
                 commonState = delete(sourceRoot, rootFile, relativePath, fm, clean, monitor)
-                && commonState;
-                if(commonState) {
+                        && commonState;
+                if (commonState) {
                     deleteParent(sourceRoot, clean, monitor, fm, rootFile, relativePath);
                 }
             }
@@ -300,17 +289,16 @@ public class BulkSyncWizard extends SyncWizard {
 
         boolean commonState = true;
         File sourceFile = getSourceFile(sourceRoot);
-        for (int i = 0; i < mappingList.size(); i++) {
-            FileMapping fm = mappingList.get(i);
+        for (FileMapping fm : mappingList) {
             IPath relativePath = getRelativePath(sourceRoot, fm);
             if (isDelayedCopyDelete(fm)) {
                 if (!isContainer(sourceRoot)) {
                     commonState = addSourceFile(fm, relativePath, sourceRoot, sourceFile)
-                    && commonState;
+                            && commonState;
                 }
             } else {
                 commonState = copy(sourceRoot, sourceFile, relativePath, fm, monitor)
-                && commonState;
+                        && commonState;
             }
         }
 
@@ -319,7 +307,6 @@ public class BulkSyncWizard extends SyncWizard {
                     + "mapped in project '" + sourceRoot.getProject().getName() + "'", null,
                     IStatus.WARNING);
         }
-
         return true;
     }
 
@@ -332,7 +319,7 @@ public class BulkSyncWizard extends SyncWizard {
         IPath destinationRoot = getDestinationRootPath(fm);
         Set<FileRecord> sourceFilesSet = getSourceFilesSet(destinationRoot);
         return sourceFilesSet.add(new FileRecord(sourceFile, relativePath.toString())
-        .setCopyDelegate(cd));
+                .setCopyDelegate(cd));
     }
 
     private Set<FileRecord> getSourceFilesSet(IPath destinationRoot) {
@@ -347,21 +334,22 @@ public class BulkSyncWizard extends SyncWizard {
     private Set<DeleteFileRecord> getDeleteFilesSet(IPath destinationRoot) {
         Set<DeleteFileRecord> filesToDeleteSet = filesToDelete.get(destinationRoot);
         if (filesToDeleteSet == null) {
+            // TODO why reverse order is important?
             filesToDeleteSet = new TreeSet<DeleteFileRecord>(Collections.reverseOrder());
             filesToDelete.put(destinationRoot, filesToDeleteSet);
         }
         return filesToDeleteSet;
     }
 
-    public CmdExecuter getCmdExecuter(IPath destinationRoot) {
-        return CmdExecuterFactory.getInstance().getCmdExecuter(destinationRoot);
+    private ICommandExecutor getCmdExecuter(IPath destinationRoot) {
+        return CommandExecutorFactory.getInstance().getCmdExecuter(destinationRoot);
     }
 
     /**
      * @param fm
      * @return delayedCopyDelete
      */
-    public boolean isDelayedCopyDelete(FileMapping fm) {
+    private boolean isDelayedCopyDelete(FileMapping fm) {
         if (isWindowsUncIssue(getDestinationRootPath(fm))) {
             return false;
         }
@@ -373,16 +361,16 @@ public class BulkSyncWizard extends SyncWizard {
      * @param path
      * @return
      */
-    public boolean isWindowsUncIssue(IPath path) {
+    private boolean isWindowsUncIssue(IPath path) {
         return path != null && path.isUNC() && FS.isWin32();
 
     }
 
-    public boolean isDelayedCopyDelete() {
+    private boolean isDelayedCopyDelete() {
         return delayedCopyDelete;
     }
 
-    public static class DeleteFileRecord implements Comparable<DeleteFileRecord>{
+    public static class DeleteFileRecord implements Comparable<DeleteFileRecord> {
 
         private final String targetName;
         private final boolean directory;
@@ -391,11 +379,10 @@ public class BulkSyncWizard extends SyncWizard {
             return targetName;
         }
 
-        public DeleteFileRecord(String targetName, boolean directory){
+        public DeleteFileRecord(String targetName, boolean directory) {
             this.targetName = targetName;
             this.directory = directory;
         }
-
 
         public boolean isDirectory() {
             return directory;

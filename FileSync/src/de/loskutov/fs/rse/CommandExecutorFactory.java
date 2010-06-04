@@ -24,25 +24,25 @@ import de.loskutov.fs.rse.utils.RemoteFileImpl;
 import de.loskutov.fs.rse.utils.RseSimpleUtils;
 import de.loskutov.fs.rse.utils.RseUtils;
 
-public class CmdExecuterFactory {
+public class CommandExecutorFactory {
 
-    private static CmdExecuterFactory instance;
+    private static CommandExecutorFactory instance;
 
-    private final Map<IPath, CmdExecuter> cmdExecuterMap = new HashMap<IPath, CmdExecuter>();
+    private final Map<IPath, ICommandExecutor> cmdExecuterMap = new HashMap<IPath, ICommandExecutor>();
 
-    private CmdExecuterFactory() {
+    private CommandExecutorFactory() {
         /* Singleton */
     }
 
-    public static CmdExecuterFactory getInstance() {
+    public static synchronized CommandExecutorFactory getInstance() {
         if (instance == null) {
-            instance = new CmdExecuterFactory();
+            instance = new CommandExecutorFactory();
         }
         return instance;
     }
 
-    public CmdExecuter getCmdExecuter(IPath destinationRoot) {
-        CmdExecuter ret = cmdExecuterMap.get(destinationRoot);
+    public ICommandExecutor getCmdExecuter(IPath destinationRoot) {
+        ICommandExecutor ret = cmdExecuterMap.get(destinationRoot);
         if (ret == null) {
             File destinationFile = SyncWizard.getDestinationFile(destinationRoot);
             IRemoteFile remoteFile = null;
@@ -58,12 +58,12 @@ public class CmdExecuterFactory {
             }
 
             if (RseUtils.isUnixStyle(remoteFile)) {
-                ret = new RseUnixCmdExecuter(remoteFile);
+                ret = new RemoteUnixCommandExecutor(remoteFile);
             } else if (RseUtils.isWindows(remoteFile)) {
                 if (RseSimpleUtils.isRseFile(destinationFile)) {
-                    ret = new RseWindowsCmdExecuter(remoteFile);
+                    ret = new RemoteWindowsCommandExecutor(remoteFile);
                 } else {
-                    ret = new WindowsLocalCmdExecuter(remoteFile);
+                    ret = new LocalWindowsCommandExecutor(remoteFile);
                 }
             } else {
                 throw new FileSyncException("UnsupportedOperationSystem (RSE Host '"

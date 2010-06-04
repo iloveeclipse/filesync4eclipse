@@ -21,7 +21,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-
 /**
  * without references to any rse=packages
  */
@@ -42,7 +41,7 @@ public class RseSimpleUtils {
 
     /**
      * copied and modified from java.io.File.generateFile
-     *
+     * 
      * @param prefix
      * @param suffix
      * @return
@@ -57,10 +56,13 @@ public class RseSimpleUtils {
 
         return prefix + Long.toString(n) + (suffix == null ? ".tmp" : suffix);
     }
+
     public static void write(OutputStream out, Collection<?> collection, boolean closeStreamWhenDone) {
-        write(out, collection, null, closeStreamWhenDone );
+        write(out, collection, null, closeStreamWhenDone);
     }
-    public static void write(OutputStream out, Collection<?> collection, String lineDelimiter, boolean closeStreamWhenDone) {
+
+    public static void write(OutputStream out, Collection<?> collection, String lineDelimiter,
+            boolean closeStreamWhenDone) {
         PrintWriter writer = new PrintWriter(out);
 
         for (Iterator<?> iterator = collection.iterator(); iterator.hasNext();) {
@@ -70,9 +72,9 @@ public class RseSimpleUtils {
             } else {
                 writer.print(object.toString());
             }
-            if(lineDelimiter==null){
+            if (lineDelimiter == null) {
                 writer.println();
-            }else{
+            } else {
                 writer.print(lineDelimiter);
             }
 
@@ -82,11 +84,10 @@ public class RseSimpleUtils {
         }
     }
 
-    public static String[] toEnvArray(Map<String,String> env) {
+    public static String[] toEnvArray(Map<String, String> env) {
         String[] ret = new String[env.size()];
         int i = 0;
-        for (Iterator<Entry<String,String>> iterator = env.entrySet().iterator(); iterator.hasNext();) {
-            Entry<String,String> entry = iterator.next();
+        for (Entry<String, String> entry : env.entrySet()) {
             String key = entry.getKey();
             String value = entry.getValue();
             ret[i++] = key + "=" + value;
@@ -134,7 +135,5 @@ public class RseSimpleUtils {
         }
 
     }
-
-
 
 }

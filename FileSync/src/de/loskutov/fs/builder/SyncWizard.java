@@ -41,13 +41,13 @@ import de.loskutov.fs.command.PathVariableHelper;
 /**
  * Wizard should has knowledge to allow/diasllow/perform all required sync operations for particular
  * project resource
- *
+ * 
  * @author Andrei
  */
 public class SyncWizard {
 
     protected static final IContentType TEXT_TYPE = Platform.getContentTypeManager()
-    .getContentType("org.eclipse.core.runtime.text"); //$NON-NLS-1$
+            .getContentType("org.eclipse.core.runtime.text"); //$NON-NLS-1$
 
     /**
      * all known file mappings for this wizard
@@ -190,7 +190,7 @@ public class SyncWizard {
 
     /**
      * Performs all required operations to sync given delta with target directory
-     *
+     * 
      * @param delta
      * @param monitor
      * @return true only if this operation was successfull for all mapped files
@@ -232,7 +232,7 @@ public class SyncWizard {
     /**
      * Delete target directory / file first (if "deleteDestinationOnFullBuild" is true), then copy
      * source file/dir
-     *
+     * 
      * @param res
      * @param monitor
      * @return true only if this operation was successfull
@@ -259,7 +259,7 @@ public class SyncWizard {
 
     public void cleanUp(IProgressMonitor monitor) {
         if (needRefreshAffectedProjects) {
-            List<IContainer>containers = getAffectedResources();
+            List<IContainer> containers = getAffectedResources();
             for (int i = 0; i < containers.size(); i++) {
                 IContainer container = containers.get(i);
                 try {
@@ -267,8 +267,9 @@ public class SyncWizard {
                     // so that we could have "refresh forever"
                     container.refreshLocal(IResource.DEPTH_INFINITE, monitor);
                 } catch (CoreException e) {
-                    FileSyncPlugin.log("Failed to refresh destination folder '"
-                            + container.getName() + "' after file sync", e, IStatus.WARNING);
+                    FileSyncPlugin.log(
+                            "Failed to refresh destination folder '" + container.getName()
+                                    + "' after file sync", e, IStatus.WARNING);
                 }
             }
         }
@@ -297,7 +298,7 @@ public class SyncWizard {
         }
         if (usesDefaultOutputFolder() && rootPath != null && rootPath.toFile() != null) {
             IContainer[] containers = ResourcesPlugin.getWorkspace().getRoot()
-            .findContainersForLocationURI(URIUtil.toURI(rootPath.makeAbsolute()));
+                    .findContainersForLocationURI(URIUtil.toURI(rootPath.makeAbsolute()));
             if (containers.length > 0) {
                 for (int i = 0; i < containers.length; i++) {
                     if (!list.contains(containers[i])) {
@@ -311,7 +312,7 @@ public class SyncWizard {
 
     /**
      * Copy file(s) mapped to given resource according to existing project file mappings
-     *
+     * 
      * @param sourceRoot
      * @param monitor
      * @return true only if this operation was successfull for all mapped files
@@ -324,8 +325,8 @@ public class SyncWizard {
     protected boolean copy(IResource sourceRoot, IProgressMonitor monitor) {
         IPath relativePath = sourceRoot.getProjectRelativePath();
 
-        List<FileMapping> mappingList = getMappings(relativePath, sourceRoot.getType() == IResource.FOLDER,
-                false);
+        List<FileMapping> mappingList = getMappings(relativePath,
+                sourceRoot.getType() == IResource.FOLDER, false);
 
         if (mappingList == null) {
             return false;
@@ -365,7 +366,7 @@ public class SyncWizard {
             commonState = createDir(sourceRoot, destinationFile, monitor) && commonState;
         } else {
             commonState = copy(sourceRoot, sourceFile, destinationFile, relativePath, fm)
-            && commonState;
+                    && commonState;
         }
         return commonState;
     }
@@ -459,9 +460,9 @@ public class SyncWizard {
             FileSyncPlugin.log("Failed to delete the external resource '" + destinationFile
                     + "', mapped in project '" + sourceRoot.getProject().getName() + "'", null,
                     IStatus.WARNING);
-        }else{
+        } else {
             deleteParent(sourceRoot, clean, monitor, fm, rootFile, relativePath);
-            result=true;
+            result = true;
         }
 
         return result;
@@ -469,7 +470,7 @@ public class SyncWizard {
 
     /**
      * Deletes file(s) mapped to given resource according to existing project file mappings
-     *
+     * 
      * @param sourceRoot
      * @param clean
      *            true to delete all children of given resource
@@ -478,8 +479,8 @@ public class SyncWizard {
      */
     protected boolean delete(IResource sourceRoot, boolean clean, IProgressMonitor monitor) {
         IPath relativePath = sourceRoot.getProjectRelativePath();
-        List<FileMapping> mappingList = getMappings(relativePath, sourceRoot.getType() == IResource.FOLDER,
-                clean);
+        List<FileMapping> mappingList = getMappings(relativePath,
+                sourceRoot.getType() == IResource.FOLDER, clean);
         if (mappingList == null) {
             return true;
         }
@@ -493,7 +494,7 @@ public class SyncWizard {
             }
 
             commonState = delete(sourceRoot, rootFile, relativePath, fm, clean, monitor)
-            && commonState;
+                    && commonState;
 
         }
 
@@ -548,7 +549,7 @@ public class SyncWizard {
     /**
      * Check if given resource is in included and not in excluded entries patterns in any one of
      * known project files mappings.
-     *
+     * 
      * @param resource
      * @return true
      */
@@ -564,7 +565,7 @@ public class SyncWizard {
     /**
      * Check if given path is in included and not in excluded entries patterns in any one of known
      * project files mappings.
-     *
+     * 
      * @param path
      * @param isFolder
      * @return true
@@ -597,12 +598,12 @@ public class SyncWizard {
 
     /*
      * Copy from org.eclipse.jdt.internal.core.util.Util
-     *
+     * 
      * Returns whether the given resource path matches one of the inclusion/exclusion patterns.
      * NOTE: should not be asked directly using pkg root pathes
-     *
+     * 
      * @see IClasspathEntry#getInclusionPatterns
-     *
+     * 
      * @see IClasspathEntry#getExclusionPatterns
      */
     public final static boolean isExcluded(IPath resourcePath, char[][] inclusionPatterns,
@@ -616,13 +617,13 @@ public class SyncWizard {
 
     /*
      * Copy from org.eclipse.jdt.internal.compiler.util.Util.isExcluded
-     *
+     * 
      * ToDO (philippe) should consider promoting it to CharOperation Returns whether the given
      * resource path matches one of the inclusion/exclusion patterns. NOTE: should not be asked
      * directly using pkg root pathes
-     *
+     * 
      * @see IClasspathEntry#getInclusionPatterns
-     *
+     * 
      * @see IClasspathEntry#getExclusionPatterns
      */
     public final static boolean isExcluded(char[] path, char[][] inclusionPatterns,
@@ -669,7 +670,7 @@ public class SyncWizard {
     /**
      * Check if given resource is in any (included or excluded) entries patterns in any one of known
      * project files mappings.
-     *
+     * 
      * @param resource
      * @return true
      */
@@ -684,7 +685,7 @@ public class SyncWizard {
 
     /**
      * Check if given path is in any one of known project files mappings.
-     *
+     * 
      * @param path
      * @param isFolder
      * @return true
@@ -747,8 +748,7 @@ public class SyncWizard {
      *            true if given path should denote folder
      * @return null if there no matching mappings, or not-empty list with FileMapping objects
      */
-    protected List<FileMapping> getMappings(IPath path, boolean isFolder,
-            boolean includeExcludes) {
+    protected List<FileMapping> getMappings(IPath path, boolean isFolder, boolean includeExcludes) {
         ArrayList<FileMapping> mappingList = null;
         for (int i = 0; i < mappings.length; i++) {
             FileMapping fm = mappings[i];
@@ -857,11 +857,10 @@ public class SyncWizard {
         if (rootPath != null && !SyncWizardFactory.getInstance().isRseAvailable()
                 && rootPath.toFile() == null) {
             FileSyncPlugin
-            .log(
-                    "FileSync for project '"
-                    + projectProps.getProject().getName()
-                    + "' ignored as RSE is not available and default target folder is an URI-expression with a scheme != 'file'.",
-                    null, IStatus.WARNING);
+                    .log("FileSync for project '"
+                            + projectProps.getProject().getName()
+                            + "' ignored as RSE is not available and default target folder is an URI-expression with a scheme != 'file'.",
+                            null, IStatus.WARNING);
         }
 
         for (int i = 0; i < mappings.length; i++) {
@@ -874,7 +873,7 @@ public class SyncWizard {
         return anyValid;
     }
 
-    public boolean commit() {
+    public boolean commit(IProgressMonitor monitor) {
         return true;
     }
 

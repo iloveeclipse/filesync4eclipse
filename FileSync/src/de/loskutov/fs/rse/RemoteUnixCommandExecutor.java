@@ -14,13 +14,12 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.rse.core.model.IHost;
 import org.eclipse.rse.core.subsystems.IRemoteSystemEnvVar;
 import org.eclipse.rse.shells.ui.RemoteCommandHelpers;
@@ -37,10 +36,16 @@ import de.loskutov.fs.rse.BulkSyncWizard.DeleteFileRecord;
 import de.loskutov.fs.rse.utils.RseSimpleUtils;
 import de.loskutov.fs.rse.utils.RseUtils;
 
-public class RseUnixCmdExecuter implements CmdExecuter {
+public class RemoteUnixCommandExecutor implements ICommandExecutor {
 
-    public static final String SINGLE_QUOTE = "'";
-    public static final String DOUBLE_QUOTE = "\"";
+    /**
+     * when using rse-shell to a linux-remote-system, there stderr-stream is part of stdout and
+     * can't be distinguished easily So this String should be added to a cmd in a way like
+     * "cmd || echo " + ERROR_SIGNAL //TODO: I didn't tested ssh to a windows-remote-system
+     */
+    private static final String ERROR_SIGNAL = "errorOfRseCommandWhichShouldBeAFairlyUniqueString";
+    private static final String SINGLE_QUOTE = "'";
+    protected static final String DOUBLE_QUOTE = "\"";
 
     private static final long NO_TIME_OUT_IN_MILLIS = -1;
     private static final String KEY_FILESYNC_UNZIP_CMD = "FILESYNC_UNZIP_CMD";
@@ -49,7 +54,7 @@ public class RseUnixCmdExecuter implements CmdExecuter {
     private final IRemoteCmdSubSystem cmdSS;
     protected final IRemoteFile workingDirectory;
 
-    public RseUnixCmdExecuter(IRemoteFile workingDirectory) {
+    public RemoteUnixCommandExecutor(IRemoteFile workingDirectory) {
         this.workingDirectory = workingDirectory;
         cmdSS = RemoteCommandHelpers.getCmdSubSystem(getHost());
     }
@@ -62,23 +67,25 @@ public class RseUnixCmdExecuter implements CmdExecuter {
         return workingDirectory.getLineSeparator();
     }
 
-    public boolean execute(String[] commands) {
+    public boolean execute(String command, IProgressMonitor monitor) {
         boolean ok = true;
-        IRemoteCommandShell cmdShell = getCmdShell(commands);
+        IRemoteCommandShell cmdShell = getCmdShell(command);
         try {
-            for (int i = 0; i < commands.length; i++) {
-                cmdSS.sendCommandToShell(commands[i], cmdShell, null);
+            if (monitor.isCanceled()) {
+                return false;
             }
+            cmdSS.sendCommandToShell(command, cmdShell, null);
             String eoCmd = "echo " + END_OF_RSE_COMMAND;
             cmdSS.sendCommandToShell(eoCmd, cmdShell, null);
-            getOutputUntil(cmdShell, END_OF_RSE_COMMAND, 5000, 2000);
+            // XXX should go to the props page
+            getOutputUntil(cmdShell, END_OF_RSE_COMMAND, 5000, 2000, monitor);
         } catch (Exception e) {
             FileSyncPlugin.log("not executed.", e, IStatus.WARNING);
             ok = false;
         } finally {
             cmdShell.removeOutput();
             try {
-                cmdSS.cancelShell(cmdShell, new NullProgressMonitor());
+                cmdSS.cancelShell(cmdShell, monitor);
                 cmdSS.removeShell(cmdShell);
             } catch (Exception e) {
                 FileSyncPlugin.log("CmdShell not closed: ", e, IStatus.WARNING);
@@ -89,50 +96,59 @@ public class RseUnixCmdExecuter implements CmdExecuter {
 
     }
 
-    public String getFileQuote(){
+    public String getFileQuote() {
         return SINGLE_QUOTE;
     }
 
-    public String[] getDeleteCommands(File contentFile) {
-        StringBuilder sb1 = new StringBuilder();
-        sb1.append(" cat ").append(quote(contentFile.getName()));
-        sb1.append(" | xargs rm -f -r -v " );
+    public String getDeleteCommand(File contentFile) {
+        // XXX should go to the props page
+        StringBuilder sb1 = new StringBuilder(" cat ");
+        sb1.append(quote(contentFile.getName()));
+        sb1.append(" | xargs rm -f -r -v ");
         sb1.append(" || echo " + ERROR_SIGNAL).append(";");
-
-        return new String[] { sb1.toString() };
+        return sb1.toString();
     }
 
-    public String[] getUnzipCommands(File zipFile) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("cd ").append(quote(zipFile.getParent()));
+    public String getUnzipCommand(File zipFile) {
+        // XXX should go to the props page
+        StringBuilder sb = new StringBuilder("cd ");
+        sb.append(quote(zipFile.getParent()));
         sb.append(" && ").append(getUnzipCmd()).append(" ").append(quote(zipFile.getName()));
         sb.append(" || echo " + ERROR_SIGNAL);
-        return new String[] { sb.toString() };
+        return sb.toString();
     }
 
+    /**
+     * this is used in {@link BulkSyncWizard#commit(IProgressMonitor)}.
+     *
+     * @param fileRecord
+     * @return a String-representation of the file. On Default it's the
+     *         {@link File#getAbsolutePath()}.
+     */
     public String toStringForDelete(DeleteFileRecord fileRecord) {
         return quote(fileRecord.getTargetName());
     }
 
     public List<String> toStringsForDelete(Collection<DeleteFileRecord> fileRecords) {
-        if(fileRecords == null) {
+        if (fileRecords == null) {
             return null;
         }
 
         List<String> ret = new ArrayList<String>(fileRecords.size());
-        for (DeleteFileRecord fileRecord: fileRecords) {
+        for (DeleteFileRecord fileRecord : fileRecords) {
             ret.add(toStringForDelete(fileRecord));
         }
         return ret;
 
     }
 
-    public String getFilesToDeleteSuffix(){
+    public String getFilesToDeleteSuffix() {
         return ".txt";
     }
 
-    public String quote(String stringToQuote){
-        return new StringBuilder().append(getFileQuote()).append(stringToQuote).append(getFileQuote()).toString();
+    public String quote(String stringToQuote) {
+        return new StringBuilder(getFileQuote()).append(stringToQuote).append(getFileQuote())
+                .toString();
     }
 
     protected String getUnzipCmd() {
@@ -145,21 +161,22 @@ public class RseUnixCmdExecuter implements CmdExecuter {
         if (envVar != null) {
             ret = envVar.getValue();
         } else {
-            if(RseUtils.isWindows(workingDirectory)){
+            // XXX should go to the props page
+            if (RseUtils.isWindows(workingDirectory)) {
                 ret = "jar -xfv ";
-            }else{
-                ret = "unzip -o" ;
+            } else {
+                ret = "unzip -o";
             }
         }
         return ret;
     }
 
-    private IRemoteCommandShell getCmdShell(String[] commands) {
+    private IRemoteCommandShell getCmdShell(String commands) {
         try {
             return cmdSS.runShell(workingDirectory, null);
         } catch (Exception e) {
-            throw new FileSyncException("CmdShell should be active for commands '"
-                    + Arrays.toString(commands) + SINGLE_QUOTE);
+            throw new FileSyncException("CmdShell should be active for commands '" + commands
+                    + SINGLE_QUOTE);
         }
     }
 
@@ -168,11 +185,11 @@ public class RseUnixCmdExecuter implements CmdExecuter {
      * @param searchedLine
      * @param timeOutInMillis
      * @param maxLines
+     * @param monitor
      * @return
-     * @see CmdExecuter#ERROR_SIGNAL
      */
-    private static List<String> getOutputUntil(IRemoteCommandShell cmdShell,
-            String searchedLine, long timeOutInMillis, int maxLines) {
+    private static List<String> getOutputUntil(IRemoteCommandShell cmdShell, String searchedLine,
+            long timeOutInMillis, int maxLines, IProgressMonitor monitor) {
 
         LinkedList<String> lines = new LinkedList<String>();
         if (cmdShell == null || searchedLine == null) {
@@ -183,7 +200,7 @@ public class RseUnixCmdExecuter implements CmdExecuter {
         int firstIndex = 0;
         long lastChangedOutputTime = System.currentTimeMillis();
         boolean error = false;
-        while (!finished) {
+        while (!finished && !monitor.isCanceled()) {
             // TODO: would be much easy if I would have a Stream instead of cmdShell.listOutput()
             Object[] listOutput = cmdShell.listOutput();
             // TODO: here is a possibility that rows were inserted into _output between call of
@@ -193,6 +210,9 @@ public class RseUnixCmdExecuter implements CmdExecuter {
                 firstIndex = 0;
             }
             for (int i = firstIndex; i < listOutput.length; i++) {
+                if(monitor.isCanceled()){
+                    break;
+                }
                 if ((listOutput[i] instanceof IRemoteError)) {
                     error = true;
                 }
@@ -201,7 +221,7 @@ public class RseUnixCmdExecuter implements CmdExecuter {
                 }
                 IRemoteOutput line = (IRemoteOutput) listOutput[i];
                 String text = line.getText();
-                if (text.equals(CmdExecuter.ERROR_SIGNAL)) {
+                if (text.equals(ERROR_SIGNAL)) {
                     error = true;
                 }
                 if (searchedLine.equals(text)) {
@@ -229,14 +249,15 @@ public class RseUnixCmdExecuter implements CmdExecuter {
                     try {
                         tmpFile = File.createTempFile(BulkSyncWizard.FILE_PREFIX
                                 + "RseUtilsGetOutputUntil", ".stdout.txt");
-                        RseSimpleUtils.write(new FileOutputStream(tmpFile),lines,
+                        RseSimpleUtils.write(new FileOutputStream(tmpFile), lines,
                                 FS.CLOSE_WHEN_DONE);
                     } catch (Exception e) {
                         writerException = e;
                     }
                     throw new FileSyncException("shell timeout in Millis:" + timeOutInMillis
                             + ". Maybe more details in '"
-                            + (tmpFile == null ? "" : tmpFile.toString()) + SINGLE_QUOTE, writerException);
+                            + (tmpFile == null ? "" : tmpFile.toString()) + SINGLE_QUOTE,
+                            writerException);
                 }
             }
             firstIndex = listOutput.length;
@@ -245,8 +266,8 @@ public class RseUnixCmdExecuter implements CmdExecuter {
             Exception writerException = null;
             File tmpFile = null;
             try {
-                tmpFile = File.createTempFile(BulkSyncWizard.FILE_PREFIX
-                        + "RseUtilsGetOutputUntil", ".stdout.txt");
+                tmpFile = File.createTempFile(
+                        BulkSyncWizard.FILE_PREFIX + "RseUtilsGetOutputUntil", ".stdout.txt");
                 RseSimpleUtils.write(new FileOutputStream(tmpFile), lines, FS.CLOSE_WHEN_DONE);
             } catch (IOException e) {
                 writerException = e;

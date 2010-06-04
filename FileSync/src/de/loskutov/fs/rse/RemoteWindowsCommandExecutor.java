@@ -16,39 +16,36 @@ import org.eclipse.rse.subsystems.files.core.subsystems.IRemoteFile;
 
 import de.loskutov.fs.rse.BulkSyncWizard.DeleteFileRecord;
 
+public class RemoteWindowsCommandExecutor extends RemoteUnixCommandExecutor {
 
-public class RseWindowsCmdExecuter extends RseUnixCmdExecuter {
-
-    public RseWindowsCmdExecuter(IRemoteFile workingDirectory) {
+    public RemoteWindowsCommandExecutor(IRemoteFile workingDirectory) {
         super(workingDirectory);
     }
 
     @Override
-    public String[] getDeleteCommands(File contentFile) {
-        String[] ret = new String[] { quote(contentFile.getAbsolutePath()) };
-        return ret;
+    public String getDeleteCommand(File contentFile) {
+        return quote(contentFile.getAbsolutePath());
     }
 
     @Override
-    public String[] getUnzipCommands(File zipFile) {
-        String[] ret = new String[] { getUnzipCmd() + " " + quote(zipFile.getAbsolutePath()) };
-        return ret;
+    public String getUnzipCommand(File zipFile) {
+        return getUnzipCmd() + " " + quote(zipFile.getAbsolutePath());
     }
 
     @Override
     public String toStringForDelete(DeleteFileRecord fileRecord) {
-        return (fileRecord.isDirectory()? "rmdir ":"del ") + quote(fileRecord.getTargetName());
+        // XXX should go to the props page
+        return (fileRecord.isDirectory() ? "rmdir " : "del ") + quote(fileRecord.getTargetName());
     }
 
     @Override
-    public String getFilesToDeleteSuffix(){
+    public String getFilesToDeleteSuffix() {
         return ".bat";
     }
 
     @Override
-    public String getFileQuote(){
-        return RseUnixCmdExecuter.DOUBLE_QUOTE;
+    public String getFileQuote() {
+        return RemoteUnixCommandExecutor.DOUBLE_QUOTE;
     }
-
 
 }

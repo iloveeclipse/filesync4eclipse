@@ -180,7 +180,7 @@ implements IPreferenceChangeListener {
 
     /**
      * Automatic build
-     *
+     * 
      * @param args
      *            build parameters
      * @param wizard
@@ -188,14 +188,14 @@ implements IPreferenceChangeListener {
      *            progress indicator
      * @return IProject[] related projects list
      */
-    private IProject[] buildAuto(Map<Object, Object> args, ProjectProperties props, SyncWizard wizard,
-            IProgressMonitor monitor) {
+    private IProject[] buildAuto(Map<Object, Object> args, ProjectProperties props,
+            SyncWizard wizard, IProgressMonitor monitor) {
         return buildIncremental(args, props, wizard, monitor);
     }
 
     /**
      * Full build
-     *
+     * 
      * @param args
      *            build parameters
      * @param wizard
@@ -203,8 +203,8 @@ implements IPreferenceChangeListener {
      *            progress indicator
      * @return IProject[] related projects list
      */
-    private IProject[] buildFull(Map<Object, Object> args, ProjectProperties props, SyncWizard wizard,
-            IProgressMonitor monitor) {
+    private IProject[] buildFull(Map<Object, Object> args, ProjectProperties props,
+            SyncWizard wizard, IProgressMonitor monitor) {
         IProject currentProject = getProjectInternal();
         if (currentProject != null) {
             fullProjectBuild(args, currentProject, props, wizard, monitor, false);
@@ -214,7 +214,7 @@ implements IPreferenceChangeListener {
 
     /**
      * Full build
-     *
+     * 
      * @param args
      *            build parameters
      * @param wizard
@@ -222,8 +222,8 @@ implements IPreferenceChangeListener {
      *            progress indicator
      * @return IProject[] related projects list
      */
-    private IProject[] buildClean(Map<Object, Object> args, ProjectProperties props, SyncWizard wizard,
-            IProgressMonitor monitor) {
+    private IProject[] buildClean(Map<Object, Object> args, ProjectProperties props,
+            SyncWizard wizard, IProgressMonitor monitor) {
         IProject currentProject = getProjectInternal();
         if (currentProject != null) {
             fullProjectBuild(args, currentProject, props, wizard, monitor, true);
@@ -233,7 +233,7 @@ implements IPreferenceChangeListener {
 
     /**
      * Incremental build
-     *
+     * 
      * @param args
      *            build parameters
      * @param wizard
@@ -241,8 +241,8 @@ implements IPreferenceChangeListener {
      *            progress indicator
      * @return IProject[] related projects list
      */
-    private IProject[] buildIncremental(final Map<Object, Object> args, final ProjectProperties props,
-            final SyncWizard wizard, final IProgressMonitor monitor) {
+    private IProject[] buildIncremental(final Map<Object, Object> args,
+            final ProjectProperties props, final SyncWizard wizard, final IProgressMonitor monitor) {
         IProject result[] = null;
 
         final IProject currentProject = getProjectInternal();
@@ -308,7 +308,7 @@ implements IPreferenceChangeListener {
                             monitor.beginTask("Incremental file sync", elementCount);
                             final FSDeltaVisitor visitor = new FSDeltaVisitor(monitor, wizard);
                             resourceDelta.accept(visitor, visitorFlags);
-                            wizard.commit();
+                            wizard.commit(monitor);
                         } else {
                             FileSyncPlugin.log("No valid FileMapping for project '"
                                     + currentProject + "'", null, IStatus.WARNING);
@@ -330,15 +330,16 @@ implements IPreferenceChangeListener {
 
     /**
      * Process all files in the project
-     *
+     * 
      * @param project
      *            the project
      * @param monitor
      *            a progress indicator
      * @param wizard
      */
-    protected void fullProjectBuild(Map<Object, Object> args, final IProject project, ProjectProperties props,
-            SyncWizard wizard, final IProgressMonitor monitor, boolean clean) {
+    protected void fullProjectBuild(Map<Object, Object> args, final IProject project,
+            ProjectProperties props, SyncWizard wizard, final IProgressMonitor monitor,
+            boolean clean) {
 
         if (!args.containsKey(MAPPING_CHANGED_IN_GUI) && wizard.getProjectProps() == null) {
             /*
@@ -366,9 +367,10 @@ implements IPreferenceChangeListener {
             if (wizard.begin()) {
                 final FSResourceVisitor visitor = new FSResourceVisitor(monitor, wizard, clean);
                 project.accept(visitor, IResource.DEPTH_INFINITE, visitorFlags);
-                boolean committed = wizard.commit();
-                if(!committed){
-                    FileSyncPlugin.log("Errors during commit of the resources in project '" + wizard.getProjectProps().getProject().getName() + "'", null,
+                boolean committed = wizard.commit(monitor);
+                if (!committed) {
+                    FileSyncPlugin.log("Errors during commit of the resources in project '"
+                            + wizard.getProjectProps().getProject().getName() + "'", null,
                             IStatus.WARNING);
 
                 }
@@ -387,7 +389,7 @@ implements IPreferenceChangeListener {
 
     /**
      * Count the number of sub-resources of a project
-     *
+     * 
      * @param project
      *            a project
      * @return the element count
@@ -397,15 +399,16 @@ implements IPreferenceChangeListener {
         try {
             project.accept(visitor, IResource.DEPTH_INFINITE, visitorFlags);
         } catch (CoreException e) {
-            FileSyncPlugin.log("Exception when counting elements of a project '"
-                    + project.getName() + "'", e, IStatus.ERROR);
+            FileSyncPlugin.log(
+                    "Exception when counting elements of a project '" + project.getName() + "'", e,
+                    IStatus.ERROR);
         }
         return visitor.count;
     }
 
     /**
      * Count the number of sub-resources of a delta
-     *
+     * 
      * @param delta
      *            a resource delta
      * @return the element count
@@ -442,7 +445,7 @@ implements IPreferenceChangeListener {
 
     /**
      * remember the timestamp for the project settings file
-     *
+     * 
      * @return true, if the timestamp was changed since first run
      */
     protected boolean checkSettingsTimestamp(IResource settingsFile) {
@@ -682,7 +685,7 @@ implements IPreferenceChangeListener {
 
     /**
      * Visitor which only counts visited resources
-     *
+     * 
      * @author Andrei
      */
     protected final static class CountVisitor implements IResourceDeltaVisitor, IResourceVisitor {
