@@ -6,8 +6,9 @@
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributor(s):
  * 	Volker Wandmaker - initial API and implementation
+ *  Andrei Loskutov - refactoring
  *******************************************************************************/
-package de.loskutov.fs.command;
+package de.loskutov.fs;
 
 public class FileSyncException extends RuntimeException {
 

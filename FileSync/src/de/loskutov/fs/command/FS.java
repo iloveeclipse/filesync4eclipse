@@ -14,13 +14,15 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 
 import org.eclipse.core.runtime.IStatus;
 
 import de.loskutov.fs.FileSyncPlugin;
-import de.loskutov.fs.utils.RseSimpleUtils;
+import de.loskutov.fs.IPathHelper;
+import de.loskutov.fs.utils.DefaultPathHelper;
 
 /**
  * Utility class for file system related operations.
@@ -167,22 +169,21 @@ public final class FS {
         boolean success = true;
         FileInputStream fin = null; // Streams to the two files.
         FileOutputStream fout = null; // These are closed in the finally block.
+        IPathHelper pathHelper = DefaultPathHelper.getPathHelper();
         try {
             // Open a stream to the input file and get a channel from it
             fin = new FileInputStream(source);
-            FileChannel in = fin.getChannel();
-            if (RseSimpleUtils.isRseFile(destination)) {
-                OutputStream out = FileSyncPlugin.getDefault().getFsPathUtil().getOutputStream(
-                        destination);
-                RseSimpleUtils.transferTo(fin, out, CLOSE_WHEN_DONE);
+            if (pathHelper.isRseFile(destination)) {
+                OutputStream out = pathHelper.getOutputStream(destination);
+                transferTo(fin, out, CLOSE_WHEN_DONE);
             } else {
-
                 // Now get the output channel
                 FileChannel out;
 
                 fout = new FileOutputStream(destination); // open file stream
                 out = fout.getChannel(); // get its channel
 
+                FileChannel in = fin.getChannel();
                 // Query the size of the input file
                 long numbytes = in.size();
 
@@ -237,10 +238,23 @@ public final class FS {
                     success = false;
                 }
             }
-
         }
-
         return success;
+    }
+
+    private static boolean transferTo(InputStream in, OutputStream out, boolean closeWhenDone)
+    throws IOException {
+        int packetSize = 1024 * 32;
+        byte[] t = new byte[packetSize];
+        int numBytesRead = 0;
+        while ((numBytesRead = in.read(t)) != -1) {
+            out.write(t, 0, numBytesRead);
+        }
+        out.flush();
+        if (closeWhenDone) {
+            out.close();
+        }
+        return true;
     }
 
 }

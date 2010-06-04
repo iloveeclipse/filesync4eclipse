@@ -6,8 +6,9 @@
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributor(s):
  * 	Volker Wandmaker - initial API and implementation
+ *  Andrei Loskutov - refactoring
  *******************************************************************************/
-package de.loskutov.fs.utils;
+package de.loskutov.fs.rse.utils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -24,10 +25,8 @@ import org.eclipse.rse.subsystems.files.core.model.RemoteFileUtility;
 import org.eclipse.rse.subsystems.files.core.subsystems.IRemoteFile;
 import org.eclipse.rse.subsystems.files.core.subsystems.IRemoteFileSubSystem;
 
-import de.loskutov.fs.command.FS;
-import de.loskutov.fs.command.FileSyncException;
-import de.loskutov.fs.command.RemoteFileImpl;
-import de.loskutov.fs.command.ZipUtils;
+import de.loskutov.fs.FileSyncException;
+import de.loskutov.fs.utils.NamedOutputStream;
 
 public class RseUtils {
 
@@ -44,7 +43,7 @@ public class RseUtils {
                         uFile.getRemoteFile().getName(),
                         uFile.getRemoteFile().isBinary() ? IFileService.NONE
                                 : IFileService.TEXT_MODE, null);
-                out = new ZipUtils.LocalOutputStream(out, file.toString());
+                out = new NamedOutputStream(out, file.toString());
             } catch (SystemMessageException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -119,14 +118,5 @@ public class RseUtils {
     public static boolean isWindows(IRemoteFile remoteFile) {
         return remoteFile.getHost().getSystemType().isWindows();
     }
-
-    public static boolean isWindows(File file) {
-        if (file instanceof IRemoteFile) {
-            IRemoteFile rFile = (IRemoteFile) file;
-            return isWindows(rFile);
-        }
-        return FS.isWin32();
-    }
-
 
 }

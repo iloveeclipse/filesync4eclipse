@@ -6,8 +6,9 @@
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributor(s):
  * 	Volker Wandmaker - initial API and implementation
+ *  Andrei Loskutov - refactoring
  *******************************************************************************/
-package de.loskutov.fs.builder.cmdexecuter;
+package de.loskutov.fs.rse;
 
 import java.io.File;
 import java.util.HashMap;
@@ -17,11 +18,11 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.rse.services.clientserver.messages.SystemMessageException;
 import org.eclipse.rse.subsystems.files.core.subsystems.IRemoteFile;
 
+import de.loskutov.fs.FileSyncException;
 import de.loskutov.fs.builder.SyncWizard;
-import de.loskutov.fs.command.FileSyncException;
-import de.loskutov.fs.command.RemoteFileImpl;
-import de.loskutov.fs.utils.RseSimpleUtils;
-import de.loskutov.fs.utils.RseUtils;
+import de.loskutov.fs.rse.utils.RemoteFileImpl;
+import de.loskutov.fs.rse.utils.RseSimpleUtils;
+import de.loskutov.fs.rse.utils.RseUtils;
 
 public class CmdExecuterFactory {
 

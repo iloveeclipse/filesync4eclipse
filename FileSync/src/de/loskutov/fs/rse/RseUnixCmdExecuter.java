@@ -6,8 +6,9 @@
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributor(s):
  * 	Volker Wandmaker - initial API and implementation
+ *  Andrei Loskutov - refactoring
  *******************************************************************************/
-package de.loskutov.fs.builder.cmdexecuter;
+package de.loskutov.fs.rse;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -29,13 +30,12 @@ import org.eclipse.rse.subsystems.shells.core.subsystems.IRemoteCommandShell;
 import org.eclipse.rse.subsystems.shells.core.subsystems.IRemoteError;
 import org.eclipse.rse.subsystems.shells.core.subsystems.IRemoteOutput;
 
+import de.loskutov.fs.FileSyncException;
 import de.loskutov.fs.FileSyncPlugin;
-import de.loskutov.fs.builder.DelayedSyncWizard;
-import de.loskutov.fs.builder.DelayedSyncWizard.DeleteFileRecord;
 import de.loskutov.fs.command.FS;
-import de.loskutov.fs.command.FileSyncException;
-import de.loskutov.fs.utils.RseSimpleUtils;
-import de.loskutov.fs.utils.RseUtils;
+import de.loskutov.fs.rse.BulkSyncWizard.DeleteFileRecord;
+import de.loskutov.fs.rse.utils.RseSimpleUtils;
+import de.loskutov.fs.rse.utils.RseUtils;
 
 public class RseUnixCmdExecuter implements CmdExecuter {
 
@@ -227,7 +227,7 @@ public class RseUnixCmdExecuter implements CmdExecuter {
                     Exception writerException = null;
                     File tmpFile = null;
                     try {
-                        tmpFile = File.createTempFile(DelayedSyncWizard.FILE_PREFIX
+                        tmpFile = File.createTempFile(BulkSyncWizard.FILE_PREFIX
                                 + "RseUtilsGetOutputUntil", ".stdout.txt");
                         RseSimpleUtils.write(new FileOutputStream(tmpFile),lines,
                                 FS.CLOSE_WHEN_DONE);
@@ -245,7 +245,7 @@ public class RseUnixCmdExecuter implements CmdExecuter {
             Exception writerException = null;
             File tmpFile = null;
             try {
-                tmpFile = File.createTempFile(DelayedSyncWizard.FILE_PREFIX
+                tmpFile = File.createTempFile(BulkSyncWizard.FILE_PREFIX
                         + "RseUtilsGetOutputUntil", ".stdout.txt");
                 RseSimpleUtils.write(new FileOutputStream(tmpFile), lines, FS.CLOSE_WHEN_DONE);
             } catch (IOException e) {

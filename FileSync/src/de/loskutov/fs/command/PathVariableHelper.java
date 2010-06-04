@@ -22,6 +22,7 @@ import org.eclipse.core.variables.IStringVariableManager;
 import org.eclipse.core.variables.VariablesPlugin;
 
 import de.loskutov.fs.FileSyncPlugin;
+import de.loskutov.fs.utils.DefaultPathHelper;
 
 /**
  * Resolves the path with variables to the full OS path and back. The helper should be used only for
@@ -257,23 +258,23 @@ public class PathVariableHelper {
     }
 
     private boolean isUriIncluded(String pathStr) {
-        return FileSyncPlugin.getDefault().getFsPathUtil().isUri(pathStr);
+        return DefaultPathHelper.getPathHelper().isUri(pathStr);
     }
 
     private boolean isUriIncluded(IPath path) {
-        return FileSyncPlugin.getDefault().getFsPathUtil().isUriIncluded(path);
+        return DefaultPathHelper.getPathHelper().isUriIncluded(path);
     }
 
     private IPath create(String path) {
-        return FileSyncPlugin.getDefault().getFsPathUtil().create(path);
+        return DefaultPathHelper.getPathHelper().create(path);
     }
 
     private IPath create(IPath path, String newPathStr) {
-        return FileSyncPlugin.getDefault().getFsPathUtil().create(path, newPathStr);
+        return DefaultPathHelper.getPathHelper().create(path, newPathStr);
     }
 
     private URI getUri(IPath path) {
-        return FileSyncPlugin.getDefault().getFsPathUtil().getUri(path);
+        return DefaultPathHelper.getPathHelper().getUri(path);
     }
 
 }

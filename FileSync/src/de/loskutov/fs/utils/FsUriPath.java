@@ -6,8 +6,9 @@
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributor(s):
  * 	Volker Wandmaker - initial API and implementation
+ *  Andrei Loskutov - refactoring
  *******************************************************************************/
-package de.loskutov.fs.command;
+package de.loskutov.fs.utils;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -24,7 +25,7 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.URIUtil;
 
-import de.loskutov.fs.FileSyncPlugin;
+import de.loskutov.fs.FileSyncException;
 
 /**
  * http://forums.java.net/jive/thread.jspa?messageID=215672
@@ -166,7 +167,7 @@ public class FsUriPath extends Path {
 
     @Override
     public File toFile() {
-        return FileSyncPlugin.getDefault().getFsPathUtil().toFile(this);
+        return DefaultPathHelper.getPathHelper().toFile(this);
     }
 
     public static FsUriPath create(IPath path, String pathStr) {
@@ -243,7 +244,7 @@ public class FsUriPath extends Path {
     }
 
     public static Path create(String pathStr) {
-        if (!FsPathUtilImpl.isUriLike(pathStr)) {
+        if (!DefaultPathHelper.isUriLike(pathStr)) {
             return new Path(pathStr);
         }
 

@@ -6,8 +6,9 @@
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributor(s):
  * 	Volker Wandmaker - initial API and implementation
+ * 	Andrei Loskutov - refactoring
  *******************************************************************************/
-package de.loskutov.fs.command;
+package de.loskutov.fs;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -16,7 +17,7 @@ import java.net.URI;
 
 import org.eclipse.core.runtime.IPath;
 
-public interface FsPathUtil {
+public interface IPathHelper {
 
     public boolean isUriIncluded(IPath path);
 
@@ -39,6 +40,8 @@ public interface FsPathUtil {
      * @return true if rse-uri and isUnc(). false otherwiser
      */
     public boolean isRseUnc(IPath path);
+
+    public boolean isRseFile(File path);
 
     /**
      * to fully qualified String

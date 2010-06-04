@@ -6,14 +6,16 @@
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributor(s):
  * 	Volker Wandmaker - initial API and implementation
+ *  Andrei Loskutov - refactoring
  *******************************************************************************/
-package de.loskutov.fs.builder.cmdexecuter;
+package de.loskutov.fs.rse;
 
 import java.io.File;
 
 import org.eclipse.rse.subsystems.files.core.subsystems.IRemoteFile;
 
-import de.loskutov.fs.builder.DelayedSyncWizard.DeleteFileRecord;
+import de.loskutov.fs.rse.BulkSyncWizard.DeleteFileRecord;
+
 
 public class RseWindowsCmdExecuter extends RseUnixCmdExecuter {
 

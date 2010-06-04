@@ -64,11 +64,13 @@ import org.eclipse.ui.model.WorkbenchLabelProvider;
 import org.eclipse.ui.views.navigator.ResourceComparator;
 import org.osgi.service.prefs.BackingStoreException;
 
+import de.loskutov.fs.FileSyncException;
 import de.loskutov.fs.FileSyncPlugin;
+import de.loskutov.fs.IPathHelper;
 import de.loskutov.fs.builder.CharOperation;
 import de.loskutov.fs.builder.FileSyncBuilder;
+import de.loskutov.fs.builder.SyncWizardFactory;
 import de.loskutov.fs.command.FileMapping;
-import de.loskutov.fs.command.FileSyncException;
 import de.loskutov.fs.command.PathVariableHelper;
 import de.loskutov.fs.dialogs.DialogField;
 import de.loskutov.fs.dialogs.IDialogFieldListener;
@@ -83,6 +85,7 @@ import de.loskutov.fs.dialogs.StringButtonDialogField;
 import de.loskutov.fs.dialogs.TreeListDialogField;
 import de.loskutov.fs.dialogs.TypedElementSelectionValidator;
 import de.loskutov.fs.dialogs.TypedViewerFilter;
+import de.loskutov.fs.utils.DefaultPathHelper;
 
 public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChangeListener {
 
@@ -346,12 +349,12 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         includeTeamFilesField.setDialogFieldListener(adapter);
 
         delayedCopyDeleteField = new SelectionButtonDialogField(SWT.CHECK);
-        delayedCopyDeleteField.setSelection(FileSyncPlugin.getDefault().isDefaultDelayedCopy());
+        delayedCopyDeleteField.setSelection(true);
         delayedCopyDeleteField
-        .setLabelText("delayed copy/delete (faster, especially on slow remote-connections)");
+        .setLabelText("Bulk sync (faster, especially on slow remote connections)");
         delayedCopyDeleteField.setDialogFieldListener(adapter);
 
-        if (!FileSyncPlugin.getDefault().isRseAvailable()) {
+        if (!SyncWizardFactory.getInstance().isRseAvailable()) {
             delayedCopyDeleteField.setToolTipText(FileSyncPlugin.getDefault().getRseRequirement()
                     + " not available.");
         } else {
@@ -396,8 +399,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         includeTeamFilesField.setSelection(includeTeamFiles);
 
         boolean delayedCopyDelete = preferences.getBoolean(
-                ProjectProperties.KEY_DELAYED_COPY_DELETE, FileSyncPlugin.getDefault()
-                .isDefaultDelayedCopy());
+                ProjectProperties.KEY_DELAYED_COPY_DELETE, true);
 
         delayedCopyDeleteField.setSelection(delayedCopyDelete);
     }
@@ -778,7 +780,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         useCurrentDateField.setEnabled(selected);
         includeTeamFilesField.setEnabled(selected);
 
-        delayedCopyDeleteField.setEnabled(FileSyncPlugin.getDefault().isRseAvailable() && selected);
+        delayedCopyDeleteField.setEnabled(selected && SyncWizardFactory.getInstance().isRseAvailable());
 
         destPathDialogField.setEnabled(selected);
         variablesDialogField.setEnabled(selected);
@@ -1179,8 +1181,9 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         defDestinationPath = outputLocation;
         // inits the dialog field
         if (outputLocation != null) {
-            if (FileSyncPlugin.getDefault().getFsPathUtil().isUriIncluded(outputLocation)) {
-                destPathDialogField.setText(FileSyncPlugin.getDefault().getFsPathUtil().getUri(
+            IPathHelper pathHelper = DefaultPathHelper.getPathHelper();
+            if (pathHelper.isUriIncluded(outputLocation)) {
+                destPathDialogField.setText(pathHelper.getUri(
                         outputLocation).toString());
             } else {
                 destPathDialogField.setText(outputLocation.toOSString());
@@ -1205,7 +1208,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         StringBuffer buf = new StringBuffer();
         // the host or scheme can be different even if the path is the same
         if(defDestinationPath != null){
-            String fqString = FileSyncPlugin.getDefault().getFsPathUtil()
+            String fqString = DefaultPathHelper.getPathHelper()
             .toFqString(defDestinationPath);
             PathListElement.appendEncodeString(fqString, buf).append(';');
         }
@@ -1246,8 +1249,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         }
 
         boolean delayedCopyDelete = preferences.getBoolean(
-                ProjectProperties.KEY_DELAYED_COPY_DELETE, FileSyncPlugin.getDefault()
-                .isDefaultDelayedCopy());
+                ProjectProperties.KEY_DELAYED_COPY_DELETE, true);
 
         boolean delayedCopyDeleteNew = delayedCopyDeleteField.isSelected();
         if (delayedCopyDelete != delayedCopyDeleteNew) {
@@ -1265,7 +1267,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         if ((text == null || text.trim().length() == 0)) {
             return null;
         }
-        return FileSyncPlugin.getDefault().getFsPathUtil().create(text).makeAbsolute();
+        return DefaultPathHelper.getPathHelper().create(text).makeAbsolute();
     }
 
     void changeControlPressed(DialogField field) {

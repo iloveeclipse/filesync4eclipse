@@ -6,8 +6,9 @@
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributor(s):
  * 	Volker Wandmaker - initial API and implementation
+ *  Andrei Loskutov - refactoring
  *******************************************************************************/
-package de.loskutov.fs.builder;
+package de.loskutov.fs.rse;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -32,18 +33,18 @@ import org.eclipse.rse.core.RSECorePlugin;
 import org.eclipse.rse.ui.RSEUIPlugin;
 
 import de.loskutov.fs.FileSyncPlugin;
-import de.loskutov.fs.builder.cmdexecuter.CmdExecuter;
-import de.loskutov.fs.builder.cmdexecuter.CmdExecuterFactory;
+import de.loskutov.fs.builder.SyncWizard;
+import de.loskutov.fs.command.CopyDelegate;
 import de.loskutov.fs.command.FS;
 import de.loskutov.fs.command.FileMapping;
-import de.loskutov.fs.command.ZipUtils;
-import de.loskutov.fs.command.ZipUtils.AbstractCopyDelegate;
-import de.loskutov.fs.command.ZipUtils.FileRecord;
 import de.loskutov.fs.properties.ProjectProperties;
-import de.loskutov.fs.utils.RseSimpleUtils;
-import de.loskutov.fs.utils.RseUtils;
+import de.loskutov.fs.rse.utils.RseSimpleUtils;
+import de.loskutov.fs.rse.utils.RseUtils;
+import de.loskutov.fs.rse.utils.ZipUtils;
+import de.loskutov.fs.rse.utils.ZipUtils.FileRecord;
+import de.loskutov.fs.utils.DefaultPathHelper;
 
-public class DelayedSyncWizard extends SyncWizard {
+public class BulkSyncWizard extends SyncWizard {
 
     private static final boolean DEBUG = false;
     private static final boolean IS_FILE = true;
@@ -59,16 +60,26 @@ public class DelayedSyncWizard extends SyncWizard {
         }
     }
 
-    private final Map<IPath, Set<FileRecord>> sourceFiles = new HashMap<IPath, Set<FileRecord>>();
-    private final Map<IPath, Set<DeleteFileRecord>> filesToDelete = new HashMap<IPath, Set<DeleteFileRecord>>();
-    protected boolean delayedCopyDelete = DELAYED_COPY_DELETE;
+    private final Map<IPath, Set<FileRecord>> sourceFiles;
+    private final Map<IPath, Set<DeleteFileRecord>> filesToDelete;
+    protected boolean delayedCopyDelete;
+
+
+    /**
+     * Used via reflection
+     */
+    public BulkSyncWizard() {
+        super();
+        sourceFiles = new HashMap<IPath, Set<FileRecord>>();
+        filesToDelete = new HashMap<IPath, Set<DeleteFileRecord>>();
+    }
 
     @Override
     public void setProjectProps(ProjectProperties props) throws IllegalArgumentException {
         super.setProjectProps(props);
         IEclipsePreferences preferences = props.getPreferences(false);
         delayedCopyDelete = preferences.getBoolean(ProjectProperties.KEY_DELAYED_COPY_DELETE,
-                FileSyncPlugin.getDefault().isDefaultDelayedCopy());
+                true);
 
     }
 
@@ -84,7 +95,7 @@ public class DelayedSyncWizard extends SyncWizard {
                     null, IStatus.INFO);
         }
         boolean globalValid = true;
-        if (FileSyncPlugin.getDefault().getFsPathUtil().isRseUnc(rootPath)) {
+        if (DefaultPathHelper.getPathHelper().isRseUnc(rootPath)) {
             logUncRseMsg(rootPath);
         }
 
@@ -102,7 +113,7 @@ public class DelayedSyncWizard extends SyncWizard {
                             + "'ignored. @see http://support.microsoft.com/kb/156276/en for details.",
                             null, IStatus.INFO);
                 }
-                if (FileSyncPlugin.getDefault().getFsPathUtil().isRseUnc(destinationPath)) {
+                if (DefaultPathHelper.getPathHelper().isRseUnc(destinationPath)) {
                     logUncRseMsg(destinationPath);
                     fm.setValid(false);
 
@@ -116,7 +127,7 @@ public class DelayedSyncWizard extends SyncWizard {
 
     private void logUncRseMsg(IPath destinationPath) {
         String msg = "UNC via RSE is not supported yet (Path '"
-            + FileSyncPlugin.getDefault().getFsPathUtil().toFqString(
+            + DefaultPathHelper.getPathHelper().toFqString(
                     destinationPath) + "') in Project '"
                     + projectProps.getProject().getName() + "'.";
         FileSyncPlugin.log(msg, null, IStatus.WARNING);
@@ -314,7 +325,7 @@ public class DelayedSyncWizard extends SyncWizard {
 
     private boolean addSourceFile(FileMapping fm, IPath relativePath, IResource sourceRoot,
             File sourceFile) {
-        AbstractCopyDelegate cd = null;
+        CopyDelegate cd = null;
         if (isUseCopyDelegate((IFile) sourceRoot, fm)) {
             cd = initCopyDelegate(createCopyDelegate(), (IFile) sourceRoot, fm);
         }

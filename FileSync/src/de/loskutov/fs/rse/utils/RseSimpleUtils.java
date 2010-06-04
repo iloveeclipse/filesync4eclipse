@@ -6,8 +6,9 @@
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributor(s):
  * 	Volker Wandmaker - initial API and implementation
+ *  Andrei Loskutov - refactoring
  *******************************************************************************/
-package de.loskutov.fs.utils;
+package de.loskutov.fs.rse.utils;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,7 +21,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import de.loskutov.fs.command.RemoteFileImpl;
 
 /**
  * without references to any rse=packages
@@ -135,19 +135,6 @@ public class RseSimpleUtils {
 
     }
 
-    public static boolean transferTo(InputStream in, OutputStream out, boolean closeWhenDone)
-    throws IOException {
-        int packetSize = 1024 * 32;
-        byte[] t = new byte[packetSize];
-        int numBytesRead = 0;
-        while ((numBytesRead = in.read(t)) != -1) {
-            out.write(t, 0, numBytesRead);
-        }
-        out.flush();
-        if (closeWhenDone) {
-            out.close();
-        }
-        return true;
-    }
+
 
 }

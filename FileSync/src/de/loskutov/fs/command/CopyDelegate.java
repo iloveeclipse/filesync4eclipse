@@ -11,6 +11,7 @@
 package de.loskutov.fs.command;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,15 +26,20 @@ import java.util.regex.Pattern;
 import org.eclipse.core.runtime.IStatus;
 
 import de.loskutov.fs.FileSyncPlugin;
-import de.loskutov.fs.command.ZipUtils.AbstractCopyDelegate;
-import de.loskutov.fs.command.ZipUtils.LocalFileInputStream;
-import de.loskutov.fs.command.ZipUtils.LocalOutputStream;
+import de.loskutov.fs.utils.DefaultPathHelper;
+import de.loskutov.fs.utils.NamedOutputStream;
 
 /**
  * @author Coloma Escribano, Ignacio - initial idea and first implementation
  * @author Andrei - production ready code :)
  */
-public class CopyDelegate extends AbstractCopyDelegate {
+public class CopyDelegate {
+
+    public static final int KEEP_BOTH_OPEN_OPTION = 0;
+    public static final int CLOSE_READER_OPTION = 1;
+    public static final int CLOSE_WRITER_OPTION = 2;
+    public static final int CLOSE_BOTH_OPTION = CLOSE_READER_OPTION | CLOSE_WRITER_OPTION;
+    public static final int DEFAULT_OPTIONS = CLOSE_BOTH_OPTION;
 
     private Map<Pattern, String> patternToValue;
     private Map<Pattern, String> patternToKey;
@@ -107,9 +113,9 @@ public class CopyDelegate extends AbstractCopyDelegate {
         boolean success = true;
         try {
             LocalFileInputStream sourceStream = new LocalFileInputStream(source);
-            LocalOutputStream targetStream = new LocalOutputStream(FileSyncPlugin.getDefault()
-                    .getFsPathUtil().getOutputStream(destination), destination.toString());
-            success = copyInternal(sourceStream, targetStream, DEFAULT_OPTIONS);
+            NamedOutputStream targetStream = new NamedOutputStream(DefaultPathHelper
+                    .getPathHelper().getOutputStream(destination), destination.toString());
+            success = copyStreams(sourceStream, targetStream, DEFAULT_OPTIONS);
         } catch (FileNotFoundException e) {
             FileSyncPlugin.log("Could not create Streams", e, IStatus.WARNING);
             return false;
@@ -147,8 +153,7 @@ public class CopyDelegate extends AbstractCopyDelegate {
         this.encoding = encoding;
     }
 
-    @Override
-    protected boolean copyInternal(InputStream source, OutputStream destination, int options) {
+    public boolean copyStreams(InputStream source, OutputStream destination, int options) {
         LineReader reader = null;
         LineWriter writer = null;
 
@@ -219,5 +224,26 @@ public class CopyDelegate extends AbstractCopyDelegate {
             patternToValue.put(pattern, (String) variablesMap.get(key));
             patternToKey.put(pattern, key);
         }
+    }
+
+    /**
+     * Has a readable toString()-Method
+     *
+     * @author Volker
+     */
+    public static class LocalFileInputStream extends FileInputStream {
+
+        private final String toString;
+
+        public LocalFileInputStream(File file) throws FileNotFoundException {
+            super(file);
+            toString = file.toString();
+        }
+
+        @Override
+        public String toString() {
+            return toString;
+        }
+
     }
 }

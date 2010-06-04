@@ -1,4 +1,21 @@
-package de.loskutov.fs.command;
+/*******************************************************************************
+ * Copyright (c) 2000, 2009 IBM Corporation and others.
+ * All rights reserved. This program and the accompanying materials
+ * are made available under the terms of the Eclipse Public License v1.0
+ * which accompanies this distribution, and is available at
+ * http://www.eclipse.org/legal/epl-v10.html
+ *
+ * Contributors:
+ *     IBM Corporation - initial API and implementation
+ * Martin Oberhuber (Wind River) - [186128] Move IProgressMonitor last in all API
+ * Martin Oberhuber (Wind River) - [183824] Forward SystemMessageException from IRemoteFileSubsystem
+ * David McKnight   (IBM)        - [207178] changing list APIs for file service and subsystems
+ * David Dykstal (IBM) [230821] fix IRemoteFileSubSystem API to be consistent with IFileService
+ * Takuya Miyamoto - [185925] Integrate Platform/Team Synchronization
+ * David McKnight   (IBM)        - [272708] [import/export] fix various bugs with the synchronization support
+ * Andrei Loskutov - refactoring
+ *******************************************************************************/
+package de.loskutov.fs.rse.utils;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -27,7 +44,7 @@ import de.loskutov.fs.FileSyncPlugin;
  * and maybe future versions as well, I created my own copy and requested to remove this class from
  * the restricted area.
  * <p>
- * see  //dev.eclipse.org/viewcvs/index.cgi/org.eclipse.tm.rse/plugins/org.eclipse.rse.importexport/src/org/eclipse/rse/internal/importexport/files/?root=DSDP_Project}
+ * see  http://dev.eclipse.org/viewcvs/index.cgi/org.eclipse.tm.rse/plugins/org.eclipse.rse.importexport/src/org/eclipse/rse/internal/importexport/files/?root=DSDP_Project}
  */
 public class UniFilePlus extends File {
 

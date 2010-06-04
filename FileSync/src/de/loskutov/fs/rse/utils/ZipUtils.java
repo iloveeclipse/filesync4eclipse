@@ -6,19 +6,19 @@
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributor(s):
  * 	Volker Wandmaker - initial API and implementation
+ *  Andrei Loskutov - refactoring
  *******************************************************************************/
-package de.loskutov.fs.command;
+package de.loskutov.fs.rse.utils;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.zip.ZipOutputStream;
+
+import de.loskutov.fs.command.CopyDelegate;
 
 public class ZipUtils {
 
@@ -61,8 +61,8 @@ public class ZipUtils {
                 // Write file to archive
                 FileInputStream in = new FileInputStream(tobeJared[i].getSource());
                 if (tobeJared[i].getCopyDelegate() != null) {
-                    tobeJared[i].getCopyDelegate().copyInternal(in, out,
-                            AbstractCopyDelegate.KEEP_BOTH_OPEN_OPTION);
+                    tobeJared[i].getCopyDelegate().copyStreams(in, out,
+                            CopyDelegate.KEEP_BOTH_OPEN_OPTION);
                 } else {
                     while (true) {
                         int nRead = in.read(buffer, 0, buffer.length);
@@ -86,7 +86,7 @@ public class ZipUtils {
 
         private final File source;
         private final String targetName;
-        private AbstractCopyDelegate copyDelegate;
+        private CopyDelegate copyDelegate;
 
         public String getTargetName() {
             return targetName;
@@ -98,11 +98,11 @@ public class ZipUtils {
             this.targetName = targetName;
         }
 
-        public AbstractCopyDelegate getCopyDelegate() {
+        public CopyDelegate getCopyDelegate() {
             return copyDelegate;
         }
 
-        public FileRecord setCopyDelegate(AbstractCopyDelegate copyDelegate) {
+        public FileRecord setCopyDelegate(CopyDelegate copyDelegate) {
             this.copyDelegate = copyDelegate;
             return this;
         }
@@ -148,97 +148,6 @@ public class ZipUtils {
                 return false;
             }
             return true;
-        }
-
-    }
-
-    public static abstract class AbstractCopyDelegate {
-
-        public static final int KEEP_BOTH_OPEN_OPTION = 0;
-        public static final int CLOSE_READER_OPTION = 1;
-        public static final int CLOSE_WRITER_OPTION = 2;
-        public static final int CLOSE_BOTH_OPTION = CLOSE_READER_OPTION | CLOSE_WRITER_OPTION;
-        public static final int DEFAULT_OPTIONS = CLOSE_BOTH_OPTION;
-
-        protected abstract boolean copyInternal(InputStream source, OutputStream destination,
-                int options);
-
-    }
-
-    /**
-     * Has a readable toString()-Method
-     *
-     * @author Volker
-     */
-    public static class LocalFileInputStream extends FileInputStream {
-
-        private final String toString;
-
-        public LocalFileInputStream(File file) throws FileNotFoundException {
-            super(file);
-            toString = file.toString();
-        }
-
-        @Override
-        public String toString() {
-            return toString;
-        }
-
-    }
-
-    /**
-     * Has a readable toString()-Method
-     *
-     * @author Volker
-     */
-    public static class LocalOutputStream extends OutputStream {
-
-        private final OutputStream outputStream;
-        private final String toString;
-
-        public LocalOutputStream(OutputStream outputStream, String toString) {
-            this.outputStream = outputStream;
-            this.toString = toString;
-        }
-
-        @Override
-        public String toString() {
-            return toString;
-        }
-
-        @Override
-        public void close() throws IOException {
-            outputStream.close();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            return outputStream.equals(obj);
-        }
-
-        @Override
-        public void flush() throws IOException {
-            outputStream.flush();
-        }
-
-        @Override
-        public int hashCode() {
-            return outputStream.hashCode();
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            outputStream.write(b, off, len);
-        }
-
-        @Override
-        public void write(byte[] b) throws IOException {
-            outputStream.write(b);
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            outputStream.write(b);
         }
 
     }

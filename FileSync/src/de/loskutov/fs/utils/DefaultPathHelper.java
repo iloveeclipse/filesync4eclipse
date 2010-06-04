@@ -6,8 +6,9 @@
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributor(s):
  * 	Volker Wandmaker - initial API and implementation
+ *  Andrei Loskutov - refactoring
  *******************************************************************************/
-package de.loskutov.fs.command;
+package de.loskutov.fs.utils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -17,7 +18,33 @@ import java.net.URI;
 
 import org.eclipse.core.runtime.IPath;
 
-public class FsPathUtilImpl implements FsPathUtil {
+import de.loskutov.fs.IPathHelper;
+
+public class DefaultPathHelper implements IPathHelper {
+    private static final String FS_PATH_UTIL_CLASS_NAME = "de.loskutov.fs.command.FsUriPathUtil";
+    private static boolean errorOnLoadOfFsPathUtil;
+    private static IPathHelper iPathHelper;
+
+    public static IPathHelper getPathHelper() {
+        if (iPathHelper == null) {
+            iPathHelper = createIPathHelper();
+        }
+        return iPathHelper;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static IPathHelper createIPathHelper() {
+        if (!errorOnLoadOfFsPathUtil) {
+            try {
+                Class<IPathHelper> wizardClass = (Class<IPathHelper>) Class.forName(
+                        FS_PATH_UTIL_CLASS_NAME, true, IPathHelper.class.getClassLoader());
+                return wizardClass.newInstance();
+            } catch (Throwable e) {
+                errorOnLoadOfFsPathUtil = true;
+            }
+        }
+        return new DefaultPathHelper();
+    }
 
     public boolean isUriIncluded(IPath path) {
         return FsUriPath.isUriIncluded(path);
@@ -35,9 +62,6 @@ public class FsPathUtilImpl implements FsPathUtil {
         return isUriLike(pathStr);
     }
 
-    // public URI getUri(IPath path) {
-    // throw new UnsupportedOperationException();
-    // }
     public URI getUri(IPath path) {
         if (!(path instanceof FsUriPath)) {
             throw new IllegalArgumentException();
@@ -50,7 +74,7 @@ public class FsPathUtilImpl implements FsPathUtil {
         return new FileOutputStream(file);
     }
 
-    /*
+    /**
      * return null if((path instanceof FsUriPath) and uri.scheme != "file". A file otherwise.
      */
     public File toFile(IPath path) {
@@ -83,6 +107,10 @@ public class FsPathUtilImpl implements FsPathUtil {
             return fsUriPath.getUri().getScheme().equalsIgnoreCase(FsUriPath.RSE_SCHEME_TOKEN)
             && path.isUNC();
         }
+        return false;
+    }
+
+    public boolean isRseFile(File path) {
         return false;
     }
 

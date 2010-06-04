@@ -32,9 +32,9 @@ import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent;
 
+import de.loskutov.fs.FileSyncException;
 import de.loskutov.fs.FileSyncPlugin;
 import de.loskutov.fs.command.FileMapping;
-import de.loskutov.fs.command.FileSyncException;
 import de.loskutov.fs.properties.ProjectProperties;
 
 /**

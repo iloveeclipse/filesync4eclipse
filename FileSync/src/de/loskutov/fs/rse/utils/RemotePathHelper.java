@@ -6,8 +6,9 @@
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributor(s):
  * 	Volker Wandmaker - initial API and implementation
+ *  Andrei Loskutov - refactoring
  *******************************************************************************/
-package de.loskutov.fs.command;
+package de.loskutov.fs.rse.utils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -17,9 +18,11 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.rse.core.model.IHost;
 import org.eclipse.rse.subsystems.files.core.subsystems.IRemoteFile;
 
-import de.loskutov.fs.utils.RseUtils;
+import de.loskutov.fs.FileSyncException;
+import de.loskutov.fs.utils.DefaultPathHelper;
+import de.loskutov.fs.utils.FsUriPath;
 
-public class FsUriPathUtil extends FsPathUtilImpl {
+public class RemotePathHelper extends DefaultPathHelper {
 
     @Override
     public OutputStream getOutputStream(File file) throws FileNotFoundException {
@@ -76,4 +79,8 @@ public class FsUriPathUtil extends FsPathUtilImpl {
         .create("rse", remoteFile.getHost().getName(), remoteFile.getAbsolutePath());
     }
 
+    @Override
+    public boolean isRseFile(File path) {
+        return RseSimpleUtils.isRseFile(path);
+    }
 }

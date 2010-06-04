@@ -24,11 +24,9 @@ Bundle-ActivationPolicy: lazy
 Export-Package: de.loskutov.fs,
  de.loskutov.fs.actions,
  de.loskutov.fs.builder,
- de.loskutov.fs.builder.cmdexecuter,
  de.loskutov.fs.command,
  de.loskutov.fs.dialogs,
  de.loskutov.fs.preferences,
- de.loskutov.fs.properties,
- de.loskutov.fs.utils
+ de.loskutov.fs.properties
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Bundle-ClassPath: .

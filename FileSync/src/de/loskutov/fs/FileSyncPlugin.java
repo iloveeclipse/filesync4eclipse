@@ -19,26 +19,19 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.Version;
 
-import de.loskutov.fs.builder.SyncWizard;
-import de.loskutov.fs.builder.SyncWizardFactory;
-import de.loskutov.fs.command.FsPathUtil;
-import de.loskutov.fs.preferences.FileSyncConstants;
-
 /**
  * The main plugin class to be used in the desktop.
  */
 public class FileSyncPlugin extends AbstractUIPlugin {
 
     private static FileSyncPlugin plugin;
-
+    /** used for tests to not to open dialogs */
+    public static final String KEY_ASK_USER = "askUser";
     public static final String RSE_SYMBOLIC_NAME = "org.eclipse.rse";
     public static final Version RSE_MIN_VERSION = new Version("3.1.0");
 
     public static final String PLUGIN_ID = "de.loskutov.FileSync";
 
-    private volatile Boolean rseAvailable;
-
-    private FsPathUtil fsPathUtil;
 
     /**
      * The constructor.
@@ -67,7 +60,7 @@ public class FileSyncPlugin extends AbstractUIPlugin {
             message = message + " " + error.getMessage();
         }
         IPreferenceStore store = getDefault().getPreferenceStore();
-        if (store.getBoolean(FileSyncConstants.KEY_ASK_USER)) {
+        if (store.getBoolean(KEY_ASK_USER)) {
             MessageDialog.openError(shell, "FileSync error", message);
         }
         log(message, error, IStatus.ERROR);
@@ -129,27 +122,8 @@ public class FileSyncPlugin extends AbstractUIPlugin {
         return null;
     }
 
-    public boolean isRseAvailable() {
-        if (rseAvailable == null) {
-            rseAvailable = Boolean.valueOf(SyncWizardFactory.getInstance().createSyncWizard()
-                    .getClass() != SyncWizard.class);
-        }
-        return rseAvailable.booleanValue();
-    }
-
     public String getRseRequirement() {
         return RSE_SYMBOLIC_NAME + " >= " + RSE_MIN_VERSION;
-    }
-
-    public boolean isDefaultDelayedCopy() {
-        return SyncWizard.DEFAULT_DELAYED_COPY_DELETE;
-    }
-
-    public FsPathUtil getFsPathUtil() {
-        if (fsPathUtil == null) {
-            fsPathUtil = SyncWizardFactory.getInstance().createFsPathUtil();
-        }
-        return fsPathUtil;
     }
 
 }

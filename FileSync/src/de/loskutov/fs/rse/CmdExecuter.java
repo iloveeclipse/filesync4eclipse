@@ -6,15 +6,15 @@
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributor(s):
  * 	Volker Wandmaker - initial API and implementation
+ *  Andrei Loskutov - refactoring
  *******************************************************************************/
-package de.loskutov.fs.builder.cmdexecuter;
+package de.loskutov.fs.rse;
 
 import java.io.File;
 import java.util.Collection;
 import java.util.List;
 
-import de.loskutov.fs.builder.DelayedSyncWizard;
-import de.loskutov.fs.builder.DelayedSyncWizard.DeleteFileRecord;
+import de.loskutov.fs.rse.BulkSyncWizard.DeleteFileRecord;
 
 public interface CmdExecuter {
 
@@ -34,7 +34,7 @@ public interface CmdExecuter {
     String getLineSeparator();
 
     /**
-     * this is used in {@link DelayedSyncWizard#commit()}.
+     * this is used in {@link BulkSyncWizard#commit()}.
      *
      * @param fileRecord
      * @return a String-representation of the file. On Default it's the

@@ -50,9 +50,6 @@ public class SyncWizard {
     protected static final IContentType TEXT_TYPE = Platform.getContentTypeManager()
     .getContentType("org.eclipse.core.runtime.text"); //$NON-NLS-1$
 
-    public static final boolean DELAYED_COPY_DELETE = true;
-    public static final boolean DEFAULT_DELAYED_COPY_DELETE = !DELAYED_COPY_DELETE;
-
     /**
      * all known file mappings for this wizard
      */
@@ -858,7 +855,7 @@ public class SyncWizard {
     public boolean begin() {
         boolean anyValid = false;
 
-        if (rootPath != null && !FileSyncPlugin.getDefault().isRseAvailable()
+        if (rootPath != null && !SyncWizardFactory.getInstance().isRseAvailable()
                 && rootPath.toFile() == null) {
             FileSyncPlugin
             .log(
