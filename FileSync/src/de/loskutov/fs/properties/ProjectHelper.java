@@ -21,6 +21,7 @@ import org.eclipse.core.runtime.IStatus;
 
 import de.loskutov.fs.FileSyncPlugin;
 import de.loskutov.fs.builder.FileSyncBuilder;
+import de.loskutov.fs.builder.ProjectProperties;
 
 /**
  * @author Andrei

@@ -69,6 +69,7 @@ import de.loskutov.fs.FileSyncPlugin;
 import de.loskutov.fs.IPathHelper;
 import de.loskutov.fs.builder.CharOperation;
 import de.loskutov.fs.builder.FileSyncBuilder;
+import de.loskutov.fs.builder.ProjectProperties;
 import de.loskutov.fs.builder.SyncWizardFactory;
 import de.loskutov.fs.command.FileMapping;
 import de.loskutov.fs.command.PathVariableHelper;

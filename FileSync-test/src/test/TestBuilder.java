@@ -38,10 +38,10 @@ import org.osgi.framework.Bundle;
 import de.loskutov.fs.FileSyncPlugin;
 import de.loskutov.fs.actions.ForceFileSyncActionDelegate;
 import de.loskutov.fs.builder.FileSyncBuilder;
+import de.loskutov.fs.builder.ProjectProperties;
 import de.loskutov.fs.command.FileMapping;
 import de.loskutov.fs.preferences.FileSyncConstants;
 import de.loskutov.fs.properties.ProjectHelper;
-import de.loskutov.fs.properties.ProjectProperties;
 
 public class TestBuilder extends TestCase {
     private static final String PREFIX_EXCL_FROM_SYNC = "resources";

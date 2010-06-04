@@ -6,7 +6,7 @@
  * http://www.eclipse.org/legal/epl-v10.html
  * Contributor:  Andrei Loskutov - initial API and implementation
  *******************************************************************************/
-package de.loskutov.fs.properties;
+package de.loskutov.fs.builder;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,7 +32,6 @@ import org.eclipse.core.runtime.preferences.IScopeContext;
 import org.osgi.service.prefs.BackingStoreException;
 
 import de.loskutov.fs.FileSyncPlugin;
-import de.loskutov.fs.builder.FileSyncBuilder;
 import de.loskutov.fs.command.FileMapping;
 
 /**

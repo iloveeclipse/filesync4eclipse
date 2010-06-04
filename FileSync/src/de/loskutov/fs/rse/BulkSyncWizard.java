@@ -33,11 +33,11 @@ import org.eclipse.rse.core.RSECorePlugin;
 import org.eclipse.rse.ui.RSEUIPlugin;
 
 import de.loskutov.fs.FileSyncPlugin;
+import de.loskutov.fs.builder.ProjectProperties;
 import de.loskutov.fs.builder.SyncWizard;
 import de.loskutov.fs.command.CopyDelegate;
 import de.loskutov.fs.command.FS;
 import de.loskutov.fs.command.FileMapping;
-import de.loskutov.fs.properties.ProjectProperties;
 import de.loskutov.fs.rse.utils.RseSimpleUtils;
 import de.loskutov.fs.rse.utils.RseUtils;
 import de.loskutov.fs.rse.utils.ZipUtils;

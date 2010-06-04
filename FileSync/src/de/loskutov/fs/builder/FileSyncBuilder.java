@@ -35,7 +35,6 @@ import org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChange
 import de.loskutov.fs.FileSyncException;
 import de.loskutov.fs.FileSyncPlugin;
 import de.loskutov.fs.command.FileMapping;
-import de.loskutov.fs.properties.ProjectProperties;
 
 /**
  * @author Andrei

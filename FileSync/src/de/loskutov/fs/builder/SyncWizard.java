@@ -37,7 +37,6 @@ import de.loskutov.fs.command.CopyDelegate;
 import de.loskutov.fs.command.FS;
 import de.loskutov.fs.command.FileMapping;
 import de.loskutov.fs.command.PathVariableHelper;
-import de.loskutov.fs.properties.ProjectProperties;
 
 /**
  * Wizard should has knowledge to allow/diasllow/perform all required sync operations for particular
