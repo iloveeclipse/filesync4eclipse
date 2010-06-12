@@ -18,9 +18,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Map.Entry;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
@@ -91,7 +91,7 @@ public class BulkSyncWizard extends SyncWizard {
                     null, IStatus.INFO);
         }
         boolean globalValid = true;
-        if (DefaultPathHelper.getPathHelper().isRseUnc(rootPath)) {
+        if (DefaultPathHelper.getInstance().isRseUnc(rootPath)) {
             logUncRseMsg(rootPath);
         }
 
@@ -107,7 +107,7 @@ public class BulkSyncWizard extends SyncWizard {
                                     + "'ignored. @see http://support.microsoft.com/kb/156276/en for details.",
                                     null, IStatus.INFO);
                 }
-                if (DefaultPathHelper.getPathHelper().isRseUnc(destinationPath)) {
+                if (DefaultPathHelper.getInstance().isRseUnc(destinationPath)) {
                     logUncRseMsg(destinationPath);
                     fm.setValid(false);
 
@@ -121,7 +121,7 @@ public class BulkSyncWizard extends SyncWizard {
 
     private void logUncRseMsg(IPath destinationPath) {
         String msg = "UNC via RSE is not supported yet (Path '"
-                + DefaultPathHelper.getPathHelper().toFqString(destinationPath) + "') in Project '"
+                + DefaultPathHelper.getInstance().toFqString(destinationPath) + "') in Project '"
                 + projectProps.getProject().getName() + "'.";
         FileSyncPlugin.log(msg, null, IStatus.WARNING);
     }
@@ -150,13 +150,17 @@ public class BulkSyncWizard extends SyncWizard {
         if (filesToDeleteSet.size() == 0) {
             return true;
         }
-        ICommandExecutor cmdExecuter = getCmdExecuter(destinationRoot);
+        IPath destinationRootParent = (destinationRoot.segmentCount() > 0 ? destinationRoot
+                .removeLastSegments(1)
+                : destinationRoot);
+
+        ICommandExecutor cmdExecuter = getCmdExecuter(destinationRootParent);
         try {
             String delPrefix = FILE_PREFIX + "filesToDeleteSet";
             String delSuffix = cmdExecuter.getFilesToDeleteSuffix();
             String randomName = RseSimpleUtils.getRandomName(delPrefix, delSuffix);
 
-            File destinationFile = getDestinationFile(destinationRoot.append(randomName));
+            File destinationFile = getDestinationFile(destinationRootParent.append(randomName));
             if (!FS.create(destinationFile, IS_FILE)) {
                 return false;
             }

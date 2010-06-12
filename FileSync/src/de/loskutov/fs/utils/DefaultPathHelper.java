@@ -17,30 +17,40 @@ import java.io.OutputStream;
 import java.net.URI;
 
 import org.eclipse.core.runtime.IPath;
+import org.eclipse.core.runtime.IStatus;
 
+import de.loskutov.fs.FileSyncPlugin;
 import de.loskutov.fs.IPathHelper;
+import de.loskutov.fs.builder.SyncWizardFactory;
 
 public class DefaultPathHelper implements IPathHelper {
-    private static final String FS_PATH_UTIL_CLASS_NAME = "de.loskutov.fs.command.FsUriPathUtil";
-    private static boolean errorOnLoadOfFsPathUtil;
-    private static IPathHelper iPathHelper;
+    private static final String REMOTE_PATH_HELPER = "de.loskutov.fs.rse.utils.RemotePathHelper";
 
-    public static IPathHelper getPathHelper() {
-        if (iPathHelper == null) {
-            iPathHelper = createIPathHelper();
+    private static IPathHelper instance;
+
+    private static boolean errorOnLoadOfPathHelper = false;
+
+    protected DefaultPathHelper(){/*Singleton*/}
+
+    public static IPathHelper getInstance() {
+        if (instance == null) {
+            instance = createIPathHelper();
         }
-        return iPathHelper;
+        return instance;
     }
 
     @SuppressWarnings("unchecked")
     private static IPathHelper createIPathHelper() {
-        if (!errorOnLoadOfFsPathUtil) {
+        if (SyncWizardFactory.getInstance().isRseAvailable() && !errorOnLoadOfPathHelper) {
             try {
                 Class<IPathHelper> wizardClass = (Class<IPathHelper>) Class.forName(
-                        FS_PATH_UTIL_CLASS_NAME, true, IPathHelper.class.getClassLoader());
+                        REMOTE_PATH_HELPER, true, IPathHelper.class.getClassLoader());
                 return wizardClass.newInstance();
             } catch (Throwable e) {
-                errorOnLoadOfFsPathUtil = true;
+                errorOnLoadOfPathHelper = true;
+                FileSyncPlugin.log("Rse is availabe, but " + REMOTE_PATH_HELPER + " failed.",
+                        e, IStatus.WARNING);
+
             }
         }
         return new DefaultPathHelper();
@@ -102,15 +112,21 @@ public class DefaultPathHelper implements IPathHelper {
     }
 
     public boolean isRseUnc(IPath path) {
-        if (path instanceof FsUriPath) {
-            FsUriPath fsUriPath = (FsUriPath) path;
-            return fsUriPath.getUri().getScheme().equalsIgnoreCase(FsUriPath.RSE_SCHEME_TOKEN)
-            && path.isUNC();
-        }
-        return false;
+        return isRseUri(path) && path.isUNC();
     }
 
     public boolean isRseFile(File path) {
+        return false;
+    }
+
+    public boolean isRseUri(IPath path) {
+        if(!isUriIncluded(path)) {
+            return false;
+        }
+        if (path instanceof FsUriPath) {
+            FsUriPath fsUriPath = (FsUriPath) path;
+            return fsUriPath.getUri().getScheme().equalsIgnoreCase(FsUriPath.RSE_SCHEME_TOKEN);
+        }
         return false;
     }
 

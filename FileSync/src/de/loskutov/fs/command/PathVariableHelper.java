@@ -258,23 +258,23 @@ public class PathVariableHelper {
     }
 
     private boolean isUriIncluded(String pathStr) {
-        return DefaultPathHelper.getPathHelper().isUri(pathStr);
+        return DefaultPathHelper.getInstance().isUri(pathStr);
     }
 
     private boolean isUriIncluded(IPath path) {
-        return DefaultPathHelper.getPathHelper().isUriIncluded(path);
+        return DefaultPathHelper.getInstance().isUriIncluded(path);
     }
 
     private IPath create(String path) {
-        return DefaultPathHelper.getPathHelper().create(path);
+        return DefaultPathHelper.getInstance().create(path);
     }
 
     private IPath create(IPath path, String newPathStr) {
-        return DefaultPathHelper.getPathHelper().create(path, newPathStr);
+        return DefaultPathHelper.getInstance().create(path, newPathStr);
     }
 
     private URI getUri(IPath path) {
-        return DefaultPathHelper.getPathHelper().getUri(path);
+        return DefaultPathHelper.getInstance().getUri(path);
     }
 
 }

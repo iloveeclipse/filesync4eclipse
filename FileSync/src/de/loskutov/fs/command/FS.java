@@ -168,20 +168,21 @@ public final class FS {
 
         boolean success = true;
         FileInputStream fin = null; // Streams to the two files.
-        FileOutputStream fout = null; // These are closed in the finally block.
-        IPathHelper pathHelper = DefaultPathHelper.getPathHelper();
+        OutputStream fout = null; // These are closed in the finally block.
+        IPathHelper pathHelper = DefaultPathHelper.getInstance();
         try {
             // Open a stream to the input file and get a channel from it
             fin = new FileInputStream(source);
             if (pathHelper.isRseFile(destination)) {
-                OutputStream out = pathHelper.getOutputStream(destination);
-                transferTo(fin, out, CLOSE_WHEN_DONE);
+                fout = pathHelper.getOutputStream(destination);
+                transferTo(fin, fout, !CLOSE_WHEN_DONE);
             } else {
                 // Now get the output channel
                 FileChannel out;
 
-                fout = new FileOutputStream(destination); // open file stream
-                out = fout.getChannel(); // get its channel
+                FileOutputStream tmpOut = new FileOutputStream(destination); // open file stream
+                fout = tmpOut;
+                out = tmpOut.getChannel(); // get its channel
 
                 FileChannel in = fin.getChannel();
                 // Query the size of the input file

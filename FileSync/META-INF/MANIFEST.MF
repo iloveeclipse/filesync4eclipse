@@ -27,6 +27,9 @@ Export-Package: de.loskutov.fs,
  de.loskutov.fs.command,
  de.loskutov.fs.dialogs,
  de.loskutov.fs.preferences,
- de.loskutov.fs.properties
+ de.loskutov.fs.properties,
+ de.loskutov.fs.rse,
+ de.loskutov.fs.rse.utils,
+ de.loskutov.fs.utils
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Bundle-ClassPath: .

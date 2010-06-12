@@ -167,7 +167,7 @@ public class FsUriPath extends Path {
 
     @Override
     public File toFile() {
-        return DefaultPathHelper.getPathHelper().toFile(this);
+        return DefaultPathHelper.getInstance().toFile(this);
     }
 
     public static FsUriPath create(IPath path, String pathStr) {

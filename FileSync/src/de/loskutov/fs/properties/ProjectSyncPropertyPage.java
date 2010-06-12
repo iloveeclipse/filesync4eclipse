@@ -356,7 +356,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         delayedCopyDeleteField.setDialogFieldListener(adapter);
 
         if (!SyncWizardFactory.getInstance().isRseAvailable()) {
-            delayedCopyDeleteField.setToolTipText(FileSyncPlugin.getDefault().getRseRequirement()
+            delayedCopyDeleteField.setToolTipText(SyncWizardFactory.getInstance().getRseRequirement()
                     + " not available.");
         } else {
             delayedCopyDeleteField
@@ -1182,7 +1182,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         defDestinationPath = outputLocation;
         // inits the dialog field
         if (outputLocation != null) {
-            IPathHelper pathHelper = DefaultPathHelper.getPathHelper();
+            IPathHelper pathHelper = DefaultPathHelper.getInstance();
             if (pathHelper.isUriIncluded(outputLocation)) {
                 destPathDialogField.setText(pathHelper.getUri(
                         outputLocation).toString());
@@ -1209,7 +1209,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         StringBuffer buf = new StringBuffer();
         // the host or scheme can be different even if the path is the same
         if(defDestinationPath != null){
-            String fqString = DefaultPathHelper.getPathHelper()
+            String fqString = DefaultPathHelper.getInstance()
             .toFqString(defDestinationPath);
             PathListElement.appendEncodeString(fqString, buf).append(';');
         }
@@ -1268,7 +1268,7 @@ public class ProjectSyncPropertyPage extends PropertyPage implements IStatusChan
         if ((text == null || text.trim().length() == 0)) {
             return null;
         }
-        return DefaultPathHelper.getPathHelper().create(text).makeAbsolute();
+        return DefaultPathHelper.getInstance().create(text).makeAbsolute();
     }
 
     void changeControlPressed(DialogField field) {

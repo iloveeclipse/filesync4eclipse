@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.eclipse.core.runtime.IStatus;
@@ -34,6 +35,8 @@ import de.loskutov.fs.utils.NamedOutputStream;
  * @author Andrei - production ready code :)
  */
 public class CopyDelegate {
+
+    public static final boolean QUOTE_REPLACEMENT = true;
 
     public static final int KEEP_BOTH_OPEN_OPTION = 0;
     public static final int CLOSE_READER_OPTION = 1;
@@ -114,7 +117,7 @@ public class CopyDelegate {
         try {
             LocalFileInputStream sourceStream = new LocalFileInputStream(source);
             NamedOutputStream targetStream = new NamedOutputStream(DefaultPathHelper
-                    .getPathHelper().getOutputStream(destination), destination.toString());
+                    .getInstance().getOutputStream(destination), destination.toString());
             success = copyStreams(sourceStream, targetStream, DEFAULT_OPTIONS);
         } catch (FileNotFoundException e) {
             FileSyncPlugin.log("Could not create Streams", e, IStatus.WARNING);
@@ -201,17 +204,25 @@ public class CopyDelegate {
     private void copyInternalOpened(LineReader reader, LineWriter writer) throws IOException {
         String line = null;
         while ((line = reader.readLineToString()) != null) {
-            for (Iterator<Pattern> i = patternToValue.keySet().iterator(); i.hasNext();) {
-                Pattern pattern = i.next();
-                if (line.indexOf(patternToKey.get(pattern)) < 0) {
-                    continue;
-                }
-                String value = patternToValue.get(pattern);
-                line = pattern.matcher(line).replaceAll(value);
-            }
+            line = copyLine(line, !QUOTE_REPLACEMENT);
             writer.writeLine(line);
         }
         writer.flush();
+    }
+
+    public String copyLine(String line, boolean quoteReplacement) {
+        for (Iterator<Pattern> i = patternToValue.keySet().iterator(); i.hasNext();) {
+            Pattern pattern = i.next();
+            if (line.indexOf(patternToKey.get(pattern)) < 0) {
+                continue;
+            }
+            String value = patternToValue.get(pattern);
+            if(quoteReplacement) {
+                value = Matcher.quoteReplacement(value);
+            }
+            line = pattern.matcher(line).replaceAll(value );
+        }
+        return line;
     }
 
     private void initPatterns() {

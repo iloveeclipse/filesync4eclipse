@@ -17,7 +17,11 @@ import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
-import org.osgi.framework.Version;
+import org.osgi.framework.Bundle;
+import org.osgi.framework.BundleContext;
+
+import de.loskutov.fs.builder.SyncWizardFactory;
+import de.loskutov.fs.utils.BundleUtils;
 
 /**
  * The main plugin class to be used in the desktop.
@@ -27,11 +31,13 @@ public class FileSyncPlugin extends AbstractUIPlugin {
     private static FileSyncPlugin plugin;
     /** used for tests to not to open dialogs */
     public static final String KEY_ASK_USER = "askUser";
-    public static final String RSE_SYMBOLIC_NAME = "org.eclipse.rse";
-    public static final Version RSE_MIN_VERSION = new Version("3.1.0");
-
     public static final String PLUGIN_ID = "de.loskutov.FileSync";
 
+    /**
+     * If the User added a RSE-URI and RSE is not available, this field is used to give the user
+     * more detailed information.
+     */
+    private Bundle rseBundle;
 
     /**
      * The constructor.
@@ -42,6 +48,15 @@ public class FileSyncPlugin extends AbstractUIPlugin {
             throw new IllegalStateException("FileSync plugin is singleton!");
         }
         plugin = this;
+    }
+
+    @Override
+    public void start(BundleContext context) throws Exception {
+        super.start(context);
+        Bundle[] bundles = context.getBundles();
+
+        rseBundle = BundleUtils.get(bundles, SyncWizardFactory.RSE_SYMBOLIC_NAME, SyncWizardFactory.ZERO_VERSION);
+        SyncWizardFactory.setInstance(rseBundle );
     }
 
     /**
@@ -120,10 +135,6 @@ public class FileSyncPlugin extends AbstractUIPlugin {
         }
         // TODO error message
         return null;
-    }
-
-    public String getRseRequirement() {
-        return RSE_SYMBOLIC_NAME + " >= " + RSE_MIN_VERSION;
     }
 
 }

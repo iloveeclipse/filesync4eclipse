@@ -42,7 +42,11 @@ public interface IPathHelper {
     public boolean isRseUnc(IPath path);
 
     public boolean isRseFile(File path);
-
+    /**
+     * @param path
+     * @return isUriIncluded(path) && "isRseScheme"
+     */
+    public boolean isRseUri(IPath path);
     /**
      * to fully qualified String
      *

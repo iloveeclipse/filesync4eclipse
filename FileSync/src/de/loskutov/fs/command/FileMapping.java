@@ -23,6 +23,7 @@ import org.eclipse.core.runtime.Path;
 
 import de.loskutov.fs.FileSyncPlugin;
 import de.loskutov.fs.builder.SyncWizard;
+import de.loskutov.fs.utils.DefaultPathHelper;
 
 /**
  * @author Andrei
@@ -388,8 +389,12 @@ public class FileMapping {
         if (destination == null) {
             return new IContainer[0];
         }
-        return ResourcesPlugin.getWorkspace().getRoot()
-        .findContainersForLocationURI(URIUtil.toURI(destination.makeAbsolute()));
+
+        if(DefaultPathHelper.getInstance().isRseUri(destination)){
+            return new IContainer[]{};
+        }
+        return ResourcesPlugin.getWorkspace().getRoot().findContainersForLocationURI(
+                URIUtil.toURI(destination.makeAbsolute()));
     }
 
     /**

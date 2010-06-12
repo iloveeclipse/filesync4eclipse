@@ -31,17 +31,19 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.content.IContentDescription;
 import org.eclipse.core.runtime.content.IContentType;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
+import org.osgi.framework.Bundle;
 
 import de.loskutov.fs.FileSyncPlugin;
 import de.loskutov.fs.command.CopyDelegate;
 import de.loskutov.fs.command.FS;
 import de.loskutov.fs.command.FileMapping;
 import de.loskutov.fs.command.PathVariableHelper;
+import de.loskutov.fs.utils.DefaultPathHelper;
 
 /**
  * Wizard should has knowledge to allow/diasllow/perform all required sync operations for particular
  * project resource
- * 
+ *
  * @author Andrei
  */
 public class SyncWizard {
@@ -190,7 +192,7 @@ public class SyncWizard {
 
     /**
      * Performs all required operations to sync given delta with target directory
-     * 
+     *
      * @param delta
      * @param monitor
      * @return true only if this operation was successfull for all mapped files
@@ -232,7 +234,7 @@ public class SyncWizard {
     /**
      * Delete target directory / file first (if "deleteDestinationOnFullBuild" is true), then copy
      * source file/dir
-     * 
+     *
      * @param res
      * @param monitor
      * @return true only if this operation was successfull
@@ -312,7 +314,7 @@ public class SyncWizard {
 
     /**
      * Copy file(s) mapped to given resource according to existing project file mappings
-     * 
+     *
      * @param sourceRoot
      * @param monitor
      * @return true only if this operation was successfull for all mapped files
@@ -470,7 +472,7 @@ public class SyncWizard {
 
     /**
      * Deletes file(s) mapped to given resource according to existing project file mappings
-     * 
+     *
      * @param sourceRoot
      * @param clean
      *            true to delete all children of given resource
@@ -549,7 +551,7 @@ public class SyncWizard {
     /**
      * Check if given resource is in included and not in excluded entries patterns in any one of
      * known project files mappings.
-     * 
+     *
      * @param resource
      * @return true
      */
@@ -565,7 +567,7 @@ public class SyncWizard {
     /**
      * Check if given path is in included and not in excluded entries patterns in any one of known
      * project files mappings.
-     * 
+     *
      * @param path
      * @param isFolder
      * @return true
@@ -598,12 +600,12 @@ public class SyncWizard {
 
     /*
      * Copy from org.eclipse.jdt.internal.core.util.Util
-     * 
+     *
      * Returns whether the given resource path matches one of the inclusion/exclusion patterns.
      * NOTE: should not be asked directly using pkg root pathes
-     * 
+     *
      * @see IClasspathEntry#getInclusionPatterns
-     * 
+     *
      * @see IClasspathEntry#getExclusionPatterns
      */
     public final static boolean isExcluded(IPath resourcePath, char[][] inclusionPatterns,
@@ -617,13 +619,13 @@ public class SyncWizard {
 
     /*
      * Copy from org.eclipse.jdt.internal.compiler.util.Util.isExcluded
-     * 
+     *
      * ToDO (philippe) should consider promoting it to CharOperation Returns whether the given
      * resource path matches one of the inclusion/exclusion patterns. NOTE: should not be asked
      * directly using pkg root pathes
-     * 
+     *
      * @see IClasspathEntry#getInclusionPatterns
-     * 
+     *
      * @see IClasspathEntry#getExclusionPatterns
      */
     public final static boolean isExcluded(char[] path, char[][] inclusionPatterns,
@@ -670,7 +672,7 @@ public class SyncWizard {
     /**
      * Check if given resource is in any (included or excluded) entries patterns in any one of known
      * project files mappings.
-     * 
+     *
      * @param resource
      * @return true
      */
@@ -685,7 +687,7 @@ public class SyncWizard {
 
     /**
      * Check if given path is in any one of known project files mappings.
-     * 
+     *
      * @param path
      * @param isFolder
      * @return true
@@ -855,12 +857,8 @@ public class SyncWizard {
         boolean anyValid = false;
 
         if (rootPath != null && !SyncWizardFactory.getInstance().isRseAvailable()
-                && rootPath.toFile() == null) {
-            FileSyncPlugin
-                    .log("FileSync for project '"
-                            + projectProps.getProject().getName()
-                            + "' ignored as RSE is not available and default target folder is an URI-expression with a scheme != 'file'.",
-                            null, IStatus.WARNING);
+                && DefaultPathHelper.getInstance().isRseUri(rootPath)) {
+            logRseMsg(projectProps.getProject().getName(), rootPath);
         }
 
         for (int i = 0; i < mappings.length; i++) {
@@ -871,6 +869,18 @@ public class SyncWizard {
             anyValid |= created;
         }
         return anyValid;
+    }
+
+    private void logRseMsg(String projectName, IPath path) {
+        Bundle rseBundle = SyncWizardFactory.getInstance().getRseBundle();
+        String msg = null;
+        if(rseBundle != null){
+            msg = String.format("%s is available with Version %s, but Version %s is required. Check for Updates or get Rse from http://www.eclipse.org/dsdp/tm/", SyncWizardFactory.RSE_SYMBOLIC_NAME, rseBundle.getVersion(), SyncWizardFactory.getInstance().getRseMinVersion());
+        }else{
+            msg = String.format("%s is not available. You can get Rse >= %s from http://www.eclipse.org/dsdp/tm/", SyncWizardFactory.RSE_SYMBOLIC_NAME, SyncWizardFactory.getInstance().getRseMinVersion());
+        }
+        msg += "\n" +String.format("FileSync for project '%s' ignored for path '%s'.", projectName, path);
+        FileSyncPlugin.log(msg,null, IStatus.WARNING);
     }
 
     public boolean commit(IProgressMonitor monitor) {
