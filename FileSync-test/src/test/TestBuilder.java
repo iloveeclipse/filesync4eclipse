@@ -11,7 +11,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Map.Entry;
 
+import junit.framework.Assert;
 import junit.framework.TestCase;
 
 import org.eclipse.core.resources.IFile;
@@ -39,141 +41,156 @@ import de.loskutov.fs.FileSyncPlugin;
 import de.loskutov.fs.actions.ForceFileSyncActionDelegate;
 import de.loskutov.fs.builder.FileSyncBuilder;
 import de.loskutov.fs.builder.ProjectProperties;
+import de.loskutov.fs.builder.SyncWizardFactory;
+import de.loskutov.fs.command.CopyDelegate;
 import de.loskutov.fs.command.FileMapping;
 import de.loskutov.fs.preferences.FileSyncConstants;
 import de.loskutov.fs.properties.ProjectHelper;
+import de.loskutov.fs.utils.DefaultPathHelper;
 
 public class TestBuilder extends TestCase {
-    private static final String PREFIX_EXCL_FROM_SYNC = "resources";
+	private static final String PREFIX_EXCL_FROM_SYNC = "resources";
+	private static final String SUFFIX_ORIG_FILE = "_orig";
+	private static final boolean SYNCRONIZED_WAIT = true;
 
-    private static final String SUFFIX_ORIG_FILE = "_orig";
+	private static final CopyDelegate SYTEM_DELEGATE = new CopyDelegate();
+	static{
+		Properties properties = new Properties(/*System.getProperties()*/);
+		properties.put("java.io.tmpdir", System.getProperty("java.io.tmpdir").replace("\\", "/"));
+		SYTEM_DELEGATE.setPropertiesMap(properties );
+	}
 
-    protected List<IProject> destProjects;
+	protected List<IProject> destProjects;
 
-    protected String[] destPaths;
+	protected String[] destPaths;
 
-    protected String defDestination;
+	protected String defDestination;
 
-    protected Map<String, IPath> pathVarsToValues;
+	private String delayedCopyDelete;
 
-    protected Map<String, String> projNameToVariable;
+	protected Map<String, IPath> pathVarsToValues;
 
-    protected/*static final*/String DEFAULT_PROPS_NAME = "test";
+	protected Map<String, String> projNameToVariable;
 
-    protected/*static final*/String PROPS_PATH = "resources/";
+	protected/*static final*/String DEFAULT_PROPS_NAME = "test";
 
-    protected String[] pathVars;
+	protected/*static final*/String PROPS_PATH = "resources/";
 
-    protected IProject srcProj;
+	protected String[] pathVars;
 
-    protected String[] srcRootDirs;
+	protected IProject srcProj;
 
-    protected NullProgressMonitor monitor;
+	protected String[] srcRootDirs;
 
-    protected List<File> allDestFiles;
+	protected NullProgressMonitor monitor;
 
-    private String defVars;
+	protected List<File> allDestFiles;
 
-    private String extraVars;
+	private String defVars;
+
+	private String extraVars;
 
 
 
-    public TestBuilder() {
-        super();
-        IPreferenceStore store = FileSyncPlugin.getDefault().getPreferenceStore();
-        store.setValue(FileSyncConstants.KEY_ASK_USER, false);
-        monitor = new NullProgressMonitor();
-        allDestFiles = new ArrayList<File>();
-    }
+	public TestBuilder() {
+		super();
+		IPreferenceStore store = FileSyncPlugin.getDefault().getPreferenceStore();
+		assertTrue(SyncWizardFactory.getInstance().getRseRequirement() +" not available, but is required for these tests." ,SyncWizardFactory.getInstance().isRseAvailable());
+		store.setValue(FileSyncConstants.KEY_ASK_USER, false);
+		monitor = new NullProgressMonitor();
+		allDestFiles = new ArrayList<File>();
+	}
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        Properties properties = readProps(getName());
-        initResources(properties);
-    }
+	@Override
+	protected void setUp() throws Exception {
+		super.setUp();
+	}
 
-    private Properties readProps(String name) throws Exception {
-        Properties props = new Properties();
-        InputStream openStream = null;
-        try {
-            Bundle bundle = Platform.getBundle(TestFS.PLUGUN_ID);
-            URL resource = bundle.getResource(PROPS_PATH + name + ".properties");
-            if (resource == null) {
-                resource = bundle.getResource(PROPS_PATH + DEFAULT_PROPS_NAME
-                        + ".properties");
-            }
-            openStream = resource.openStream();
-            props.load(openStream);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            if (openStream != null) {
-                openStream.close();
-            }
-        }
-        return props;
-    }
+	private Properties readProps(String name) throws Exception {
+		Properties props = new Properties();
+		InputStream openStream = null;
+		try {
+			Bundle bundle = Platform.getBundle(TestFS.PLUGUN_ID);
+			URL resource = bundle.getResource(PROPS_PATH + name + ".properties");
+			if (resource == null) {
+				resource = bundle.getResource(PROPS_PATH + DEFAULT_PROPS_NAME
+						+ ".properties");
+			}
+			openStream = resource.openStream();
+			props.load(openStream);
+		} catch (IOException e) {
+			e.printStackTrace();
+		} finally {
+			if (openStream != null) {
+				openStream.close();
+			}
+		}
+		return resolve(props);
+	}
 
-    private InputStream openStream(String path) throws Exception {
-        Bundle bundle = Platform.getBundle(TestFS.PLUGUN_ID);
-        URL resource = bundle.getResource(path);
-        return resource.openStream();
-    }
+	private InputStream openStream(String path) throws Exception {
+		Bundle bundle = Platform.getBundle(TestFS.PLUGUN_ID);
+		URL resource = bundle.getResource(path);
+		return resource.openStream();
+	}
 
-    private void initResources(Properties props) throws Exception {
-        ResourcesPlugin.getWorkspace().getDescription().setAutoBuilding(false);
-        IProject srcProject = createSourceProject(props, true);
+	private void initResources(Properties props) throws Exception {
+		ResourcesPlugin.getWorkspace().getDescription().setAutoBuilding(false);
+		IProject srcProject = createSourceProject(props, true);
 
-        createDestinationProjects(props);
+		createDestinationProjects(props);
 
-        destPaths = props.getProperty("dest_paths").split("\\|");
+		destPaths = props.getProperty("dest_paths").split("\\|");
 
-        defDestination = props.getProperty("def_dest");
+		defDestination = props.getProperty("def_dest");
+		delayedCopyDelete = props.getProperty(ProjectProperties.KEY_DELAYED_COPY_DELETE);
+		if(delayedCopyDelete==null) {
+			delayedCopyDelete = "false";
+		}
 
-        defVars = props.getProperty("def_vars");
-        extraVars = props.getProperty("extra_vars");
-        createPathVariables(props);
+		defVars = props.getProperty("def_vars");
+		extraVars = props.getProperty("extra_vars");
+		createPathVariables(props);
 
-        createProjectMapping(srcProject);
+		createProjectMapping(srcProject);
 
-        //        srcProject.touch(monitor);
-        createProjectProperties(srcProject);
+		//        srcProject.touch(monitor);
+		createProjectProperties(srcProject);
 
-        ResourcesPlugin.getWorkspace().getDescription().setAutoBuilding(true);
-    }
+		ResourcesPlugin.getWorkspace().getDescription().setAutoBuilding(true);
+	}
 
-    protected FileSyncBuilder createBuilder(IProject srcProject) throws Exception {
-        ForceFileSyncActionDelegate fsd = new ForceFileSyncActionDelegate();
-        fsd.selectionChanged(null, new StructuredSelection(srcProject));
-        FileSyncBuilder builder = fsd.getOrCreateBuilder();
-        waitForBuilder();
-        assertTrue(ProjectHelper.hasBuilder(srcProject));
-        return builder;
-    }
+	protected FileSyncBuilder createBuilder(IProject srcProject) throws Exception {
+		ForceFileSyncActionDelegate fsd = new ForceFileSyncActionDelegate();
+		fsd.selectionChanged(null, new StructuredSelection(srcProject));
+		FileSyncBuilder builder = fsd.getOrCreateBuilder();
+		waitForBuilder();
+		assertTrue(ProjectHelper.hasBuilder(srcProject));
+		return builder;
+	}
 
-    private void createProjectProperties(IProject srcProject) {
-        ProjectProperties properties = ProjectProperties.getInstance(srcProject);
+	private void createProjectProperties(IProject srcProject) {
+		ProjectProperties properties = ProjectProperties.getInstance(srcProject);
 
-        // we need to refresh props because of previous test run
-        IEclipsePreferences preferences = properties.getPreferences(true);
-        FileMapping[] mappings = properties.getMappings();
-        System.out.println("\nProject props: \n");
-        for (FileMapping mapping : mappings) {
-            System.out.println(mapping);
-        }
-        System.out.println("\ndef. dest: "
-                + preferences.get(ProjectProperties.KEY_DEFAULT_DESTINATION, ""));
-    }
+		// we need to refresh props because of previous test run
+		IEclipsePreferences preferences = properties.getPreferences(true);
+		FileMapping[] mappings = properties.getMappings();
+		System.out.println("\nProject props: \n");
+		for (FileMapping mapping : mappings) {
+			System.out.println(mapping);
+		}
+		System.out.println("\ndef. dest: "
+				+ preferences.get(ProjectProperties.KEY_DEFAULT_DESTINATION, ""));
+	}
 
-    /*
-     * 1 create mapping
-     *  - for each src dir
-     *      - for each dest project
-     *      - for each path variable
-     *      - for each dest path
-     * 2 copy to project
-     *
+	/*
+	 * 1 create mapping
+	 *  - for each src dir
+	 *      - for each dest project
+	 *      - for each path variable
+	 *      - for each dest path
+	 * 2 copy to project
+	 *
      map|0=/dir1|E\:/Temp/test1|,|,
      map|1=/dir2|E\:/Temp/test2|,|,
      map|2=/dir1|:/TestProjectB/testdir|,|,
@@ -182,590 +199,611 @@ public class TestBuilder extends TestCase {
      map|5=/dir2|PATH_2/testdir|,|,
      useCurrentDateForDestinationFiles=false
      cleanOnCleanBuild=true
-     */
-    private void createProjectMapping(IProject srcProject) throws IOException,
-            CoreException {
-        int idx = 0;
-        StringBuilder mapFile = new StringBuilder();
-        for (String dir : srcRootDirs) {
-            for (IProject project : destProjects) {
-                if (projNameToVariable.get(project.getName()) != null) {
-                    // the project is addressed by the path variable
-                    continue;
-                }
-                mapFile.append("map|");
-                mapFile.append(idx).append("=/").append(dir).append("|:/");
-                mapFile.append(project.getName()).append("/").append(dir);
-                if (extraVars != null) {
-                    mapFile.append("|,|,|" + extraVars + "\n");
-                } else {
-                    mapFile.append("|,|,\n");
-                }
-                idx++;
-            }
-            for (String pathVar : pathVars) {
-                mapFile.append("map|");
-                mapFile.append(idx).append("=/").append(dir).append("|");
-                mapFile.append(pathVar).append("/").append(dir);
-                if (extraVars != null) {
-                    mapFile.append("|,|,|" + extraVars + "\n");
-                } else {
-                    mapFile.append("|,|,\n");
-                }
-                idx++;
-            }
-            for (String path : destPaths) {
-                if (pathVarsToValues.containsValue(new Path(path))) {
-                    // the path is addressed by the path variable
-                    continue;
-                }
-                mapFile.append("map|");
-                mapFile.append(idx).append("=/").append(dir).append("|");
-                mapFile.append(path).append("/").append(dir);
-                if (extraVars != null) {
-                    mapFile.append("|,|,|" + extraVars + "\n");
-                } else {
-                    mapFile.append("|,|,\n");
-                }
-                idx++;
-            }
-            if (defDestination != null && defDestination.length() > 0) {
-                mapFile.append("map|");
-                mapFile.append(idx).append("=/").append(dir);
-                if (extraVars != null) {
-                    mapFile.append("|,|,|,|" + extraVars + "\n");
-                } else {
-                    mapFile.append("|,|,|,\n");
-                }
-                idx++;
-            }
-        }
-        mapFile.append("useCurrentDateForDestinationFiles=false\n");
-        mapFile.append("cleanOnCleanBuild=true\n");
-        mapFile.append("defaultDestination=");
-        if (defDestination != null) {
-            mapFile.append(defDestination);
-        }
-        mapFile.append('\n');
-        mapFile.append("defaultVariables=");
-        if (defVars != null) {
-            mapFile.append(defVars);
-        }
-        mapFile.append('\n');
+	 */
+	private void createProjectMapping(IProject srcProject) throws IOException,
+	CoreException {
+		int idx = 0;
+		StringBuilder mapFile = new StringBuilder();
+		for (String dir : srcRootDirs) {
+			for (IProject project : destProjects) {
+				if (projNameToVariable.get(project.getName()) != null) {
+					// the project is addressed by the path variable
+					continue;
+				}
+				mapFile.append("map|");
+				mapFile.append(idx).append("=/").append(dir).append("|:/");
+				mapFile.append(project.getName()).append("/").append(dir);
+				if (extraVars != null) {
+					mapFile.append("|,|,|" + extraVars + "\n");
+				} else {
+					mapFile.append("|,|,\n");
+				}
+				idx++;
+			}
+			for (String pathVar : pathVars) {
+				mapFile.append("map|");
+				mapFile.append(idx).append("=/").append(dir).append("|");
+				mapFile.append(pathVar).append("/").append(dir);
+				if (extraVars != null) {
+					mapFile.append("|,|,|" + extraVars + "\n");
+				} else {
+					mapFile.append("|,|,\n");
+				}
+				idx++;
+			}
+			for (String path : destPaths) {
+				IPath createdPath = DefaultPathHelper.getInstance().create(path);
+				if (pathVarsToValues.containsValue(createdPath)) {
+					// the path is addressed by the path variable
+					continue;
+				}
+				mapFile.append("map|");
+				mapFile.append(idx).append("=/").append(dir).append("|");
+				mapFile.append(path).append("/").append(dir);
+				if (extraVars != null) {
+					mapFile.append("|,|,|" + extraVars + "\n");
+				} else {
+					mapFile.append("|,|,\n");
+				}
+				idx++;
+			}
+			if (defDestination != null && defDestination.length() > 0) {
+				mapFile.append("map|");
+				mapFile.append(idx).append("=/").append(dir);
+				if (extraVars != null) {
+					mapFile.append("|,|,|,|" + extraVars + "\n");
+				} else {
+					mapFile.append("|,|,|,\n");
+				}
+				idx++;
+			}
+		}
+		mapFile.append("useCurrentDateForDestinationFiles=false\n");
+		mapFile.append("cleanOnCleanBuild=true\n");
+		mapFile.append(ProjectProperties.KEY_DELAYED_COPY_DELETE).append("=");
+		mapFile.append(delayedCopyDelete).append("\n");
 
-        String toOSString = srcProject.getLocation().append(
-                ".settings/de.loskutov.FileSync.prefs").toOSString();
-        File f = new File(toOSString);
-        f.getParentFile().mkdirs();
-        if (f.exists()) {
-            f.delete();
-        }
-        f.createNewFile();
-        FileWriter fw = new FileWriter(f);
-        fw.write(mapFile.toString());
-        fw.flush();
-        fw.close();
-        srcProject.refreshLocal(IResource.DEPTH_INFINITE, monitor);
-        System.out.println("Project map file: \n\n");
-        System.out.println(mapFile.toString());
-        System.out.println("\n");
-    }
+		mapFile.append("defaultDestination=");
+		if (defDestination != null) {
+			mapFile.append(defDestination);
+		}
+		mapFile.append('\n');
+		mapFile.append("defaultVariables=");
+		if (defVars != null) {
+			mapFile.append(defVars);
+		}
+		mapFile.append('\n');
 
-    private void createDestinationProjects(Properties props) throws CoreException {
-        IWorkspace workspace = ResourcesPlugin.getWorkspace();
-        IWorkspaceRoot root = workspace.getRoot();
-        String destProjProp = props.getProperty("dest_projects");
-        String[] destProjNames = destProjProp.split("\\|");
+		String toOSString = srcProject.getLocation().append(
+		".settings/de.loskutov.FileSync.prefs").toOSString();
+		File f = new File(toOSString);
+		f.getParentFile().mkdirs();
+		if (f.exists()) {
+			f.delete();
+		}
+		f.createNewFile();
+		FileWriter fw = new FileWriter(f);
+		fw.write(mapFile.toString());
+		fw.flush();
+		fw.close();
+		srcProject.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+		System.out.println("Project map file: \n\n");
+		System.out.println(mapFile.toString());
+		System.out.println("\n");
+	}
 
-        destProjects = new ArrayList<IProject>();
-        for (String projectName : destProjNames) {
-            // creates project
-            IProject project = root.getProject(projectName);
-            if (!project.isAccessible()) {
-                project.create(null, monitor);
-                project.open(monitor);
-            }
-            destProjects.add(project);
-            IResource[] resources = project.members();
-            for (IResource resource : resources) {
-                if (resource.exists() && resource.getType() == IResource.FOLDER) {
-                    resource.delete(true, monitor);
-                }
-            }
-        }
-    }
+	private void createDestinationProjects(Properties props) throws CoreException {
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		IWorkspaceRoot root = workspace.getRoot();
+		String destProjProp = props.getProperty("dest_projects");
+		String[] destProjNames = destProjProp.split("\\|");
 
-    private void createPathVariables(Properties props) throws CoreException {
-        IWorkspace workspace = ResourcesPlugin.getWorkspace();
-        IWorkspaceRoot root = workspace.getRoot();
-        String pathVarProp = props.getProperty("path_variables");
+		destProjects = new ArrayList<IProject>();
+		for (String projectName : destProjNames) {
+			// creates project
+			IProject project = root.getProject(projectName);
+			if (!project.isAccessible()) {
+				project.create(null, monitor);
+				project.open(monitor);
+			}
+			destProjects.add(project);
+			IResource[] resources = project.members();
+			for (IResource resource : resources) {
+				if (resource.exists() && resource.getType() == IResource.FOLDER) {
+					resource.delete(true, monitor);
+				}
+			}
+		}
+	}
 
-        pathVars = pathVarProp.split("\\|");
+	private void createPathVariables(Properties props) throws CoreException {
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		IWorkspaceRoot root = workspace.getRoot();
+		String pathVarProp = props.getProperty("path_variables");
 
-        pathVarsToValues = new HashMap<String, IPath>();
-        projNameToVariable = new HashMap<String, String>();
-        IProject[] projects = root.getProjects();
-        for (String key : pathVars) {
-            String value = props.getProperty(key);
-            IProject project = getProject(projects, value);
-            if (project != null) {
-                pathVarsToValues.put(key, project.getLocation());
-                projNameToVariable.put(project.getName(), key);
-            } else {
-                if (value == null) {
-                    pathVarsToValues.put(key, null);
-                } else {
-                    pathVarsToValues.put(key, new Path(value));
-                }
-            }
-            workspace.getPathVariableManager().setValue(key, pathVarsToValues.get(key));
-        }
-    }
+		pathVars = pathVarProp.split("\\|");
 
-    @SuppressWarnings("null")
-    private IProject createSourceProject(Properties props, boolean deleteExisting)
-            throws Exception {
-        IWorkspace workspace = ResourcesPlugin.getWorkspace();
-        IWorkspaceRoot root = workspace.getRoot();
-        String srcProjectName = props.getProperty("src_project");
-        // creates project
-        srcProj = root.getProject(srcProjectName);
-        if (deleteExisting) {
-            srcProj.delete(true, true, monitor);
-        }
-        srcProj = root.getProject(srcProjectName);
-        if (!srcProj.isAccessible()) {
-            srcProj.create(null, monitor);
-            srcProj.open(monitor);
-        }
+		pathVarsToValues = new HashMap<String, IPath>();
+		projNameToVariable = new HashMap<String, String>();
+		IProject[] projects = root.getProjects();
+		for (String key : pathVars) {
+			String value = props.getProperty(key);
+			IProject project = getProject(projects, value);
+			if (project != null) {
+				pathVarsToValues.put(key, project.getLocation());
+				projNameToVariable.put(project.getName(), key);
+			} else {
+				if (value == null) {
+					pathVarsToValues.put(key, null);
+				} else {
+					pathVarsToValues.put(key, new Path(value));
+				}
+			}
+			workspace.getPathVariableManager().setValue(key, pathVarsToValues.get(key));
+		}
+	}
 
-        String srcDirsProp = props.getProperty("src_root_dirs");
-        String[] srcDirs = srcDirsProp.split("\\|");
-        srcRootDirs = srcDirs;
-        srcDirsProp = props.getProperty("src_dirs");
-        List<String> srcDirsList = new ArrayList<String>(Arrays.asList(srcDirs));
-        List<String> asList = Arrays.asList(srcDirsProp.split("\\|"));
-        srcDirsList.addAll(asList);
-        srcDirs = srcDirsList.toArray(new String[0]);
-        String srcFilesProp = props.getProperty("src_files");
-        String[] srcFiles = srcFilesProp.split("\\|");
-        long fileSize = Long.parseLong(props.getProperty("fileSize"));
-        String defVarsPath = props.getProperty("def_vars");
-        String extraVarsPath = props.getProperty("extra_vars");
-        boolean useVars = defVarsPath != null;
-        Properties[] varProperties = null;
-        if (useVars) {
-            varProperties = createVarsFiles(defVarsPath, extraVarsPath);
-            varProperties[0].putAll(varProperties[1]);
-        }
-        for (String dir : srcDirs) {
-            IFolder folder = srcProj.getFolder(dir);
-            if (folder.exists()) {
-                folder.delete(true, false, monitor);
-            }
-            // re-create in workspace
-            folder = srcProj.getFolder(dir);
-            // create in file system
-            folder.create(true, true, monitor);
-            folder.setLocal(true, IResource.DEPTH_INFINITE, monitor);
-            IPath projectRelativePath = folder.getProjectRelativePath();
+	@SuppressWarnings("null")
+	private IProject createSourceProject(Properties props, boolean deleteExisting)
+	throws Exception {
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		IWorkspaceRoot root = workspace.getRoot();
+		String srcProjectName = props.getProperty("src_project");
+		// creates project
+		srcProj = root.getProject(srcProjectName);
+		if (deleteExisting) {
+			srcProj.delete(true, true, monitor);
+		}
+		srcProj = root.getProject(srcProjectName);
+		if (!srcProj.isAccessible()) {
+			srcProj.create(null, monitor);
+			srcProj.open(monitor);
+		}
 
-            for (String path : srcFiles) {
-                IPath ipath = projectRelativePath.append(path);
-                IFile file = srcProj.getFile(ipath);
-                if (useVars) {
-                    InputStream[] sources = TestFS.createRandomContent(varProperties[0]);
-                    if (file.exists()) {
-                        file.delete(true, false, monitor);
-                    }
-                    srcProj.getFile(ipath).create(sources[0], true, monitor);
-                    ipath = new Path(ipath.toPortableString() + SUFFIX_ORIG_FILE);
-                    file = srcProj.getFile(ipath);
-                    if (file.exists()) {
-                        file.delete(true, false, monitor);
-                    }
-                    srcProj.getFile(ipath).create(sources[1], true, monitor);
-                } else {
-                    InputStream source = TestFS.createRandomContent(fileSize++);
-                    if (file.exists()) {
-                        file.delete(true, false, monitor);
-                    }
-                    srcProj.getFile(ipath).create(source, true, monitor);
-                }
-            }
-        }
-        return srcProj;
-    }
+		String srcDirsProp = props.getProperty("src_root_dirs");
+		String[] srcDirs = srcDirsProp.split("\\|");
+		srcRootDirs = srcDirs;
+		srcDirsProp = props.getProperty("src_dirs");
+		List<String> srcDirsList = new ArrayList<String>(Arrays.asList(srcDirs));
+		List<String> asList = Arrays.asList(srcDirsProp.split("\\|"));
+		srcDirsList.addAll(asList);
+		srcDirs = srcDirsList.toArray(new String[0]);
+		String srcFilesProp = props.getProperty("src_files");
+		String[] srcFiles = srcFilesProp.split("\\|");
+		long fileSize = Long.parseLong(props.getProperty("fileSize"));
+		String defVarsPath = props.getProperty("def_vars");
+		String extraVarsPath = props.getProperty("extra_vars");
+		boolean useVars = defVarsPath != null;
+		Properties[] varProperties = null;
+		if (useVars) {
+			varProperties = createVarsFiles(defVarsPath, extraVarsPath);
+			varProperties[0].putAll(varProperties[1]);
+		}
+		for (String dir : srcDirs) {
+			IFolder folder = srcProj.getFolder(dir);
+			if (folder.exists()) {
+				folder.delete(true, false, monitor);
+			}
+			// re-create in workspace
+			folder = srcProj.getFolder(dir);
+			// create in file system
+			folder.create(true, true, monitor);
+			folder.setLocal(true, IResource.DEPTH_INFINITE, monitor);
+			IPath projectRelativePath = folder.getProjectRelativePath();
 
-    private Properties[] createVarsFiles(String defVarsPath, String extraVarsPath)
-            throws Exception {
-        Properties props1 = new Properties();
-        Properties props2 = new Properties();
-        IFile file = srcProj.getFile(defVarsPath);
-        InputStream source = null;
-        if (file.exists()) {
-            file.delete(true, false, monitor);
-        }
+			for (String path : srcFiles) {
+				IPath ipath = projectRelativePath.append(path);
+				IFile file = srcProj.getFile(ipath);
+				if (useVars) {
+					InputStream[] sources = TestFS.createRandomContent(varProperties[0]);
+					if (file.exists()) {
+						file.delete(true, false, monitor);
+					}
+					srcProj.getFile(ipath).create(sources[0], true, monitor);
+					ipath = new Path(ipath.toPortableString() + SUFFIX_ORIG_FILE);
+					file = srcProj.getFile(ipath);
+					if (file.exists()) {
+						file.delete(true, false, monitor);
+					}
+					srcProj.getFile(ipath).create(sources[1], true, monitor);
+				} else {
+					InputStream source = TestFS.createRandomContent(fileSize++);
+					if (file.exists()) {
+						file.delete(true, false, monitor);
+					}
+					srcProj.getFile(ipath).create(source, true, monitor);
+				}
+			}
+		}
+		return srcProj;
+	}
 
-        try {
-            source = openStream(defVarsPath);
-            file = srcProj.getFile(defVarsPath);
-            IPath parentDir = file.getParent().getProjectRelativePath();
-            IFolder parentFolder = srcProj.getFolder(parentDir);
-            if (!parentFolder.exists()) {
-                parentFolder.create(true, true, monitor);
-            }
-            file.create(source, true, monitor);
-            source.close();
-            source = file.getContents();
-            props1.load(source);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (source != null) {
-                source.close();
-            }
-        }
-        file = srcProj.getFile(extraVarsPath);
-        if (file.exists()) {
-            file.delete(true, false, monitor);
-        }
-        try {
-            source = openStream(extraVarsPath);
-            file = srcProj.getFile(extraVarsPath);
-            IPath parentDir = file.getParent().getProjectRelativePath();
-            IFolder parentFolder = srcProj.getFolder(parentDir);
-            if (!parentFolder.exists()) {
-                parentFolder.create(true, true, monitor);
-            }
-            file.create(source, true, monitor);
-            source.close();
-            source = file.getContents();
-            props2.load(source);
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (source != null) {
-                source.close();
-            }
-        }
-        return new Properties[] { props1, props2 };
-    }
+	private Properties[] createVarsFiles(String defVarsPath, String extraVarsPath)
+	throws Exception {
+		Properties props1 = new Properties();
+		Properties props2 = new Properties();
+		IFile file = srcProj.getFile(defVarsPath);
+		InputStream source = null;
+		if (file.exists()) {
+			file.delete(true, false, monitor);
+		}
 
-    private IProject getProject(IProject[] projects, String name) {
-        if (name == null) {
-            return null;
-        }
-        for (IProject project : projects) {
-            if (name.equals(project.getName())) {
-                return project;
-            }
-        }
-        return null;
-    }
+		try {
+			source = openStream(defVarsPath);
+			file = srcProj.getFile(defVarsPath);
+			IPath parentDir = file.getParent().getProjectRelativePath();
+			IFolder parentFolder = srcProj.getFolder(parentDir);
+			if (!parentFolder.exists()) {
+				parentFolder.create(true, true, monitor);
+			}
+			file.create(source, true, monitor);
+			source.close();
+			source = file.getContents();
+			props1.load(source);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (source != null) {
+				source.close();
+			}
+		}
+		file = srcProj.getFile(extraVarsPath);
+		if (file.exists()) {
+			file.delete(true, false, monitor);
+		}
+		try {
+			source = openStream(extraVarsPath);
+			file = srcProj.getFile(extraVarsPath);
+			IPath parentDir = file.getParent().getProjectRelativePath();
+			IFolder parentFolder = srcProj.getFolder(parentDir);
+			if (!parentFolder.exists()) {
+				parentFolder.create(true, true, monitor);
+			}
+			file.create(source, true, monitor);
+			source.close();
+			source = file.getContents();
+			props2.load(source);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			if (source != null) {
+				source.close();
+			}
+		}
+		return new Properties[] { props1, props2 };
+	}
 
-    @Override
-    protected void tearDown() throws Exception {
-        ProjectProperties.removeInstance(srcProj);
-        super.tearDown();
-    }
+	private IProject getProject(IProject[] projects, String name) {
+		if (name == null) {
+			return null;
+		}
+		for (IProject project : projects) {
+			if (name.equals(project.getName())) {
+				return project;
+			}
+		}
+		return null;
+	}
 
-    public void testPropsFileChange() throws Exception {
-        IFile file = srcProj.getFile(FileSyncBuilder.SETTINGS_DIR + "/"
-                + FileSyncBuilder.SETTINGS_FILE);
-        assertTrue(file.exists());
-        File file2 = file.getLocation().toFile();
-        long localTimeStamp = file2.lastModified();
-        long modificationStamp = file.getModificationStamp();
+	@Override
+	protected void tearDown() throws Exception {
+		super.tearDown();
+	}
 
-        file.refreshLocal(IResource.DEPTH_ONE, monitor);
-        assertEquals(localTimeStamp, file2.lastModified());
-        assertEquals(modificationStamp, file.getModificationStamp());
+	public void testPropsFileChange() throws Exception {
+		Properties properties = readProps(getName());
+		initResources(properties);
 
-        createBuilder(srcProj);
+		IFile file = srcProj.getFile(FileSyncBuilder.SETTINGS_DIR + "/"
+				+ FileSyncBuilder.SETTINGS_FILE);
+		assertTrue(file.exists());
+		File file2 = file.getLocation().toFile();
+		long localTimeStamp = file2.lastModified();
+		long modificationStamp = file.getModificationStamp();
 
-        // first time the props file shouldnt'be changed
-        assertEquals(localTimeStamp, file2.lastModified());
-        assertEquals(modificationStamp, file.getModificationStamp());
+		file.refreshLocal(IResource.DEPTH_ONE, monitor);
+		assertEquals(localTimeStamp, file2.lastModified());
+		assertEquals(modificationStamp, file.getModificationStamp());
 
-        long newTime = file2.lastModified() + 111111;
-        file2.setLastModified(newTime);
-        assertEquals(newTime, file2.lastModified());
-        localTimeStamp = file2.lastModified();
-        file.refreshLocal(IResource.DEPTH_ONE, monitor);
-        waitForBuilder();
+		createBuilder(srcProj);
 
-        // the builder should re-read the props. this causes props to be written back to file
-        assertFalse(localTimeStamp == file2.lastModified());
-        assertFalse(modificationStamp == file.getModificationStamp());
+		// first time the props file shouldnt'be changed
+		assertEquals(localTimeStamp, file2.lastModified());
+		assertEquals(modificationStamp, file.getModificationStamp());
 
-        modificationStamp = file.getModificationStamp();
-        localTimeStamp = file2.lastModified();
+		long newTime = file2.lastModified() + 111111;
+		file2.setLastModified(newTime);
+		assertEquals(newTime, file2.lastModified());
+		localTimeStamp = file2.lastModified();
+		file.refreshLocal(IResource.DEPTH_ONE, monitor);
+		waitForBuilder();
 
-        // if builder is disabled, the file content schouldn't be changed
-        ProjectHelper.disableBuilder(srcProj);
-        file2.setLastModified(newTime);
-        localTimeStamp = file2.lastModified();
-        file.refreshLocal(IResource.DEPTH_ONE, monitor);
-        waitForBuilder();
+		// the builder should re-read the props. this causes props to be written back to file
+		assertFalse(localTimeStamp == file2.lastModified());
+		assertFalse(modificationStamp == file.getModificationStamp());
 
-        assertFalse(modificationStamp == file.getModificationStamp());
-        assertTrue(localTimeStamp == file2.lastModified());
-    }
+		modificationStamp = file.getModificationStamp();
+		localTimeStamp = file2.lastModified();
 
-    public void testWithDefaultPath() throws Exception {
-        createBuilder(srcProj);
+		// if builder is disabled, the file content schouldn't be changed
+		ProjectHelper.disableBuilder(srcProj);
+		file2.setLastModified(newTime);
+		localTimeStamp = file2.lastModified();
+		file.refreshLocal(IResource.DEPTH_ONE, monitor);
+		waitForBuilder();
 
-        change();
-        waitForBuilder();
-        // remembers all visited destination files in field "allDestFiles"
-        checkAfterChange();
+		assertFalse(modificationStamp == file.getModificationStamp());
+		assertTrue(localTimeStamp == file2.lastModified());
 
-        delete();
-        waitForBuilder();
-        // uses "allDestFiles" to check if all files are deleted now
-        checkAfterDelete();
+		ProjectProperties.removeInstance(srcProj);
+	}
 
-        create();
-        waitForBuilder();
-        checkAfterChange();
+	private void doIt(boolean syncronizedWait)throws Exception {
 
-        delete();
-        waitForBuilder();
-    }
+		Properties properties = readProps(getName());
 
-    public void testWithResolvedPathVariable() throws Exception {
-        createBuilder(srcProj);
+		for(String delayedCopyDeleteValue: new String[]{"true", "false"}){
+			properties.put(ProjectProperties.KEY_DELAYED_COPY_DELETE, delayedCopyDeleteValue);
+			doIt(syncronizedWait, properties);
+		}
 
-        change();
-        waitForBuilder();
-        // remembers all visited destination files in field "allDestFiles"
-        checkAfterChange();
+	}
 
-        delete();
-        waitForBuilder();
-        // uses "allDestFiles" to check if all files are deleted now
-        checkAfterDelete();
+	private void doIt(boolean syncronizedWait, Properties properties) throws Exception,
+	CoreException, InterruptedException {
 
-        create();
-        waitForBuilder();
-        checkAfterChange();
+		initResources(properties);
 
-        delete();
-        waitForBuilder();
-    }
+		createBuilder(srcProj);
 
-    public void testWithVariablesSubstitution() throws Exception {
-        createBuilder(srcProj);
+		change();
+		waitForBuilder();
+		// remembers all visited destination files in field "allDestFiles"
+		checkAfterChange();
 
-        change();
-        waitForBuilder();
-        // remembers all visited destination files in field "allDestFiles"
-        checkAfterChange();
+		delete();
+		if(syncronizedWait){
+			synchronized (this) {
+				wait(500);
+			}
+		}
+		waitForBuilder();
+		// uses "allDestFiles" to check if all files are deleted now
+		checkAfterDelete();
 
-        delete();
-        synchronized (this) {
-            wait(500);
-        }
-        waitForBuilder();
+		create();
+		waitForBuilder();
+		checkAfterChange();
 
-        // uses "allDestFiles" to check if all files are deleted now
-        checkAfterDelete();
+		delete();
+		if(syncronizedWait){
+			synchronized (this) {
+				wait(500);
+			}
+		}
+		waitForBuilder();
 
-        create();
-        waitForBuilder();
-        checkAfterChange();
+		ProjectProperties.removeInstance(srcProj);
+	}
 
-        delete();
-        synchronized (this) {
-            wait(500);
-        }
-        waitForBuilder();
-    }
+	public void testWithDefaultPath() throws Exception {
+		doIt(!SYNCRONIZED_WAIT);
+	}
 
-    private void waitForBuilder() throws Exception {
-        IJobManager jobManager = Platform.getJobManager();
-        synchronized (this) {
-            wait(300);
-        }
-        try {
-            jobManager.join(ResourcesPlugin.FAMILY_MANUAL_BUILD, monitor);
-            jobManager.join(ResourcesPlugin.FAMILY_AUTO_BUILD, monitor);
-            jobManager.join(FileSyncBuilder.class, monitor);
-            jobManager.join(ResourcesPlugin.FAMILY_MANUAL_BUILD, monitor);
-            jobManager.join(ResourcesPlugin.FAMILY_AUTO_BUILD, monitor);
-            jobManager.join(FileSyncBuilder.class, monitor);
-        } catch (InterruptedException e) {
-            // just continue.
-        }
-    }
+	public void testWithResolvedPathVariable() throws Exception {
+		testWithDefaultPath();
+	}
 
-    private void create() throws Exception {
-        /*IProject project = */
-        createSourceProject(readProps(getName()), false);
-        //        project.touch(new NullProgressMonitor());
-    }
+	public void testWithVariablesSubstitution() throws Exception {
+		doIt(SYNCRONIZED_WAIT);
+	}
 
-    private void change() throws CoreException {
-        final long time = System.currentTimeMillis();
-        IResourceVisitor visitor = new IResourceVisitor() {
-            public boolean visit(IResource resource) throws CoreException {
-                File file = resource.getLocation().makeAbsolute().toFile();
-                file.setLastModified(time);
-                resource.touch(monitor);
-                return true;
-            }
-        };
-        srcProj.accept(visitor);
-        srcProj.refreshLocal(IResource.DEPTH_INFINITE, monitor);
-        srcProj.build(IncrementalProjectBuilder.FULL_BUILD, monitor);
-    }
+	private void waitForBuilder() throws Exception {
+		IJobManager jobManager = Platform.getJobManager();
+		synchronized (this) {
+			wait(300);
+		}
+		try {
+			jobManager.join(ResourcesPlugin.FAMILY_MANUAL_BUILD, monitor);
+			jobManager.join(ResourcesPlugin.FAMILY_AUTO_BUILD, monitor);
+			jobManager.join(FileSyncBuilder.class, monitor);
+			jobManager.join(ResourcesPlugin.FAMILY_MANUAL_BUILD, monitor);
+			jobManager.join(ResourcesPlugin.FAMILY_AUTO_BUILD, monitor);
+			jobManager.join(FileSyncBuilder.class, monitor);
+		} catch (InterruptedException e) {
+			// just continue.
+		}
+	}
 
-    private void delete() throws CoreException {
-        IResourceVisitor visitor = new IResourceVisitor() {
-            public boolean visit(IResource resource) throws CoreException {
-                if (resource.getName().startsWith(".")) {
-                    return false;
-                }
-                // there is a possibility for bugs if variables file is deleted too
-                // then sync breaks ... so this is intensionally
-                // disabled to simulate deletion of variables files
-//                if (resource.getName().startsWith(PREFIX_EXCL_FROM_SYNC)) {
-//                    return false;
-//                }
-                if (resource.getType() == IResource.FOLDER) {
-                    resource.delete(true, monitor);
-                    return false;
-                }
-                return true;
-            }
-        };
-        srcProj.accept(visitor);
-    }
+	private void create() throws Exception {
+		/*IProject project = */
+		createSourceProject(readProps(getName()), false);
+		//        project.touch(new NullProgressMonitor());
+	}
 
-    private void checkAfterDelete() throws Exception {
-        for (File file : allDestFiles) {
-            assertFalse("not deleted: " + file.getAbsolutePath(), file.exists());
-        }
-    }
+	private void change() throws CoreException {
+		final long time = System.currentTimeMillis();
+		IResourceVisitor visitor = new IResourceVisitor() {
+			public boolean visit(IResource resource) throws CoreException {
+				File file = resource.getLocation().makeAbsolute().toFile();
+				file.setLastModified(time);
+				resource.touch(monitor);
+				return true;
+			}
+		};
+		srcProj.accept(visitor);
+		srcProj.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+		srcProj.build(IncrementalProjectBuilder.FULL_BUILD, monitor);
+	}
 
-    /**
-     * This function remembers all visited destination files in field "allDestFiles"
-     * @throws CoreException
-     */
-    private void checkAfterChange() throws CoreException {
-        // clear remembered files
-        allDestFiles.clear();
-        System.out.println("\nSynchronized files :\n");
+	private void delete() throws CoreException {
+		IResourceVisitor visitor = new IResourceVisitor() {
+			public boolean visit(IResource resource) throws CoreException {
+				if (resource.getName().startsWith(".")) {
+					return false;
+				}
+				// there is a possibility for bugs if variables file is deleted too
+				// then sync breaks ... so this is intensionally
+				// disabled to simulate deletion of variables files
+				//                if (resource.getName().startsWith(PREFIX_EXCL_FROM_SYNC)) {
+				//                    return false;
+				//                }
+				if (resource.getType() == IResource.FOLDER) {
+					resource.delete(true, monitor);
+					return false;
+				}
+				return true;
+			}
+		};
+		srcProj.accept(visitor);
+	}
 
-        final IPathVariableManager pmanager = ResourcesPlugin.getWorkspace()
-                .getPathVariableManager();
-        IResourceVisitor visitor = new IResourceVisitor() {
-            public boolean visit(IResource resource) throws CoreException {
-                if (resource instanceof IProject) {
-                    return true;
-                }
-                if (resource.getName().startsWith(".")) {
-                    return false;
-                }
-                if (resource.getName().startsWith(PREFIX_EXCL_FROM_SYNC)) {
-                    // special dir only for JUnit
-                    return false;
-                }
-                IPath relativePath = resource.getProjectRelativePath();
-                File srcFile = resource.getLocation().makeAbsolute().toFile();
-                assertTrue(destProjects.size() > 0);
-                for (IProject project : destProjects) {
-                    if (projNameToVariable.get(project.getName()) != null) {
-                        // the project is addressed by the path variable
-                        continue;
-                    }
+	private void checkAfterDelete() throws Exception {
+		for (File file : allDestFiles) {
+			assertFalse("not deleted: " + file.getAbsolutePath(), file.exists());
+		}
+	}
 
-                    IResource res = project.findMember(relativePath);
-                    File destFile = res.getLocation().makeAbsolute().toFile();
+	/**
+	 * This function remembers all visited destination files in field "allDestFiles"
+	 * @throws CoreException
+	 */
+	private void checkAfterChange() throws CoreException {
+		// clear remembered files
+		allDestFiles.clear();
+		System.out.println("\nSynchronized files :\n");
 
-                    // remember file for later test cases
-                    allDestFiles.add(destFile);
-                    System.out.println(destFile);
+		final IPathVariableManager pmanager = ResourcesPlugin.getWorkspace()
+		.getPathVariableManager();
 
-                    if (resource.getType() == IResource.FILE) {
-                        assertEquals(destFile.lastModified(), srcFile.lastModified());
-                        String absolutePath = destFile.getAbsolutePath();
-                        if (!absolutePath.endsWith(SUFFIX_ORIG_FILE)) {
-                            File origFile = new File(absolutePath + SUFFIX_ORIG_FILE);
-                            if (origFile.exists()) {
-                                assertEquals(origFile.length(), destFile.length());
-                                boolean same = TestFS.isSame(destFile, origFile, true, false);
-                                assertTrue(same);
-                            } else {
-                                assertEquals(srcFile.length(), destFile.length());
-                            }
-                        }
-                    } else {
-                        assertTrue(destFile.isDirectory());
-                    }
-                }
+		IResourceVisitor visitor = new IResourceVisitor() {
+			public boolean visit(IResource resource) throws CoreException {
+				if (resource instanceof IProject) {
+					return true;
+				}
+				if (resource.getName().startsWith(".")) {
+					return false;
+				}
+				if (resource.getName().startsWith(PREFIX_EXCL_FROM_SYNC)) {
+					// special dir only for JUnit
+					return false;
+				}
+				IPath relativePath = resource.getProjectRelativePath();
+				File srcFile = resource.getLocation().makeAbsolute().toFile();
+				assertTrue(destProjects.size() > 0);
+				for (IProject project : destProjects) {
+					if (projNameToVariable.get(project.getName()) != null) {
+						// the project is addressed by the path variable
+						continue;
+					}
 
-                assertTrue(pathVars.length > 0);
-                for (String pathVar : pathVars) {
-                    IPath path = pmanager.getValue(pathVar);
-                    path = path.append(relativePath);
-                    File destFile = path.makeAbsolute().toFile();
-                    // remember file for later test cases
-                    allDestFiles.add(destFile);
-                    System.out.println(destFile);
+					IResource res = project.findMember(relativePath);
+					File destFile = res.getLocation().makeAbsolute().toFile();
 
-                    if (resource.getType() == IResource.FILE) {
-                        assertEquals(destFile.lastModified(), srcFile.lastModified());
-                        String absolutePath = destFile.getAbsolutePath();
-                        if (!absolutePath.endsWith(SUFFIX_ORIG_FILE)) {
-                            File origFile = new File(absolutePath + SUFFIX_ORIG_FILE);
-                            if (origFile.exists()) {
-                                assertEquals(origFile.length(), destFile.length());
-                                assertTrue(TestFS.isSame(destFile, origFile, true, false));
-                            } else {
-                                assertEquals(srcFile.length(), destFile.length());
-                            }
-                        }
-                    } else {
-                        assertTrue(destFile.isDirectory());
-                    }
-                }
+					// remember file for later test cases
+					allDestFiles.add(destFile);
+					System.out.println(destFile);
 
-                assertTrue(destPaths.length > 0);
-                for (String dpath : destPaths) {
-                    IPath path = new Path(dpath);
-                    if (pathVarsToValues.containsValue(path)) {
-                        // the path is addressed by the path variable
-                        continue;
-                    }
-                    path = path.append(relativePath);
-                    File destFile = path.makeAbsolute().toFile();
-                    // remember file for later test cases
-                    allDestFiles.add(destFile);
-                    System.out.println(destFile);
+					if (resource.getType() == IResource.FILE) {
+						assertTimeEquals(srcFile.lastModified(), destFile.lastModified());
+						String absolutePath = destFile.getAbsolutePath();
+						if (!absolutePath.endsWith(SUFFIX_ORIG_FILE)) {
+							File origFile = new File(absolutePath + SUFFIX_ORIG_FILE);
+							if (origFile.exists()) {
+								assertEquals(origFile.length(), destFile.length());
+								boolean same = TestFS.isSame(destFile, origFile, true, false);
+								assertTrue(same);
+							} else {
+								assertEquals(srcFile.length(), destFile.length());
+							}
+						}
+					} else {
+						assertTrue(destFile.isDirectory());
+					}
+				}
 
-                    if (resource.getType() == IResource.FILE) {
-                        assertEquals(destFile.lastModified(), srcFile.lastModified());
-                        String absolutePath = destFile.getAbsolutePath();
-                        if (!absolutePath.endsWith(SUFFIX_ORIG_FILE)) {
-                            File origFile = new File(absolutePath + SUFFIX_ORIG_FILE);
-                            if (origFile.exists()) {
-                                assertEquals(origFile.length(), destFile.length());
-                                assertTrue(TestFS.isSame(destFile, origFile, true, false));
-                            } else {
-                                assertEquals(srcFile.length(), destFile.length());
-                            }
-                        }
-                    } else {
-                        assertTrue(destFile.isDirectory());
-                    }
-                }
-                return true;
-            }
-        };
+				assertTrue(pathVars.length > 0);
+				for (String pathVar : pathVars) {
+					IPath path = pmanager.getValue(pathVar);
+					path = path.append(relativePath);
+					File destFile = path.makeAbsolute().toFile();
+					// remember file for later test cases
+					allDestFiles.add(destFile);
+					System.out.println(destFile);
 
-        srcProj.accept(visitor);
-    }
+					if (resource.getType() == IResource.FILE) {
+						assertTimeEquals(srcFile.lastModified(), destFile.lastModified());
+						String absolutePath = destFile.getAbsolutePath();
+						if (!absolutePath.endsWith(SUFFIX_ORIG_FILE)) {
+							File origFile = new File(absolutePath + SUFFIX_ORIG_FILE);
+							if (origFile.exists()) {
+								assertEquals(origFile.length(), destFile.length());
+								assertTrue(TestFS.isSame(destFile, origFile, true, false));
+							} else {
+								assertEquals(srcFile.length(), destFile.length());
+							}
+						}
+					} else {
+						assertTrue(destFile.isDirectory());
+					}
+				}
+
+				assertTrue(destPaths.length > 0);
+				for (String dpath : destPaths) {
+					IPath path = DefaultPathHelper.getInstance().create(dpath);
+					if (pathVarsToValues.containsValue(path)) {
+						// the path is addressed by the path variable
+						continue;
+					}
+					path = path.append(relativePath);
+					File destFile = path.makeAbsolute().toFile();
+					assertNotNull(destFile);
+					// remember file for later test cases
+					allDestFiles.add(destFile);
+					System.out.println(destFile);
+
+					if (destFile !=null && resource.getType() == IResource.FILE) {
+						assertTimeEquals(srcFile.lastModified(), destFile.lastModified());
+						String absolutePath = destFile.getAbsolutePath();
+						if (!absolutePath.endsWith(SUFFIX_ORIG_FILE)) {
+							File origFile = new File(absolutePath + SUFFIX_ORIG_FILE);
+							if (origFile.exists()) {
+								assertEquals(origFile.length(), destFile.length());
+								assertTrue(TestFS.isSame(destFile, origFile, true, false));
+							} else {
+								assertEquals(srcFile.length(), destFile.length());
+							}
+						}
+					} else {
+						assertTrue(destFile!=null && destFile.isDirectory());
+					}
+				}
+				return true;
+			}
+
+			private void assertTimeEquals(long expected, long actual) {
+				if(Boolean.parseBoolean(delayedCopyDelete)){
+					Assert.assertTrue(String.format("%d expected, but was %d", expected, actual),Math.abs(expected - actual)<2000);
+				}else{
+					Assert.assertEquals(String.format("%d expected, but was %d", expected, actual),expected , actual);
+				}
+			}
+		};
+
+		srcProj.accept(visitor);
+	}
+
+	public static Properties resolve(Properties properties){
+		Properties ret = new Properties();
+		for(Entry<Object,Object> e: properties.entrySet()){
+			Object key = e.getKey();
+			Object value = e.getValue();
+			if(value instanceof String){
+				value = SYTEM_DELEGATE.copyLine((String)value, CopyDelegate.QUOTE_REPLACEMENT);
+			}
+			ret.put(key, value);
+		}
+		return ret;
+	}
 
 }
