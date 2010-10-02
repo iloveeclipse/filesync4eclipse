@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.Properties;
 
 import org.eclipse.core.runtime.IStatus;
@@ -33,7 +32,7 @@ public class CopyDelegate {
 
     public CopyDelegate() {
         super();
-//        setEncoding("ISO-8859-1");
+        //        setEncoding("ISO-8859-1");
     }
 
 
@@ -87,8 +86,8 @@ public class CopyDelegate {
             byte[] array = new byte[size];
             fin.read(array, 0, size);
             String string = new String(array, encoding);
-            for (Iterator i = variablesMap.keySet().iterator(); i.hasNext();) {
-                String key = (String) i.next();
+            for (Object name : variablesMap.keySet()) {
+                String key = (String) name;
                 String value = (String) variablesMap.get(key);
                 if(string.indexOf(key) >= 0) {
                     string = string.replaceAll("\\$\\{" + key + "\\}", value);

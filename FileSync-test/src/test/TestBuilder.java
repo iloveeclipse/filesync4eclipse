@@ -710,9 +710,10 @@ public class TestBuilder extends TestCase {
 						if (!absolutePath.endsWith(SUFFIX_ORIG_FILE)) {
 							File origFile = new File(absolutePath + SUFFIX_ORIG_FILE);
 							if (origFile.exists()) {
-								assertEquals(origFile.length(), destFile.length());
+								String message = "File content differ: Expected: " + origFile + ", \n\tSeen: " + destFile;
+								assertEquals(message, origFile.length(), destFile.length());
 								boolean same = TestFS.isSame(destFile, origFile, true, false);
-								assertTrue(same);
+								assertTrue(message, same);
 							} else {
 								assertEquals(srcFile.length(), destFile.length());
 							}

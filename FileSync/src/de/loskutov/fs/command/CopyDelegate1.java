@@ -27,9 +27,10 @@ import de.loskutov.fs.FileSyncPlugin;
  * @author Andrei
  */
 public class CopyDelegate1 extends CopyDelegate {
-    private Map/*<Pattern, String>*/ patternToValue;
-    private Map/*<Pattern, String>*/ patternToKey;
+    private Map<Pattern, String> patternToValue;
+    private Map<Pattern, String> patternToKey;
 
+    @Override
     public void setPropertiesMap(Properties propertiesMap) {
         if(getPropertiesMap() != propertiesMap) {
             super.setPropertiesMap(propertiesMap);
@@ -44,6 +45,7 @@ public class CopyDelegate1 extends CopyDelegate {
      * @param destination - should be already created
      * @return true if source was successfully copied
      */
+    @Override
     protected boolean copyInternal(File source, File destination) {
 
         boolean success = true;
@@ -56,12 +58,12 @@ public class CopyDelegate1 extends CopyDelegate {
             writer = new LineWriter(new FileOutputStream(destination), encoding);
             String line = null;
             while((line = reader.readLineToString()) != null){
-                for (Iterator i = patternToValue.keySet().iterator(); i.hasNext();) {
-                    Pattern pattern =  (Pattern) i.next();
-                    if(line.indexOf((String) patternToKey.get(pattern)) < 0 ){
+                for (Iterator<Pattern> i = patternToValue.keySet().iterator(); i.hasNext();) {
+                    Pattern pattern =  i.next();
+                    if(line.indexOf(patternToKey.get(pattern)) < 0 ){
                         continue;
                     }
-                    String value = (String) patternToValue.get(pattern);
+                    String value = patternToValue.get(pattern);
                     line = pattern.matcher(line).replaceAll(value);
                 }
                 writer.writeLine(line);
@@ -111,13 +113,12 @@ public class CopyDelegate1 extends CopyDelegate {
     }
 
     private void initPatterns() {
-        patternToValue = new HashMap();
-        patternToKey = new HashMap();
-        Set keySet = variablesMap.keySet();
-        for (Iterator i = keySet.iterator(); i.hasNext();) {
-            String key = (String) i.next();
+        patternToValue = new HashMap<Pattern, String>();
+        patternToKey = new HashMap<Pattern, String>();
+        Set<String> keySet = variablesMap.stringPropertyNames();
+        for (String key : keySet) {
             Pattern pattern = Pattern.compile("\\$\\{" + key + "\\}");
-            patternToValue.put(pattern, variablesMap.get(key));
+            patternToValue.put(pattern, variablesMap.getProperty(key));
             patternToKey.put(pattern, key);
         }
     }
