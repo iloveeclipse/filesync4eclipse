@@ -76,7 +76,7 @@ public class TestBuilder extends TestCase {
 
 	private String extraVars;
 
-	private final String TEMP_DIR = "${java.io.temp}";
+	private final String TEMP_DIR = "${java.io.tmpdir}";
 
 
 
