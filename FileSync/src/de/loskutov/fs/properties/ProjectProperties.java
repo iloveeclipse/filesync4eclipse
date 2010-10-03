@@ -24,11 +24,11 @@ import org.eclipse.core.resources.ProjectScope;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
-import org.eclipse.core.runtime.preferences.IScopeContext;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.INodeChangeListener;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.NodeChangeEvent;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent;
+import org.eclipse.core.runtime.preferences.IScopeContext;
 import org.osgi.service.prefs.BackingStoreException;
 
 import de.loskutov.fs.FileSyncPlugin;
@@ -334,11 +334,6 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         }
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener#preferenceChange(org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent)
-     */
     public void preferenceChange(PreferenceChangeEvent event) {
         if (!isIgnorePreferenceListeners()) {
             buildPathMap(preferences);
@@ -421,11 +416,6 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         this.mappings = mappings;
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.eclipse.core.runtime.preferences.IEclipsePreferences.INodeChangeListener#added(org.eclipse.core.runtime.preferences.IEclipsePreferences.NodeChangeEvent)
-     */
     public void added(NodeChangeEvent event) {
         if (!isIgnorePreferenceListeners()) {
             buildPathMap(preferences);
@@ -434,12 +424,19 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         }
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see org.eclipse.core.runtime.preferences.IEclipsePreferences.INodeChangeListener#removed(org.eclipse.core.runtime.preferences.IEclipsePreferences.NodeChangeEvent)
-     */
     public void removed(NodeChangeEvent event) {
+        try {
+            // in case preferences are entirely deleted
+            if(event.getParent() == preferences && !preferences.nodeExists("")) {
+                // code below throws exception
+                // preferences.removeNodeChangeListener(this);
+                // preferences.removePreferenceChangeListener(this);
+                return;
+            }
+        } catch (BackingStoreException e) {
+            // ignore
+            return;
+        }
         if (!isIgnorePreferenceListeners()) {
             buildPathMap(preferences);
         } else {
