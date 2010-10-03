@@ -46,7 +46,7 @@ import de.loskutov.fs.properties.ProjectProperties;
 public class TestBuilder extends TestCase {
 	private static final String PREFIX_EXCL_FROM_SYNC = "resources";
 
-	private static final String SUFFIX_ORIG_FILE = "_orig";
+	private static final String SUFFIX_ORIG_FILE = "_orig.txt";
 
 	protected List<IProject> destProjects;
 
@@ -91,6 +91,7 @@ public class TestBuilder extends TestCase {
 	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
+		System.out.println("\nStarting test " + getName() + "\n");
 		Properties properties = readProps(getName());
 		initResources(properties);
 	}
