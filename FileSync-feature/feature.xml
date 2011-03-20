@@ -2,7 +2,7 @@
 <feature
       id="FileSync"
       label="FileSync"
-      version="1.3.6.qualifier"
+      version="1.3.7.qualifier"
       provider-name="Andrei Loskutov"
       plugin="de.loskutov.FileSync"
       image="loskutov32.gif">
@@ -18,7 +18,7 @@ with Eclipse project files.
    </copyright>
 
    <license url="http://www.eclipse.org/legal/epl-v10.html">
-       Copyright (c) 2002 - 2010 Andrei Loskutov, licensed under the Eclipse Public License 1.0.
+      Copyright (c) 2002 - 2010 Andrei Loskutov, licensed under the Eclipse Public License 1.0.
    </license>
 
    <url>
