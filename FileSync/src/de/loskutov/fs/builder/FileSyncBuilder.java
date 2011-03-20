@@ -90,7 +90,14 @@ implements IPreferenceChangeListener {
     }
 
     protected IProject getProjectInternal() {
-        IProject project = getProject();
+        IProject project = null;
+        try {
+            project = getProject();
+        } catch (NullPointerException e) {
+            // TODO: since Eclipse 3.7 getProject() throws NPE if the builder
+            // was created manually (as we do for the manually triggered build)
+            // Have no time to fix properly, so just catch the NPE
+        }
         if (project == null) {
             project = project2;
         }
@@ -113,6 +120,7 @@ implements IPreferenceChangeListener {
      * (non-Javadoc)
      * @see org.eclipse.core.resources.IncrementalProjectBuilder#clean(org.eclipse.core.runtime.IProgressMonitor)
      */
+    @Override
     protected void clean(IProgressMonitor monitor) throws CoreException {
         build(CLEAN_BUILD, new HashMap(), monitor);
     }
@@ -120,6 +128,7 @@ implements IPreferenceChangeListener {
     /*
      * @see org.eclipse.core.internal.events.InternalBuilder#build(int, Map, IProgressMonitor)
      */
+    @Override
     protected IProject[] build(int kind, Map args, IProgressMonitor monitor) {
         if (isDisabled()) {
             return null;
@@ -268,10 +277,12 @@ implements IPreferenceChangeListener {
                     if (jobs.length == 0) {
                         // start full build (not clean!) because properties are changed!!!
                         Job job = new Job("Filesync") {
+                            @Override
                             public boolean belongsTo(Object family) {
                                 return family == FileSyncBuilder.class;
                             }
 
+                            @Override
                             protected IStatus run(IProgressMonitor monitor1) {
                                 build(FULL_BUILD, monitor1);
                                 return Status.OK_STATUS;
@@ -297,7 +308,7 @@ implements IPreferenceChangeListener {
                         FileSyncPlugin.log(
                                 "Errors during sync of the resource delta:"
                                 + resourceDelta + " for project '"
-                                + currentProject + "'", e, IStatus.ERROR);
+                                        + currentProject + "'", e, IStatus.ERROR);
                     } finally {
                         wizard.cleanUp(monitor);
                         monitor.done();
@@ -387,6 +398,7 @@ implements IPreferenceChangeListener {
         return visitor.count;
     }
 
+    @Override
     protected void startupOnInitialize() {
         super.startupOnInitialize();
         checkSettingsTimestamp(getProject().getFile(SETTINGS_PATH));
@@ -661,10 +673,12 @@ implements IPreferenceChangeListener {
         Job[] jobs = Job.getJobManager().find(getClass());
         if (jobs.length == 0) {
             final Job myJob = new Job("Mapping is changed => full project sync") {
+                @Override
                 public boolean belongsTo(Object family) {
                     return family == FileSyncBuilder.class;
                 }
 
+                @Override
                 public IStatus run(IProgressMonitor monitor) {
                     build(MAPPING_CHANGED_IN_GUI_BUILD, monitor);
                     return Status.OK_STATUS;//new JobStatus(IStatus.INFO, 0, this, "", null);
