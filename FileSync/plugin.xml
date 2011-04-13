@@ -33,17 +33,40 @@
       adaptable="true"
       objectClass="org.eclipse.core.resources.IProject">
       <action
-            enablesFor="1"
-            label="Force File Synchronization"
-            icon="icons/refresh.gif"
             class="de.loskutov.fs.actions.ForceFileSyncActionDelegate"
-            id="FSForceSync"/>
+            definitionId="de.loskutov.FSForceSyncCommand"
+            enablesFor="1"
+            icon="icons/refresh.gif"
+            id="FSForceSync"
+            label="Force File Synchronization"/>
       <visibility>
          <objectState
                value="true"
                name="open"/>
       </visibility>
     </objectContribution>
+  </extension>
+  <extension
+        point="org.eclipse.ui.commands">
+     <command
+           categoryId="de.loskutov.FileSync"
+           defaultHandler="de.loskutov.fs.actions.ForceFileSyncActionDelegate"
+           description="Manually triggers FileSync builder"
+           id="de.loskutov.FSForceSyncCommand"
+           name="Force File Synchronization">
+     </command>
+     <category
+           description="File Synchronisation"
+           id="de.loskutov.FileSync"
+           name="FileSync">
+     </category>
+  </extension>
+  <extension
+        point="org.eclipse.ui.commandImages">
+     <image
+           commandId="de.loskutov.FSForceSyncCommand"
+           icon="icons/refresh.gif">
+     </image>
   </extension>
 
 </plugin>
