@@ -1,10 +1,10 @@
 /*******************************************************************************
- * Copyright (c) 2009 Andrei Loskutov.
+ * Copyright (c) 2011 Andrey Loskutov.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * Contributor:  Andrey Loskutov - initial API and implementation
  *******************************************************************************/
 package de.loskutov.fs.properties;
 
@@ -82,6 +82,9 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
      * Any valid file path for the default synchronizing target
      */
     public static final String KEY_DEFAULT_DESTINATION = "defaultDestination";
+
+    // TODO remote: should be a flag per path, not per project
+    public static final String KEY_ENABLE_REMOTE = "enableRemoteSync";
 
     public static final String KEY_DEFAULT_VARIABLES = "defaultVariables";
 
@@ -184,7 +187,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
             IProject project = (IProject) projects.get(i);
             if (project == null || !project.isAccessible()) {
                 ProjectProperties props = (ProjectProperties) projectsToProps
-                .get(project);
+                        .get(project);
                 props.prefListeners.clear();
                 projectsToProps.remove(project);
             }
@@ -462,7 +465,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
             rebuildPathMap = false;
             for (int i = 0; i < prefListeners.size(); i++) {
                 IPreferenceChangeListener listener = (IPreferenceChangeListener) prefListeners
-                .get(i);
+                        .get(i);
                 IEclipsePreferences.PreferenceChangeEvent event = new IEclipsePreferences.PreferenceChangeEvent(
                         preferences, KEY_PROJECT, project, project);
                 listener.preferenceChange(event);
@@ -476,6 +479,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         }
         long code = 31;
         code += preferences.get(KEY_CLEAN_ON_CLEAN_BUILD, "").hashCode();
+        code += preferences.get(KEY_ENABLE_REMOTE, "").hashCode();
         code += preferences.get(KEY_DEFAULT_DESTINATION, "").hashCode();
         code += preferences.get(KEY_DEFAULT_VARIABLES, "").hashCode();
         code += preferences.get(KEY_USE_CURRENT_DATE, "").hashCode();

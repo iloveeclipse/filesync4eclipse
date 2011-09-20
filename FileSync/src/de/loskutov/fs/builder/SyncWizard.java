@@ -1,10 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2009 Andrei Loskutov.
+ * Copyright (c) 2011 Andrey Loskutov.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * Contributors:  
+ *      Andrey Loskutov - initial API and implementation
+ *      Jianxiong Zhou - remote sync
  *******************************************************************************/
 package de.loskutov.fs.builder;
 
@@ -15,15 +17,18 @@ import java.util.Properties;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IPathVariableManager;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IWorkspace;
+import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.content.IContentDescription;
 import org.eclipse.core.runtime.content.IContentType;
@@ -44,7 +49,7 @@ import de.loskutov.fs.properties.ProjectProperties;
  */
 public class SyncWizard {
     protected static final IContentType TEXT_TYPE = Platform.getContentTypeManager()
-    .getContentType("org.eclipse.core.runtime.text"); //$NON-NLS-1$
+            .getContentType("org.eclipse.core.runtime.text"); //$NON-NLS-1$
 
 
     /**
@@ -74,6 +79,9 @@ public class SyncWizard {
     private boolean needRefreshAffectedProjects;
 
     private CopyDelegate copyDelegate;
+
+
+    private boolean enableRemote;
 
     public SyncWizard() {
         super();
@@ -114,10 +122,15 @@ public class SyncWizard {
         }
         IEclipsePreferences preferences = props.getPreferences(false);
         String root = preferences.get(ProjectProperties.KEY_DEFAULT_DESTINATION, "");
-
+        enableRemote = preferences.getBoolean(ProjectProperties.KEY_ENABLE_REMOTE, false);
         PathVariableHelper pvh = new PathVariableHelper();
         IPath projectPath = props.getProject().getLocation();
-        rootPath = pvh.resolveVariable(root, projectPath);
+        // XXX remote: check if must be avoided for remote locations
+        if(!enableRemote){
+            rootPath = pvh.resolveVariable(root, projectPath);
+        } else {
+            rootPath = new Path(root);
+        }
 
         if ((rootPath == null || rootPath.isEmpty()) && usesDefaultOutputFolder()) {
             throw new IllegalArgumentException("Default target folder is required"
@@ -298,7 +311,7 @@ public class SyncWizard {
         }
         if (usesDefaultOutputFolder() && rootPath != null) {
             IContainer[] containers = ResourcesPlugin.getWorkspace().getRoot()
-            .findContainersForLocation(rootPath);
+                    .findContainersForLocation(rootPath);
             if (containers.length > 0) {
                 for (int i = 0; i < containers.length; i++) {
                     if (!list.contains(containers[i])) {
@@ -326,7 +339,7 @@ public class SyncWizard {
             return false;
         }
 
-        List destinationFiles = getDestinationFiles(mappingList, sourceRoot, relativePath);
+        List destinationFiles = getDestinationFiles(mappingList, sourceRoot, relativePath, monitor);
 
         if (destinationFiles == null) {
             return false;
@@ -343,61 +356,83 @@ public class SyncWizard {
         Boolean hasTextType = null;
         for (int i = 0; i < mappingList.size() && !monitor.isCanceled(); i++) {
             FileMapping fm = (FileMapping) mappingList.get(i);
-            File destinationFile = fm.getCurrentDestFile();
-            if(destinationFile == null){
+            IPath destinationPath = fm.getCurrentDestFile();
+            if(destinationPath == null){
                 continue;
             }
-            boolean ok;
 
-            /*
-             * single file
-             */
-            if (!destinationFile.canWrite() || destinationFile.isDirectory()) {
-                ok = FS.delete(destinationFile, false);
+            // XXX remote: rework
+            if(!enableRemote){
+                File destinationFile = destinationPath.toFile();
+                boolean ok;
+
+                /*
+                 * single file
+                 */
+                if (!destinationFile.canWrite() || destinationFile.isDirectory()) {
+                    ok = FS.delete(destinationFile, false);
+                    if (!ok) {
+                        commonState = false;
+                        FileSyncPlugin.log("Failed to clean old external resource '"
+                                + destinationFile + "' mapped in project '"
+                                + sourceRoot.getProject().getName() + "'", null,
+                                IStatus.WARNING);
+                        continue;
+                    }
+                }
+                ok = FS.create(destinationFile, true);
                 if (!ok) {
                     commonState = false;
-                    FileSyncPlugin.log("Failed to clean old external resource '"
-                            + destinationFile + "' mapped in project '"
-                            + sourceRoot.getProject().getName() + "'", null,
-                            IStatus.WARNING);
+                    FileSyncPlugin.log("Failed to create new external resource '"
+                            + destinationFile + "', mapped in project '"
+                            + sourceRoot.getProject().getName() + "'", null, IStatus.WARNING);
                     continue;
                 }
-            }
-            ok = FS.create(destinationFile, true);
-            if (!ok) {
-                commonState = false;
-                FileSyncPlugin.log("Failed to create new external resource '"
-                        + destinationFile + "', mapped in project '"
-                        + sourceRoot.getProject().getName() + "'", null, IStatus.WARNING);
-                continue;
-            }
 
-            if (fm.getVariablesPath() != null && fm.getVariables() != null) {
-                if(hasTextType == null){
-                    hasTextType = Boolean.valueOf(hasTextContentType((IFile) sourceRoot));
-                }
-                if (hasTextType.booleanValue()) {
-                    initCopyDelegate((IFile) sourceRoot, fm);
-                    ok = copyDelegate.copy(sourceFile, destinationFile);
+                if (fm.getVariablesPath() != null && fm.getVariables() != null) {
+                    if(hasTextType == null){
+                        hasTextType = Boolean.valueOf(hasTextContentType((IFile) sourceRoot));
+                    }
+                    if (hasTextType.booleanValue()) {
+                        initCopyDelegate((IFile) sourceRoot, fm);
+                        ok = copyDelegate.copy(sourceFile, destinationFile);
+                    } else {
+                        FileSyncPlugin.log("Variable substitution not used for '"
+                                + destinationFile
+                                + "' (not a text file), mapped in project '"
+                                + sourceRoot.getProject().getName() + "'", null,
+                                IStatus.WARNING);
+                        ok = FS.copy(sourceFile, destinationFile,
+                                useCurrentDateForDestinationFiles);
+                    }
                 } else {
-                    FileSyncPlugin.log("Variable substitution not used for '"
-                            + destinationFile
-                            + "' (not a text file), mapped in project '"
-                            + sourceRoot.getProject().getName() + "'", null,
-                            IStatus.WARNING);
                     ok = FS.copy(sourceFile, destinationFile,
                             useCurrentDateForDestinationFiles);
                 }
-            } else {
-                ok = FS.copy(sourceFile, destinationFile,
-                        useCurrentDateForDestinationFiles);
-            }
 
-            if (!ok) {
-                commonState = false;
-                FileSyncPlugin.log("Failed to copy to external resource '"
-                        + destinationFile + "', mapped in project '"
-                        + sourceRoot.getProject().getName() + "'", null, IStatus.WARNING);
+                if (!ok) {
+                    commonState = false;
+                    FileSyncPlugin.log("Failed to copy to external resource '"
+                            + destinationFile + "', mapped in project '"
+                            + sourceRoot.getProject().getName() + "'", null, IStatus.WARNING);
+                }
+            } else {
+                try {
+                    IWorkspaceRoot wsRoot = sourceRoot.getWorkspace().getRoot();
+                    IFile destFile = wsRoot.getFile(destinationPath);
+                    if (!destFile.exists()) {
+                        sourceRoot.copy(destinationPath, true, monitor);
+                    } else {
+                        // XXX remote: fullPath is relative to workspace
+                        IFile srcFile = wsRoot.getFile(sourceRoot.getFullPath());
+                        destFile.setContents(srcFile.getContents(), true, true, monitor);
+                    }
+                } catch (CoreException e) {
+                    commonState = false;
+                    FileSyncPlugin.log("Failed to copy to remote resource '"
+                            + destinationPath + "', mapped in project '"
+                            + sourceRoot.getProject().getName() + "'", e, IStatus.WARNING);
+                }
             }
         }
         if (monitor.isCanceled()) {
@@ -408,17 +443,33 @@ public class SyncWizard {
         return commonState;
     }
 
-    private boolean createDirs(IResource sourceRoot, List/*<File>*/destinationFiles,
+    private boolean createDirs(IResource sourceRoot, List/*<File>*/destinationPaths,
             IProgressMonitor monitor) {
         boolean commonState = true;
-        for (int i = 0; i < destinationFiles.size() && !monitor.isCanceled(); i++) {
-            File destinationFile = (File) destinationFiles.get(i);
-            boolean ok = FS.create(destinationFile, false);
-            if (!ok) {
-                commonState = false;
-                FileSyncPlugin.log("Failed to create external folder '" + destinationFile
-                        + "', mapped in project '" + sourceRoot.getProject().getName()
-                        + "'", null, IStatus.WARNING);
+        for (int i = 0; i < destinationPaths.size() && !monitor.isCanceled(); i++) {
+            IPath destinationPath = (IPath) destinationPaths.get(i);
+            // XXX remote: rework
+            if(!enableRemote){
+                boolean ok = FS.create(destinationPath.toFile(), false);
+                if (!ok) {
+                    commonState = false;
+                    FileSyncPlugin.log("Failed to create external folder '" + destinationPath
+                            + "', mapped in project '" + sourceRoot.getProject().getName()
+                            + "'", null, IStatus.WARNING);
+                }
+            } else {
+                IFolder folder = sourceRoot.getWorkspace().getRoot().getFolder(destinationPath);
+                if(!folder.exists()) {
+                    try {
+                        folder.create(true, true, monitor);
+                    } catch (CoreException e) {
+                        commonState = false;
+                        FileSyncPlugin.log("Failed to create remote folder '"
+                                + destinationPath + "', mapped in project '"
+                                + sourceRoot.getProject().getName() + "'", e,
+                                IStatus.WARNING);
+                    }
+                }
             }
         }
         if (monitor.isCanceled()) {
@@ -427,6 +478,20 @@ public class SyncWizard {
                     null, IStatus.WARNING);
         }
         return commonState;
+    }
+
+    // XXX remote: rework
+    private IResource getExistingResource(IPath path, IWorkspaceRoot wsRoot) {
+        IFolder folder = wsRoot.getFolder(path);
+        if (folder.exists()) {
+            return folder;
+        }
+
+        IFile file = wsRoot.getFile(path);
+        if (file.exists()) {
+            return file;
+        }
+        return null;
     }
 
     /**
@@ -444,24 +509,43 @@ public class SyncWizard {
             return true;
         }
 
-        List destinationFiles = getDestinationFiles(mappingList, sourceRoot, relativePath);
-        if (destinationFiles == null || destinationFiles.isEmpty()) {
+        List destinationPaths = getDestinationFiles(mappingList, sourceRoot, relativePath, monitor);
+        if (destinationPaths == null || destinationPaths.isEmpty()) {
             return true;
         }
         boolean commonState = true;
-        File rootFile = rootPath == null ? null : rootPath.toFile();
-        for (int i = 0; i < destinationFiles.size() && !monitor.isCanceled(); i++) {
-            File destinationFile = (File) destinationFiles.get(i);
-            if (destinationFile.equals(rootFile)) {
+        for (int i = 0; i < destinationPaths.size() && !monitor.isCanceled(); i++) {
+            IPath destinationPath = (IPath) destinationPaths.get(i);
+            if (destinationPath.equals(rootPath)) {
                 // never delete root destination path !!!
                 continue;
             }
-            boolean result = FS.delete(destinationFile, clean);
-            if (!result && destinationFile.isFile()) {
-                commonState = false;
-                FileSyncPlugin.log("Failed to delete the external resource '"
-                        + destinationFile + "', mapped in project '"
-                        + sourceRoot.getProject().getName() + "'", null, IStatus.WARNING);
+            // XXX remote: rework
+            if(!enableRemote){
+                File destinationFile = destinationPath.toFile();
+                boolean result = FS.delete(destinationFile, clean);
+                if (!result && destinationFile.isFile()) {
+                    commonState = false;
+                    FileSyncPlugin.log("Failed to delete the external resource '"
+                            + destinationPath + "', mapped in project '"
+                            + sourceRoot.getProject().getName() + "'", null, IStatus.WARNING);
+                }
+            } else {
+                IResource resource = getExistingResource(destinationPath,
+                        sourceRoot.getWorkspace().getRoot());
+                if (resource != null) {
+                    try {
+                        resource.delete(true, monitor);
+                    } catch (CoreException e) {
+                        commonState = false;
+                        FileSyncPlugin.log(
+                                "Failed to delete the external resource '"
+                                        + destinationPath
+                                        + "', mapped in project '"
+                                        + sourceRoot.getProject().getName() + "'",
+                                        null, IStatus.WARNING);
+                    }
+                }
             }
         }
         IContainer parent = sourceRoot.getParent();
@@ -506,7 +590,7 @@ public class SyncWizard {
      */
     protected boolean isContainer(IResource resource) {
         return resource.getType() == IResource.FOLDER
-        || resource.getType() == IResource.PROJECT;
+                || resource.getType() == IResource.PROJECT;
     }
 
     /**
@@ -662,15 +746,39 @@ public class SyncWizard {
      * not - initialized File objects (that means, files could not
      * yet exist on file system).
      */
-    protected List/*<File>*/getDestinationFiles(List mappingList, IResource source, IPath relativePath) {
+    protected List<IPath> getDestinationFiles(List mappingList, IResource source, IPath relativePath, IProgressMonitor monitor) {
 
-        List fileList = new ArrayList();
+        List<IPath> fileList = new ArrayList<IPath>();
         IPath absSourcePath = source.getRawLocation();
         for (int i = 0; i < mappingList.size(); i++) {
             FileMapping fm = (FileMapping) mappingList.get(i);
             fm.setCurrentDestFile(null);
 
             IPath destinationPath = fm.getDestinationPath();
+
+            // XXX remote: not appropriate place for refresh?
+            if(enableRemote){
+                if (destinationPath == null) {
+                    destinationPath = rootPath;
+                }
+                if (destinationPath == null) {
+                    continue;
+                }
+                try {
+                    IFolder folder = source.getWorkspace().getRoot()
+                            .getFolder(destinationPath);
+                    if (folder.exists()
+                            && !folder.isSynchronized(IResource.DEPTH_ZERO)) {
+                        folder.refreshLocal(IResource.DEPTH_INFINITE, monitor);
+                    }
+                } catch (CoreException e) {
+                    FileSyncPlugin.log("Cannot reflesh destination folder: '"
+                            + destinationPath
+                            + "', please check mapping for project "
+                            + projectProps.getProject().getName(), null,
+                            IStatus.WARNING);
+                }
+            }
             IPath sourcePath = fm.getSourcePath();
             boolean useGlobal = destinationPath == null;
             if (useGlobal) {
@@ -692,9 +800,9 @@ public class SyncWizard {
                         + projectProps.getProject().getName(), null, IStatus.WARNING);
                 continue;
             }
-            File destFile = destinationPath.toFile();
-            fm.setCurrentDestFile(destFile);
-            fileList.add(destFile);
+            // File destFile = destinationPath.toFile();
+            fm.setCurrentDestFile(destinationPath);
+            fileList.add(destinationPath);
         }
         if (fileList.isEmpty()) {
             return null;

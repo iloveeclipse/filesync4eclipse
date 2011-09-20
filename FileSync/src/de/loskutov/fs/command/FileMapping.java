@@ -1,14 +1,15 @@
 /*******************************************************************************
- * Copyright (c) 2009 Andrei Loskutov.
+ * Copyright (c) 2011 Andrey Loskutov.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * Contributors:  
+ *      Andrey Loskutov - initial API and implementation
+ *      Jianxiong Zhou - remote sync
  *******************************************************************************/
 package de.loskutov.fs.command;
 
-import java.io.File;
 import java.util.Properties;
 import java.util.StringTokenizer;
 
@@ -81,7 +82,7 @@ public class FileMapping {
     private String encoding;
 
     /** only temporary solution during copy of files*/
-    private transient File currDestFile;
+    private transient IPath currDestFile;
 
     /**
      *
@@ -152,7 +153,12 @@ public class FileMapping {
         if (st.hasMoreTokens()) {
             path = st.nextToken();
             if (!isEmptyPath(path)) {
-                setDestinationPath(pathVariableHelper.resolveVariable(path, projectPath));
+                // XXX remote: check if should be avoided for remote locations
+                if(true){
+                    setDestinationPath(pathVariableHelper.resolveVariable(path, projectPath));
+                } else {
+                    setDestinationPath(new Path(path));
+                }
             }
         }
         if (st.hasMoreTokens()) {
@@ -204,7 +210,12 @@ public class FileMapping {
         }
         sb.append(MAP_SEPARATOR);
         if (getDestinationPath() != null) {
-            sb.append(pathVariableHelper.unResolveVariable(getDestinationPath(), projectPath));
+            // XXX remote: check if hould be avoided for remote locations
+            if(true){
+                sb.append(pathVariableHelper.unResolveVariable(getDestinationPath(), projectPath));
+            } else {
+                sb.append(getDestinationPath());
+            }
         } else {
             sb.append(EMPTY_ENTRY);
         }
@@ -251,6 +262,7 @@ public class FileMapping {
         return sb.toString();
     }
 
+    @Override
     public String toString() {
         return encode();
     }
@@ -320,10 +332,10 @@ public class FileMapping {
             for (int i = 0; i < length; i++) {
                 if (!sourcePath.isRoot()) {
                     fullCharExclusionPatterns[i] = prefixPath
-                    .append(exclusionPatterns[i]).toString().toCharArray();
+                            .append(exclusionPatterns[i]).toString().toCharArray();
                 } else {
                     fullCharExclusionPatterns[i] = exclusionPatterns[i].toString()
-                    .toCharArray();
+                            .toCharArray();
                 }
             }
         }
@@ -344,19 +356,17 @@ public class FileMapping {
             for (int i = 0; i < length; i++) {
                 if (!sourcePath.isRoot()) {
                     fullCharInclusionPatterns[i] = prefixPath
-                    .append(inclusionPatterns[i]).toString().toCharArray();
+                            .append(inclusionPatterns[i]).toString().toCharArray();
                 } else {
                     fullCharInclusionPatterns[i] = inclusionPatterns[i].toString()
-                    .toCharArray();
+                            .toCharArray();
                 }
             }
         }
         return fullCharInclusionPatterns;
     }
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
@@ -368,9 +378,7 @@ public class FileMapping {
         return mapAsString.equals(((FileMapping) obj).encode());
     }
 
-    /* (non-Javadoc)
-     * @see java.lang.Object#hashCode()
-     */
+    @Override
     public int hashCode() {
         String mapAsString = encode();
         return mapAsString.hashCode();
@@ -426,10 +434,10 @@ public class FileMapping {
         return filePath;
     }
 
-    public File getCurrentDestFile(){
+    public IPath getCurrentDestFile(){
         return currDestFile;
     }
-    public void setCurrentDestFile(File currDestFile){
+    public void setCurrentDestFile(IPath currDestFile){
         this.currDestFile = currDestFile;
     }
 

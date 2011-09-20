@@ -1,10 +1,12 @@
 /*******************************************************************************
- * Copyright (c) 2009 Andrei Loskutov.
+ * Copyright (c) 2011 Andrey Loskutov.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * Contributors:  
+ *      Andrey Loskutov - initial API and implementation
+ *      Jianxiong Zhou - remote sync
  *******************************************************************************/
 package de.loskutov.fs.properties;
 
@@ -86,7 +88,7 @@ import de.loskutov.fs.dialogs.TypedViewerFilter;
 public class ProjectSyncPropertyPage extends PropertyPage implements
 IStatusChangeListener {
     protected IStatus errorStatus = new StatusInfo(IStatus.ERROR,
-    "Please select one file");
+            "Please select one file");
 
     protected IStatus okStatus = new StatusInfo();
 
@@ -135,6 +137,8 @@ IStatusChangeListener {
 
     private final IValueCallback defPathCallback;
 
+    private SelectionButtonDialogField enableRemoteField;
+
     /**
      * Constructor for SamplePropertyPage.
      */
@@ -170,6 +174,7 @@ IStatusChangeListener {
     /**
      * @see PreferencePage#createContents(Composite)
      */
+    @Override
     protected Control createContents(Composite parent) {
         TabFolder tabFolder = new TabFolder(parent, SWT.TOP);
         tabFolder.setLayout(new GridLayout(1, true));
@@ -219,10 +224,16 @@ IStatusChangeListener {
         IPath variables = null;
         try {
             String defDest = preferences.get(ProjectProperties.KEY_DEFAULT_DESTINATION,
-            "");
-            IPath projectPath = project.getLocation();
+                    "");
 
-            destPath = pathVariableHelper.resolveVariable(defDest, projectPath);
+            // XXX remote: check if still needed
+            if(!preferences.getBoolean(ProjectProperties.KEY_ENABLE_REMOTE, false)){
+                IPath projectPath = project.getLocation();
+                destPath = pathVariableHelper.resolveVariable(defDest, projectPath);
+            } else {
+                destPath = new Path(defDest);
+            }
+            // end
             variables = readVariablesPath(preferences);
         } catch (IllegalStateException e) {
             FileSyncPlugin
@@ -289,11 +300,16 @@ IStatusChangeListener {
         PathContainerAdapter adapter = new PathContainerAdapter();
 
         boolean disabled = !ProjectHelper.hasBuilder(project)
-        || ProjectHelper.isBuilderDisabled(project);
+                || ProjectHelper.isBuilderDisabled(project);
         enableFileSyncField = new SelectionButtonDialogField(SWT.CHECK);
         enableFileSyncField.setSelection(!disabled);
         enableFileSyncField.setLabelText("Enable FileSync builder for project");
         enableFileSyncField.setDialogFieldListener(adapter);
+
+        enableRemoteField = new SelectionButtonDialogField(SWT.CHECK);
+        enableRemoteField.setSelection(!disabled);
+        enableRemoteField.setLabelText("Enable remote FileSync (requires RSE)");
+        enableRemoteField.setDialogFieldListener(adapter);
 
         String[] buttonLabels;
 
@@ -315,14 +331,17 @@ IStatusChangeListener {
         foldersList.setViewerSorter(new ViewerSorter(new Collator() {
             private final Collator delegate = Collator.getInstance();
 
+            @Override
             public int compare(String source, String target) {
                 return PathListLabelProvider.compare(source, target);
             }
 
+            @Override
             public CollationKey getCollationKey(String source) {
                 return delegate.getCollationKey(source);
             }
 
+            @Override
             public int hashCode() {
                 return delegate.hashCode();
             }
@@ -390,7 +409,7 @@ IStatusChangeListener {
         String vars = preferences.get(ProjectProperties.KEY_DEFAULT_VARIABLES, null);
         if (vars != null && vars.trim().length() > 0) {
             variables = FileMapping
-            .getRelativePath(new Path(vars), project.getFullPath());
+                    .getRelativePath(new Path(vars), project.getFullPath());
             if (variables == null) {
                 FileSyncPlugin.log("Path is not relative and will be ignored: " + vars,
                         null, IStatus.ERROR);
@@ -443,6 +462,7 @@ IStatusChangeListener {
         composite.setLayout(layout);
         composite.setLayoutData(new GridData(GridData.FILL_BOTH));
         LayoutUtil.doDefaultLayout(composite, new DialogField[] { enableFileSyncField,
+                enableRemoteField,
                 foldersList, useFolderOutputsField, /*useVariablesField,*/
                 includeTeamFilesField,
                 useCurrentDateField }, true, SWT.DEFAULT, SWT.DEFAULT);
@@ -457,9 +477,9 @@ IStatusChangeListener {
         for (int i = 0; i < elements.size(); i++) {
             PathListElement elem = (PathListElement) elements.get(i);
             IPath[] exclusionPatterns = (IPath[]) elem
-            .getAttribute(PathListElement.EXCLUSION);
+                    .getAttribute(PathListElement.EXCLUSION);
             IPath[] inclusionPatterns = (IPath[]) elem
-            .getAttribute(PathListElement.INCLUSION);
+                    .getAttribute(PathListElement.INCLUSION);
             IPath output = (IPath) elem.getAttribute(PathListElement.DESTINATION);
             if (exclusionPatterns.length > 0 || inclusionPatterns.length > 0
                     || output != null) {
@@ -526,7 +546,7 @@ IStatusChangeListener {
             }
         } else {
             boolean addRoot = MessageDialog.openQuestion(getShell(), "Project has no folders",
-            "Current project has no folders. Create mapping for project root?");
+                    "Current project has no folders. Create mapping for project root?");
             if(addRoot){
                 PathListElement entry = newFolderElement(project);
                 elementsToAdd.add(entry);
@@ -586,12 +606,29 @@ IStatusChangeListener {
             if (path == null) {
                 path = getDefaultDestinationPath();
             }
-            DirectoryDialog dialog = new DirectoryDialog(getShell());
-            dialog.setMessage("Select target folder");
-            if (path != null) {
-                dialog.setFilterPath(path.toOSString());
+            String absPath = null;
+            // XXX remote: rework
+            if (!enableRemoteField.isSelected()) {
+                DirectoryDialog dialog = new DirectoryDialog(getShell());
+                dialog.setMessage("Select target folder");
+                if (path != null) {
+                    dialog.setFilterPath(path.toOSString());
+                }
+                absPath = dialog.open();
+            } else {
+                // XXX remote: use special dialog to allow ONLY links, make them hidden afterwards
+                NewFolderDialog d = new NewFolderDialog(getShell(), getProject()) {
+                    @Override
+                    public void create() {
+                        super.create();
+                        handleAdvancedButtonSelect();
+                    }
+                };
+                if (d.open() == Window.OK) {
+                    // XXX remote: fullPath is relative to workspace
+                    absPath = ((IFolder) d.getFirstResult()).getFullPath().toString();
+                }
             }
-            String absPath = dialog.open();
             if (absPath != null) {
                 elem.getParent().setAttribute(PathListElement.DESTINATION,
                         new Path(absPath), defPathCallback);
@@ -766,6 +803,8 @@ IStatusChangeListener {
              } else {
                  enableInputControls(selected);
              }
+         } else if (field == enableRemoteField) {
+             // set remote flag
          }
     }
 
@@ -880,6 +919,7 @@ IStatusChangeListener {
                 IProject.class };
         ISelectionStatusValidator validator = new TypedElementSelectionValidator(
                 acceptedClasses, false) {
+            @Override
             public IStatus validate(Object[] elements) {
                 if (elements.length > 1 || elements.length == 0
                         || !(elements[0] instanceof IFile)) {
@@ -988,7 +1028,7 @@ IStatusChangeListener {
             if (!currPath.equals(entryPath)) {
                 if (currPath.isPrefixOf(entryPath)) {
                     IPath[] exclusionFilters = (IPath[]) curr
-                    .getAttribute(PathListElement.EXCLUSION);
+                            .getAttribute(PathListElement.EXCLUSION);
                     if (!isExcludedPath(entryPath, exclusionFilters)) {
                         IPath pathToExclude = entryPath.removeFirstSegments(
                                 currPath.segmentCount()).addTrailingSeparator();
@@ -1002,7 +1042,7 @@ IStatusChangeListener {
                     }
                 } else if (entryPath.isPrefixOf(currPath)) {
                     IPath[] exclusionFilters = (IPath[]) newEntry
-                    .getAttribute(PathListElement.EXCLUSION);
+                            .getAttribute(PathListElement.EXCLUSION);
 
                     if (!isExcludedPath(currPath, exclusionFilters)) {
                         IPath pathToExclude = currPath.removeFirstSegments(
@@ -1066,12 +1106,21 @@ IStatusChangeListener {
         return false;
     }
 
+    @Override
     protected void performDefaults() {
+        // TODO remote: should not need  the checkbox at all
+        enableRemoteField.setSelection(false);
+
         IEclipsePreferences preferences = getPreferences(false);
         String defPath = preferences.get(ProjectProperties.KEY_DEFAULT_DESTINATION, "");
         IPath projectPath = project.getLocation();
-
-        IPath path = pathVariableHelper.resolveVariable(defPath, projectPath);
+        // XXX remote: check if needed
+        IPath path;
+        if(true){
+            path = pathVariableHelper.resolveVariable(defPath, projectPath);
+        } else {
+            path = new Path(defPath);
+        }
         if (path == null) {
             destPathDialogField.setText("");
         } else {
@@ -1085,6 +1134,7 @@ IStatusChangeListener {
         }
     }
 
+    @Override
     public boolean performOk() {
         if (!destFolderStatus.isOK()) {
             return false;
@@ -1112,14 +1162,23 @@ IStatusChangeListener {
             return false;
         }
 
+        preferences.put(ProjectProperties.KEY_ENABLE_REMOTE, ""
+                + enableRemoteField.isSelected());
+
         for (int i = 0; i < mappingList.size(); i++) {
             preferences.put(FileMapping.FULL_MAP_PREFIX + i,
                     ((PathListElement) mappingList.get(i)).getMapping().encode());
         }
 
         IPath projectPath = project.getLocation();
-        String defPath = pathVariableHelper
-        .unResolveVariable(getDefaultDestinationPath(), projectPath);
+        String defPath;
+        // XXX remote: check if still needed
+        if(!enableRemoteField.isSelected()){
+            defPath = pathVariableHelper
+                    .unResolveVariable(getDefaultDestinationPath(), projectPath);
+        } else {
+            defPath = getDefaultDestinationPath().toOSString();
+        }
         if (defPath == null) {
             defPath = "";
         }
@@ -1302,12 +1361,29 @@ IStatusChangeListener {
 
     void changeControlPressed(DialogField field) {
         if (field == destPathDialogField) {
-            DirectoryDialog dialog = new DirectoryDialog(getShell());
-            dialog.setMessage("Select default target folder");
-            if (destPathDialogField.getText() != null) {
-                dialog.setFilterPath(destPathDialogField.getText());
+            String absPath = null;
+            // XXX remote: rework
+            if (!enableRemoteField.isSelected()) {
+                DirectoryDialog dialog = new DirectoryDialog(getShell());
+                dialog.setMessage("Select default target folder");
+                if (destPathDialogField.getText() != null) {
+                    dialog.setFilterPath(destPathDialogField.getText());
+                }
+                absPath = dialog.open();
+            } else {
+                // XXX remote: use special dialog to allow ONLY links, make them hidden afterwards
+                NewFolderDialog d = new NewFolderDialog(getShell(), getProject()) {
+                    @Override
+                    public void create() {
+                        super.create();
+                        handleAdvancedButtonSelect();
+                    }
+                };
+                if (d.open() == Window.OK) {
+                    // XXX remote: fullPath is relative to workspace
+                    absPath = ((IFolder) d.getFirstResult()).getFullPath().toString();
+                }
             }
-            String absPath = dialog.open();
             if (absPath == null) {
                 return;
             }
@@ -1366,11 +1442,14 @@ IStatusChangeListener {
 
         defDestinationPath = getDefaultDestinationPath();
 
-        File f = new File(defDestinationPath.toOSString());
-        // if exists, must be a folder with read/write rights
-        if (f.exists() && (f.isFile() || !f.canRead() || !f.canWrite())) {
-            destFolderStatus.setError("Default target folder is invalid: " + f);
-            return;
+        // XXX remote: check if IResource exists, NOT just a file
+        if(!enableRemoteField.isSelected()){
+            File f = new File(defDestinationPath.toOSString());
+            // if exists, must be a folder with read/write rights
+            if (f.exists() && (f.isFile() || !f.canRead() || !f.canWrite())) {
+                destFolderStatus.setError("Default target folder is invalid: " + f);
+                return;
+            }
         }
         destFolderStatus.setOK();
     }
