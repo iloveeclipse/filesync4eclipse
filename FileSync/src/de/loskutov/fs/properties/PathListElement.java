@@ -1,10 +1,10 @@
 /*******************************************************************************
- * Copyright (c) 2009 Andrei Loskutov.
+ * Copyright (c) 2011 Andrey Loskutov.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * Contributor:  Andrey Loskutov - initial API and implementation
  *******************************************************************************/
 package de.loskutov.fs.properties;
 
@@ -36,14 +36,14 @@ public class PathListElement {
 
     private FileMapping cachedMapping;
 
-    private ArrayList fChildren;
+    private ArrayList<PathListElementAttribute> fChildren;
 
     public PathListElement(IProject project, IPath path, IResource res,
             IValueCallback defPath, IValueCallback defVars) {
         fProject = project;
 
         fPath = path;
-        fChildren = new ArrayList();
+        fChildren = new ArrayList<PathListElementAttribute>();
         fResource = res;
         cachedMapping = null;
 
@@ -60,7 +60,7 @@ public class PathListElement {
         fPath = new Path(project.getName());
         fPath = fPath.append(mapping.getSourcePath());
 
-        fChildren = new ArrayList();
+        fChildren = new ArrayList<PathListElementAttribute>();
         fResource = null;
         cachedMapping = mapping;
         createAttributeElement(INCLUSION, mapping.getInclusionPatterns(), null);

@@ -1,10 +1,10 @@
 /*******************************************************************************
- * Copyright (c) 2009 Andrei Loskutov.
+ * Copyright (c) 2011 Andrey Loskutov.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * Contributor:  Andrey Loskutov - initial API and implementation
  *******************************************************************************/
 package de.loskutov.fs.properties;
 
@@ -57,12 +57,12 @@ org.eclipse.jface.dialogs.StatusDialog {
 
     private String exclPattern;
 
-    private final List existingPatterns;
+    private final List<Object> existingPatterns;
 
     private final boolean isExclusion;
 
     public InclusionExclusionEntryDialog(Shell parent, boolean isExclusion,
-            String patternToEdit, List existingPatterns,
+            String patternToEdit, List<Object> existingPatterns,
             PathListElement entryToEdit) {
         super(parent);
         this.isExclusion = isExclusion;

@@ -4,7 +4,7 @@
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * Contributors:  
+ * Contributors:
  *      Andrey Loskutov - initial API and implementation
  *      Jianxiong Zhou - remote sync
  *******************************************************************************/
@@ -272,9 +272,9 @@ public class SyncWizard {
 
     public void cleanUp(IProgressMonitor monitor) {
         if (needRefreshAffectedProjects) {
-            List/*<IContainer>*/containers = getAffectedResources();
+            List/*<IContainer>*/<IContainer>containers = getAffectedResources();
             for (int i = 0; i < containers.size(); i++) {
-                IContainer container = (IContainer) containers.get(i);
+                IContainer container = containers.get(i);
                 try {
                     // this will start all builder for the destination project too...
                     // so that we could have "refresh forever"
@@ -297,8 +297,8 @@ public class SyncWizard {
      * destination targets. It is NOT the list of *really* affected resources (if build was
      * cancelled or exception etc).
      */
-    private List getAffectedResources() {
-        ArrayList list = new ArrayList();
+    private List<IContainer> getAffectedResources() {
+        ArrayList<IContainer> list = new ArrayList<IContainer>();
         for (int i = 0; i < mappings.length; i++) {
             IContainer[] containers = mappings[i].getDestinationContainers();
             if (containers.length > 0) {
@@ -332,14 +332,14 @@ public class SyncWizard {
     protected boolean copy(IResource sourceRoot, IProgressMonitor monitor) {
         IPath relativePath = sourceRoot.getProjectRelativePath();
 
-        List mappingList = getMappings(relativePath,
+        List<FileMapping> mappingList = getMappings(relativePath,
                 sourceRoot.getType() == IResource.FOLDER, false);
 
         if (mappingList == null) {
             return false;
         }
 
-        List destinationFiles = getDestinationFiles(mappingList, sourceRoot, relativePath, monitor);
+        List<?> destinationFiles = getDestinationFiles(mappingList, sourceRoot, relativePath, monitor);
 
         if (destinationFiles == null) {
             return false;
@@ -355,7 +355,7 @@ public class SyncWizard {
         // only required if we need to substitute variables
         Boolean hasTextType = null;
         for (int i = 0; i < mappingList.size() && !monitor.isCanceled(); i++) {
-            FileMapping fm = (FileMapping) mappingList.get(i);
+            FileMapping fm = mappingList.get(i);
             IPath destinationPath = fm.getCurrentDestFile();
             if(destinationPath == null){
                 continue;
@@ -443,7 +443,7 @@ public class SyncWizard {
         return commonState;
     }
 
-    private boolean createDirs(IResource sourceRoot, List/*<File>*/destinationPaths,
+    private boolean createDirs(IResource sourceRoot, List/*<File>*/<?> destinationPaths,
             IProgressMonitor monitor) {
         boolean commonState = true;
         for (int i = 0; i < destinationPaths.size() && !monitor.isCanceled(); i++) {
@@ -481,7 +481,7 @@ public class SyncWizard {
     }
 
     // XXX remote: rework
-    private IResource getExistingResource(IPath path, IWorkspaceRoot wsRoot) {
+    private static IResource getExistingResource(IPath path, IWorkspaceRoot wsRoot) {
         IFolder folder = wsRoot.getFolder(path);
         if (folder.exists()) {
             return folder;
@@ -503,13 +503,13 @@ public class SyncWizard {
      */
     protected boolean delete(IResource sourceRoot, boolean clean, IProgressMonitor monitor) {
         IPath relativePath = sourceRoot.getProjectRelativePath();
-        List mappingList = getMappings(relativePath,
+        List<FileMapping> mappingList = getMappings(relativePath,
                 sourceRoot.getType() == IResource.FOLDER, clean);
         if (mappingList == null) {
             return true;
         }
 
-        List destinationPaths = getDestinationFiles(mappingList, sourceRoot, relativePath, monitor);
+        List<?> destinationPaths = getDestinationFiles(mappingList, sourceRoot, relativePath, monitor);
         if (destinationPaths == null || destinationPaths.isEmpty()) {
             return true;
         }
@@ -746,12 +746,12 @@ public class SyncWizard {
      * not - initialized File objects (that means, files could not
      * yet exist on file system).
      */
-    protected List<IPath> getDestinationFiles(List mappingList, IResource source, IPath relativePath, IProgressMonitor monitor) {
+    protected List<IPath> getDestinationFiles(List<FileMapping> mappingList, IResource source, IPath relativePath, IProgressMonitor monitor) {
 
         List<IPath> fileList = new ArrayList<IPath>();
         IPath absSourcePath = source.getRawLocation();
         for (int i = 0; i < mappingList.size(); i++) {
-            FileMapping fm = (FileMapping) mappingList.get(i);
+            FileMapping fm = mappingList.get(i);
             fm.setCurrentDestFile(null);
 
             IPath destinationPath = fm.getDestinationPath();
@@ -816,15 +816,15 @@ public class SyncWizard {
      * @return null if there no matching mappings, or not-empty list with
      * FileMapping objects
      */
-    protected List/*<FileMapping>*/getMappings(IPath path, boolean isFolder,
+    protected List/*<FileMapping>*/<FileMapping> getMappings(IPath path, boolean isFolder,
             boolean includeExcludes) {
-        ArrayList mappingList = null;
+        ArrayList<FileMapping> mappingList = null;
         for (int i = 0; i < mappings.length; i++) {
             FileMapping fm = mappings[i];
             if (fm.getSourcePath().isPrefixOf(path)) {
                 if (includeExcludes) {
                     if (mappingList == null) {
-                        mappingList = new ArrayList();
+                        mappingList = new ArrayList<FileMapping>();
                     }
                     mappingList.add(fm);
                     continue;
@@ -834,7 +834,7 @@ public class SyncWizard {
                 boolean ex = isExcluded(path, incl, excl, isFolder);
                 if (!ex) {
                     if (mappingList == null) {
-                        mappingList = new ArrayList();
+                        mappingList = new ArrayList<FileMapping>();
                     }
                     mappingList.add(fm);
                 }

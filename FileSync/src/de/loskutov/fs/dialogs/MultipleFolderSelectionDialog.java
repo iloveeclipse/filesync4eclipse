@@ -51,12 +51,12 @@ public class MultipleFolderSelectionDialog extends SelectionStatusDialog impleme
 
     private final ILabelProvider fLabelProvider;
     private final ITreeContentProvider fContentProvider;
-    private List fFilters;
+    private List<ViewerFilter> fFilters;
 
     private Object fInput;
     private Button fNewFolderButton;
     private IContainer fSelectedContainer;
-    protected Set fExisting;
+    protected Set<Object> fExisting;
     private Object fFocusElement;
 
     public MultipleFolderSelectionDialog(Shell parent, ILabelProvider labelProvider, ITreeContentProvider contentProvider) {
@@ -76,7 +76,7 @@ public class MultipleFolderSelectionDialog extends SelectionStatusDialog impleme
     }
 
     public void setExisting(Object[] existing) {
-        fExisting= new HashSet();
+        fExisting= new HashSet<Object>();
         for (int i= 0; i < existing.length; i++) {
             fExisting.add(existing[i]);
         }
@@ -96,7 +96,7 @@ public class MultipleFolderSelectionDialog extends SelectionStatusDialog impleme
      */
     public void addFilter(ViewerFilter filter) {
         if (fFilters == null) {
-            fFilters = new ArrayList(4);
+            fFilters = new ArrayList<ViewerFilter>(4);
         }
 
         fFilters.add(filter);
@@ -120,7 +120,7 @@ public class MultipleFolderSelectionDialog extends SelectionStatusDialog impleme
                 checked= null;
             }
         } else {
-            ArrayList res= new ArrayList();
+            ArrayList<Object> res= new ArrayList<Object>();
             for (int i= 0; i < checked.length; i++) {
                 Object elem= checked[i];
                 if (!fExisting.contains(elem)) {
@@ -151,7 +151,7 @@ public class MultipleFolderSelectionDialog extends SelectionStatusDialog impleme
 
                 fViewer.expandToLevel(2);
                 if (fExisting != null) {
-                    for (Iterator iter= fExisting.iterator(); iter.hasNext();) {
+                    for (Iterator<Object> iter= fExisting.iterator(); iter.hasNext();) {
                         fViewer.reveal(iter.next());
                     }
                 }
@@ -182,7 +182,7 @@ public class MultipleFolderSelectionDialog extends SelectionStatusDialog impleme
         fViewer.setComparator(new ResourceComparator(ResourceComparator.NAME));
         if (fFilters != null) {
             for (int i = 0; i != fFilters.size(); i++) {
-                fViewer.addFilter((ViewerFilter) fFilters.get(i));
+                fViewer.addFilter(fFilters.get(i));
             }
         }
 

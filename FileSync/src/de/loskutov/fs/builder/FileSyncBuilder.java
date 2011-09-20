@@ -1,10 +1,10 @@
 /*******************************************************************************
- * Copyright (c) 2009 Andrei Loskutov.
+ * Copyright (c) 2011 Andrey Loskutov.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * Contributor:  Andrey Loskutov - initial API and implementation
  *******************************************************************************/
 package de.loskutov.fs.builder;
 
@@ -71,7 +71,7 @@ implements IPreferenceChangeListener {
 
     private Long mappingHashCode;
 
-    private final Map pathToTimeStamp;
+    private final Map<IPath, Long> pathToTimeStamp;
 
     volatile boolean ignorePrefChange;
 
@@ -80,7 +80,7 @@ implements IPreferenceChangeListener {
     /** called by Eclipse through reflection */
     public FileSyncBuilder() {
         super();
-        pathToTimeStamp = new HashMap();
+        pathToTimeStamp = new HashMap<IPath, Long>();
     }
 
     /** caled by us on click */
@@ -113,28 +113,21 @@ implements IPreferenceChangeListener {
     }
 
     public void build(int kind, IProgressMonitor monitor) {
-        build(kind, new HashMap(), monitor);
+        build(kind, new HashMap<Integer, Integer>(), monitor);
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.eclipse.core.resources.IncrementalProjectBuilder#clean(org.eclipse.core.runtime.IProgressMonitor)
-     */
     @Override
     protected void clean(IProgressMonitor monitor) throws CoreException {
-        build(CLEAN_BUILD, new HashMap(), monitor);
+        build(CLEAN_BUILD, new HashMap<Integer, Integer>(), monitor);
     }
 
-    /*
-     * @see org.eclipse.core.internal.events.InternalBuilder#build(int, Map, IProgressMonitor)
-     */
     @Override
     protected IProject[] build(int kind, Map args, IProgressMonitor monitor) {
         if (isDisabled()) {
             return null;
         }
         if (args == null) {
-            args = new HashMap();
+            args = new HashMap<Integer, Integer>();
         }
         ProjectProperties props = ProjectProperties.getInstance(getProjectInternal());
         updateVisitorFlags(props);
@@ -194,7 +187,7 @@ implements IPreferenceChangeListener {
      * @param monitor progress indicator
      * @return IProject[] related projects list
      */
-    private IProject[] buildAuto(Map args, ProjectProperties props, SyncWizard wizard,
+    private IProject[] buildAuto(Map<Integer, Integer> args, ProjectProperties props, SyncWizard wizard,
             IProgressMonitor monitor) {
         return buildIncremental(args, props, wizard, monitor);
     }
@@ -206,7 +199,7 @@ implements IPreferenceChangeListener {
      * @param monitor progress indicator
      * @return IProject[] related projects list
      */
-    private IProject[] buildFull(Map args, ProjectProperties props, SyncWizard wizard,
+    private IProject[] buildFull(Map<Integer, Integer> args, ProjectProperties props, SyncWizard wizard,
             IProgressMonitor monitor) {
         IProject currentProject = getProjectInternal();
         if (currentProject != null) {
@@ -222,7 +215,7 @@ implements IPreferenceChangeListener {
      * @param monitor progress indicator
      * @return IProject[] related projects list
      */
-    private IProject[] buildClean(Map args, ProjectProperties props, SyncWizard wizard,
+    private IProject[] buildClean(Map<Integer, Integer> args, ProjectProperties props, SyncWizard wizard,
             IProgressMonitor monitor) {
         IProject currentProject = getProjectInternal();
         if (currentProject != null) {
@@ -238,7 +231,7 @@ implements IPreferenceChangeListener {
      * @param monitor progress indicator
      * @return IProject[] related projects list
      */
-    private IProject[] buildIncremental(final Map args, final ProjectProperties props,
+    private IProject[] buildIncremental(final Map<Integer, Integer> args, final ProjectProperties props,
             final SyncWizard wizard, final IProgressMonitor monitor) {
         IProject result[] = null;
 
@@ -307,7 +300,7 @@ implements IPreferenceChangeListener {
                     } catch (CoreException e) {
                         FileSyncPlugin.log(
                                 "Errors during sync of the resource delta:"
-                                + resourceDelta + " for project '"
+                                        + resourceDelta + " for project '"
                                         + currentProject + "'", e, IStatus.ERROR);
                     } finally {
                         wizard.cleanUp(monitor);
@@ -326,7 +319,7 @@ implements IPreferenceChangeListener {
      * @param monitor a progress indicator
      * @param wizard
      */
-    protected void fullProjectBuild(Map args, final IProject project,
+    protected void fullProjectBuild(Map<Integer, Integer> args, final IProject project,
             ProjectProperties props, SyncWizard wizard, final IProgressMonitor monitor,
             boolean clean) {
 
@@ -503,13 +496,6 @@ implements IPreferenceChangeListener {
             this.clean = clean;
         }
 
-        public Object getMonitor() {
-            return monitor;
-        }
-
-        /* (non-Javadoc)
-         * @see org.eclipse.core.resources.IResourceVisitor#visit(org.eclipse.core.resources.IResource)
-         */
         public boolean visit(IResource resource) {
             monitor.worked(1);
             checkCancel(monitor, wizard);
@@ -559,13 +545,6 @@ implements IPreferenceChangeListener {
             this.props = props;
         }
 
-        public Object getMonitor() {
-            return monitor;
-        }
-
-        /* (non-Javadoc)
-         * @see org.eclipse.core.resources.IResourceVisitor#visit(org.eclipse.core.resources.IResource)
-         */
         public boolean visit(IResource resource) {
             if (monitor.isCanceled()) {
                 throw new OperationCanceledException();
@@ -598,7 +577,7 @@ implements IPreferenceChangeListener {
                         boolean match = variablesPath.equals(resource
                                 .getProjectRelativePath());
                         if (match) {
-                            Long time = (Long) pathToTimeStamp.get(variablesPath);
+                            Long time = pathToTimeStamp.get(variablesPath);
                             long newTime = resource.getLocation().toFile().lastModified();
                             if (time != null && time.longValue() != newTime) {
                                 time = new Long(newTime);
@@ -651,17 +630,11 @@ implements IPreferenceChangeListener {
             return SETTINGS_DIR.equals(relativePath.segment(0));
         }
 
-        /* (non-Javadoc)
-         * @see org.eclipse.core.resources.IResourceDeltaVisitor#visit(org.eclipse.core.resources.IResourceDelta)
-         */
         public boolean visit(IResourceDelta delta) {
             return visit(delta.getResource());
         }
     }
 
-    /* (non-Javadoc)
-     * @see org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener#preferenceChange(org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent)
-     */
     public void preferenceChange(PreferenceChangeEvent event) {
         if (ignorePrefChange) {
             return;

@@ -1,10 +1,10 @@
 /*******************************************************************************
- * Copyright (c) 2009 Andrei Loskutov.
+ * Copyright (c) 2011 Andrey Loskutov.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * Contributor:  Andrey Loskutov - initial API and implementation
  *******************************************************************************/
 package de.loskutov.fs.properties;
 
@@ -98,7 +98,7 @@ public class ProjectHelper {
             /*
              * check for deactivated builder
              */
-            Map arguments = command.getArguments();
+            Map<?, ?> arguments = command.getArguments();
             String externalLaunch = (String) arguments
                     .get("LaunchConfigHandle"); // see BuilderUtils.LAUNCH_CONFIG_HANDLE);
             if(externalLaunch != null
@@ -156,7 +156,7 @@ public class ProjectHelper {
     private static void removeDisabledBuilder(IProjectDescription desc) {
         ICommand[] commands = desc.getBuildSpec();
 
-        List list = new ArrayList(commands.length);
+        List<ICommand> list = new ArrayList<ICommand>(commands.length);
 
         for (int i = 0; i < commands.length; i++) {
             if (!isBuilderDeactivated(commands[i])) {
@@ -164,7 +164,7 @@ public class ProjectHelper {
             }
         }
 
-        ICommand[] newCommands = (ICommand[]) list.toArray(new ICommand[list.size()]);
+        ICommand[] newCommands = list.toArray(new ICommand[list.size()]);
 
         desc.setBuildSpec(newCommands);
     }
@@ -188,7 +188,7 @@ public class ProjectHelper {
 
         ICommand[] commands = desc.getBuildSpec();
 
-        List list = new ArrayList(commands.length);
+        List<ICommand> list = new ArrayList<ICommand>(commands.length);
 
         for (int i = 0; i < commands.length; i++) {
             String builderName = commands[i].getBuilderName();
@@ -197,7 +197,7 @@ public class ProjectHelper {
             }
         }
 
-        ICommand[] newCommands = (ICommand[]) list.toArray(new ICommand[list.size()]);
+        ICommand[] newCommands = list.toArray(new ICommand[list.size()]);
 
         desc.setBuildSpec(newCommands);
         try {
@@ -212,9 +212,9 @@ public class ProjectHelper {
 
         ProjectProperties properties = ProjectProperties.getInstance(project);
         if(properties != null){
-            List listeners = properties.getProjectPreferenceChangeListeners();
+            List<FileSyncBuilder> listeners = properties.getProjectPreferenceChangeListeners();
             for (int i = 0; i < listeners.size(); i++) {
-                FileSyncBuilder b = (FileSyncBuilder) listeners.get(i);
+                FileSyncBuilder b = listeners.get(i);
                 b.setDisabled(true);
             }
         }

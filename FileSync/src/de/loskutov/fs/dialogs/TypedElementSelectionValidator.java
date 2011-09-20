@@ -28,7 +28,7 @@ public class TypedElementSelectionValidator implements ISelectionStatusValidator
 
     private final Class[] fAcceptedTypes;
     private final boolean fAllowMultipleSelection;
-    private final Collection fRejectedElements;
+    private final Collection<?> fRejectedElements;
 
     /**
      * @param acceptedTypes The types accepted by the validator
@@ -45,7 +45,7 @@ public class TypedElementSelectionValidator implements ISelectionStatusValidator
      * allows multiple selection.
      * @param rejectedElements A list of elements that are not accepted
      */
-    public TypedElementSelectionValidator(Class[] acceptedTypes, boolean allowMultipleSelection, Collection rejectedElements) {
+    public TypedElementSelectionValidator(Class[] acceptedTypes, boolean allowMultipleSelection, Collection<?> rejectedElements) {
         Assert.isNotNull(acceptedTypes);
         fAcceptedTypes= acceptedTypes;
         fAllowMultipleSelection= allowMultipleSelection;

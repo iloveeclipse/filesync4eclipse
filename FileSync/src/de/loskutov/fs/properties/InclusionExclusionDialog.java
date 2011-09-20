@@ -1,10 +1,10 @@
 /*******************************************************************************
- * Copyright (c) 2009 Andrei Loskutov.
+ * Copyright (c) 2011 Andrey Loskutov.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * Contributor:  Andrey Loskutov - initial API and implementation
  *******************************************************************************/
 package de.loskutov.fs.properties;
 
@@ -149,7 +149,7 @@ public class InclusionExclusionDialog extends StatusDialog {
 
         IPath[] pattern = (IPath[]) entryToEdit.getAttribute(key);
 
-        ArrayList elements = new ArrayList(pattern.length);
+        ArrayList<Object> elements = new ArrayList<Object>(pattern.length);
         for (int i = 0; i < pattern.length; i++) {
             elements.add(pattern[i].toString());
         }
@@ -204,21 +204,21 @@ public class InclusionExclusionDialog extends StatusDialog {
     }
 
     protected void doSelectionChanged(ListDialogField field) {
-        List selected = field.getSelectedElements();
+        List<Object> selected = field.getSelectedElements();
         field.enableButton(IDX_EDIT, canEdit(selected));
     }
 
-    private boolean canEdit(List selected) {
+    private boolean canEdit(List<Object> selected) {
         return selected.size() == 1;
     }
 
     private void editEntry(ListDialogField field) {
 
-        List selElements = field.getSelectedElements();
+        List<Object> selElements = field.getSelectedElements();
         if (selElements.size() != 1) {
             return;
         }
-        List existing = field.getElements();
+        List<Object> existing = field.getElements();
         String entry = (String) selElements.get(0);
         InclusionExclusionEntryDialog dialog = new InclusionExclusionEntryDialog(
                 getShell(), isExclusion(field), entry, existing, currElement);
@@ -232,7 +232,7 @@ public class InclusionExclusionDialog extends StatusDialog {
     }
 
     private void addEntry(ListDialogField field) {
-        List existing = field.getElements();
+        List<Object> existing = field.getElements();
         InclusionExclusionEntryDialog dialog = new InclusionExclusionEntryDialog(
                 getShell(), isExclusion(field), null, existing, currElement);
         if (dialog.open() == Window.OK) {

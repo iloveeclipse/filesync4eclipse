@@ -4,7 +4,7 @@
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * Contributors:  
+ * Contributors:
  *      Andrey Loskutov - initial API and implementation
  *      Jianxiong Zhou - remote sync
  *******************************************************************************/
@@ -98,7 +98,7 @@ IStatusChangeListener {
      */
     protected IWorkspaceRoot workspaceRoot;
 
-    protected List mappingList;
+    protected List<PathListElement> mappingList;
 
     protected StringButtonDialogField destPathDialogField;
 
@@ -193,7 +193,7 @@ IStatusChangeListener {
         // ensure the page has no special buttons
         noDefaultAndApplyButton();
 
-        mappingList = new ArrayList();
+        mappingList = new ArrayList<PathListElement>();
 
         workspaceRoot = ResourcesPlugin.getWorkspace().getRoot();
 
@@ -216,7 +216,7 @@ IStatusChangeListener {
 
 
         ProjectProperties properties = ProjectProperties.getInstance(project);
-        List listeners = properties.getProjectPreferenceChangeListeners();
+        List<FileSyncBuilder> listeners = properties.getProjectPreferenceChangeListeners();
         boolean noBuilderInstalled = listeners.isEmpty();
 
         IEclipsePreferences preferences = getPreferences(noBuilderInstalled);
@@ -374,9 +374,9 @@ IStatusChangeListener {
     protected void init() {
         boolean useFolderOutputs = hasDifferentOutputFolders();
         //        boolean useVariables = hasDifferentVasriables();
-        ArrayList folders = new ArrayList();
+        ArrayList<Object> folders = new ArrayList<Object>();
         for (int i = 0; i < mappingList.size(); i++) {
-            PathListElement cpe = (PathListElement) mappingList.get(i);
+            PathListElement cpe = mappingList.get(i);
             folders.add(cpe);
         }
 
@@ -427,7 +427,7 @@ IStatusChangeListener {
             return false;
         }
         for (int i = 0; i < mappingList.size(); i++) {
-            PathListElement cpe = (PathListElement) mappingList.get(i);
+            PathListElement cpe = mappingList.get(i);
             boolean hasOutputFolder = (cpe.getAttribute(PathListElement.DESTINATION) != null);
             if (hasOutputFolder) {
                 return true;
@@ -445,7 +445,7 @@ IStatusChangeListener {
             return false;
         }
         for (int i = 0; i < mappingList.size(); i++) {
-            PathListElement cpe = (PathListElement) mappingList.get(i);
+            PathListElement cpe = mappingList.get(i);
             Object dest = cpe.getAttribute(PathListElement.DESTINATION);
             boolean hasDefFolder = dest == null || dest.toString().trim().length() == 0;
             if (hasDefFolder) {
@@ -473,7 +473,7 @@ IStatusChangeListener {
         foldersList.setButtonsMinWidth(buttonBarWidth);
 
         // expand
-        List elements = foldersList.getElements();
+        List<Object> elements = foldersList.getElements();
         for (int i = 0; i < elements.size(); i++) {
             PathListElement elem = (PathListElement) elements.get(i);
             IPath[] exclusionPatterns = (IPath[]) elem
@@ -491,7 +491,7 @@ IStatusChangeListener {
     protected void pathListKeyPressed(TreeListDialogField field, KeyEvent event) {
         if (field == foldersList) {
             if (event.character == SWT.DEL && event.stateMask == 0) {
-                List selection = field.getSelectedElements();
+                List<Object> selection = field.getSelectedElements();
                 if (canRemove(selection)) {
                     removeEntry();
                 }
@@ -501,14 +501,14 @@ IStatusChangeListener {
 
     protected void pathListDoubleClicked(TreeListDialogField field) {
         if (field == foldersList) {
-            List selection = field.getSelectedElements();
+            List<Object> selection = field.getSelectedElements();
             if (canEdit(selection)) {
                 editEntry();
             }
         }
     }
 
-    private boolean hasMembers(IContainer container) {
+    private static boolean hasMembers(IContainer container) {
         try {
             IResource[] members = container.members();
             for (int i = 0; i < members.length; i++) {
@@ -536,7 +536,7 @@ IStatusChangeListener {
     }
 
     private void addEntry() {
-        List elementsToAdd = new ArrayList(10);
+        List<Object> elementsToAdd = new ArrayList<Object>(10);
         if (hasMembers(project)) {
             PathListElement[] srcentries = openFolderDialog(null);
             if (srcentries != null) {
@@ -559,14 +559,14 @@ IStatusChangeListener {
         }
         if (!elementsToAdd.isEmpty()) {
 
-            HashSet modifiedElements = new HashSet();
+            HashSet<PathListElement> modifiedElements = new HashSet<PathListElement>();
             askForAddingExclusionPatternsDialog(elementsToAdd, modifiedElements);
 
             foldersList.addElements(elementsToAdd);
             foldersList.postSetSelection(new StructuredSelection(elementsToAdd));
 
             if (!modifiedElements.isEmpty()) {
-                for (Iterator iter = modifiedElements.iterator(); iter.hasNext();) {
+                for (Iterator<PathListElement> iter = modifiedElements.iterator(); iter.hasNext();) {
                     Object elem = iter.next();
                     foldersList.refresh(elem);
                     foldersList.expandElement(elem, 3);
@@ -577,7 +577,7 @@ IStatusChangeListener {
     }
 
     private void editEntry() {
-        List selElements = foldersList.getSelectedElements();
+        List<Object> selElements = foldersList.getSelectedElements();
         if (selElements.size() != 1) {
             return;
         }
@@ -677,14 +677,14 @@ IStatusChangeListener {
     }
 
     protected void pathListSelectionChanged(DialogField field) {
-        List selected = foldersList.getSelectedElements();
+        List<Object> selected = foldersList.getSelectedElements();
         foldersList.enableButton(IDX_EDIT, canEdit(selected));
         foldersList.enableButton(IDX_REMOVE, canRemove(selected));
         boolean noAttributes = !hasAttributes(selected);
         foldersList.enableButton(IDX_ADD, noAttributes);
     }
 
-    private boolean hasAttributes(List selElements) {
+    private static boolean hasAttributes(List<Object> selElements) {
         if (selElements.size() == 0) {
             return false;
         }
@@ -697,7 +697,7 @@ IStatusChangeListener {
     }
 
     private void removeEntry() {
-        List selElements = foldersList.getSelectedElements();
+        List<Object> selElements = foldersList.getSelectedElements();
         for (int i = selElements.size() - 1; i >= 0; i--) {
             Object elem = selElements.get(i);
             if (elem instanceof PathListElementAttribute) {
@@ -723,7 +723,7 @@ IStatusChangeListener {
         dialogFieldChanged(destPathDialogField);
     }
 
-    private boolean canRemove(List selElements) {
+    private static boolean canRemove(List<Object> selElements) {
         if (selElements.size() == 0) {
             return false;
         }
@@ -748,7 +748,7 @@ IStatusChangeListener {
         return true;
     }
 
-    private boolean canEdit(List selElements) {
+    private static boolean canEdit(List<Object> selElements) {
         if (selElements.size() != 1) {
             return false;
         }
@@ -825,12 +825,12 @@ IStatusChangeListener {
     }
 
     private void updatePatternList() {
-        List srcelements = foldersList.getElements();
+        List<Object> srcelements = foldersList.getElements();
 
-        List oldmappings = mappingList;
-        List newMappings = new ArrayList(mappingList);
+        List<PathListElement> oldmappings = mappingList;
+        List<PathListElement> newMappings = new ArrayList<PathListElement>(mappingList);
         for (int i = 0; i < oldmappings.size(); i++) {
-            PathListElement cpe = (PathListElement) oldmappings.get(i);
+            PathListElement cpe = oldmappings.get(i);
             if (!srcelements.contains(cpe)) {
                 newMappings.remove(cpe);
             } else {
@@ -859,7 +859,7 @@ IStatusChangeListener {
         return null;
     }
 
-    private void askForAddingExclusionPatternsDialog(List newEntries, Set modifiedEntries) {
+    private void askForAddingExclusionPatternsDialog(List<Object> newEntries, Set<PathListElement> modifiedEntries) {
         fixNestingConflicts(newEntries, foldersList.getElements(), modifiedEntries);
         if (!modifiedEntries.isEmpty()) {
             String title = "Folder added";
@@ -871,10 +871,10 @@ IStatusChangeListener {
     private PathListElement[] openFolderDialog(PathListElement existing) {
 
         Class[] acceptedClasses = new Class[] { IProject.class, IFolder.class };
-        List existingContainers = getExistingContainers(null);
+        List<IResource> existingContainers = getExistingContainers(null);
 
         IProject[] allProjects = workspaceRoot.getProjects();
-        ArrayList rejectedElements = new ArrayList(allProjects.length);
+        ArrayList<IProject> rejectedElements = new ArrayList<IProject>(allProjects.length);
         IProject currProject = project;
         for (int i = 0; i < allProjects.length; i++) {
             if (!allProjects[i].equals(currProject)) {
@@ -930,7 +930,7 @@ IStatusChangeListener {
         };
 
         IProject[] allProjects = workspaceRoot.getProjects();
-        ArrayList rejectedElements = new ArrayList(allProjects.length);
+        ArrayList<IProject> rejectedElements = new ArrayList<IProject>(allProjects.length);
         for (int i = 0; i < allProjects.length; i++) {
             if (!allProjects[i].equals(project)) {
                 rejectedElements.add(allProjects[i]);
@@ -963,9 +963,9 @@ IStatusChangeListener {
         return null;
     }
 
-    private List getExistingContainers(PathListElement existing) {
-        List res = new ArrayList();
-        List cplist = foldersList.getElements();
+    private List<IResource> getExistingContainers(PathListElement existing) {
+        List<IResource> res = new ArrayList<IResource>();
+        List<Object> cplist = foldersList.getElements();
         for (int i = 0; i < cplist.size(); i++) {
             PathListElement elem = (PathListElement) cplist.get(i);
             if (elem != existing) {
@@ -987,19 +987,19 @@ IStatusChangeListener {
     /*
      * @see BuildPathBasePage#getSelection
      */
-    public List getSelection() {
+    public List<Object> getSelection() {
         return foldersList.getSelectedElements();
     }
 
     /*
      * @see BuildPathBasePage#setSelection
      */
-    public void setSelection(List selElements) {
+    public void setSelection(List<Object> selElements) {
         foldersList.selectElements(new StructuredSelection(selElements));
     }
 
-    protected void filterAndSetSelection(List list) {
-        ArrayList res = new ArrayList(list.size());
+    protected void filterAndSetSelection(List<?> list) {
+        ArrayList<Object> res = new ArrayList<Object>(list.size());
         for (int i = list.size() - 1; i >= 0; i--) {
             Object curr = list.get(i);
             if (curr instanceof PathListElement) {
@@ -1009,8 +1009,8 @@ IStatusChangeListener {
         setSelection(res);
     }
 
-    protected void fixNestingConflicts(List newEntries, List existing,
-            Set modifiedSourceEntries) {
+    protected void fixNestingConflicts(List<Object> newEntries, List<Object> existing,
+            Set<PathListElement> modifiedSourceEntries) {
         for (int i = 0; i < newEntries.size(); i++) {
             PathListElement curr = (PathListElement) newEntries.get(i);
             addExclusionPatterns(curr, existing, modifiedSourceEntries);
@@ -1018,8 +1018,8 @@ IStatusChangeListener {
         }
     }
 
-    private void addExclusionPatterns(PathListElement newEntry, List existing,
-            Set modifiedEntries) {
+    private static void addExclusionPatterns(PathListElement newEntry, List<Object> existing,
+            Set<PathListElement> modifiedEntries) {
         IPath entryPath = newEntry.getPath();
         for (int i = 0; i < existing.size(); i++) {
             PathListElement curr = (PathListElement) existing.get(i);
@@ -1167,7 +1167,7 @@ IStatusChangeListener {
 
         for (int i = 0; i < mappingList.size(); i++) {
             preferences.put(FileMapping.FULL_MAP_PREFIX + i,
-                    ((PathListElement) mappingList.get(i)).getMapping().encode());
+                    mappingList.get(i).getMapping().encode());
         }
 
         IPath projectPath = project.getLocation();
@@ -1216,9 +1216,9 @@ IStatusChangeListener {
         ProjectProperties properties = ProjectProperties.getInstance(project);
         boolean wasDisabled = true;
         if(forceSync){
-            List listeners = properties.getProjectPreferenceChangeListeners();
+            List<FileSyncBuilder> listeners = properties.getProjectPreferenceChangeListeners();
             for (int i = 0; i < listeners.size(); i++) {
-                FileSyncBuilder b = (FileSyncBuilder) listeners.get(i);
+                FileSyncBuilder b = listeners.get(i);
                 wasDisabled = b.isDisabled();
                 if(!b.isDisabled()) {
                     b.setDisabled(true);
@@ -1227,9 +1227,9 @@ IStatusChangeListener {
         }
         IEclipsePreferences preferences = properties.getPreferences(forceSync);
         if(forceSync){
-            List listeners = properties.getProjectPreferenceChangeListeners();
+            List<FileSyncBuilder> listeners = properties.getProjectPreferenceChangeListeners();
             for (int i = 0; i < listeners.size(); i++) {
-                FileSyncBuilder b = (FileSyncBuilder) listeners.get(i);
+                FileSyncBuilder b = listeners.get(i);
                 if(!wasDisabled) {
                     b.setDisabled(false);
                 }
@@ -1249,7 +1249,7 @@ IStatusChangeListener {
     }
 
     protected void init(IPath outputLocation, IPath variables, FileMapping[] mappings) {
-        List newClassPath = new ArrayList();
+        List<PathListElement> newClassPath = new ArrayList<PathListElement>();
         for (int i = 0; i < mappings.length; i++) {
             newClassPath.add(new PathListElement(project, mappings[i], defPathCallback,
                     defVariablesCallback));
@@ -1257,9 +1257,9 @@ IStatusChangeListener {
 
         Collections.sort(newClassPath, pathComparator);
 
-        List exportedEntries = new ArrayList();
+        List<PathListElement> exportedEntries = new ArrayList<PathListElement>();
         for (int i = 0; i < newClassPath.size(); i++) {
-            PathListElement curr = (PathListElement) newClassPath.get(i);
+            PathListElement curr = newClassPath.get(i);
             exportedEntries.add(curr);
         }
         mappingList = newClassPath;
@@ -1291,7 +1291,7 @@ IStatusChangeListener {
         int nElements = mappingList.size();
         buf.append('[').append(nElements).append(']');
         for (int i = 0; i < nElements; i++) {
-            PathListElement elem = (PathListElement) mappingList.get(i);
+            PathListElement elem = mappingList.get(i);
             elem.appendEncodedSettings(buf);
         }
         return buf.toString();
@@ -1353,7 +1353,7 @@ IStatusChangeListener {
         FileMapping[] entries = new FileMapping[mappingList.size()];
 
         for (int i = 0; i < nElements; i++) {
-            PathListElement currElement = (PathListElement) mappingList.get(i);
+            PathListElement currElement = mappingList.get(i);
             entries[i] = currElement.getMapping();
         }
         return entries;
