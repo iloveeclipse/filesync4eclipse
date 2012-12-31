@@ -1,6 +1,2 @@
-
-syntax: regexp
-^FileSync/bin$
-
-syntax: regexp
-^FileSync-test/bin$
+FileSync/bin
+FileSync-test/bin
