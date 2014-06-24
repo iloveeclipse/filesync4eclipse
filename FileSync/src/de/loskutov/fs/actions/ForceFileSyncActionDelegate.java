@@ -79,7 +79,7 @@ public class ForceFileSyncActionDelegate extends ActionDelegate implements IHand
                         "FileSync builder is disabled!",
                         "Please activate FileSync builder for project '"
                                 + project.getName() + "' under\n"
-                                        + "Project->Properties->Builders!");
+                                + "Project->Properties->Builders!");
             }
             return null;
         }
@@ -197,10 +197,12 @@ public class ForceFileSyncActionDelegate extends ActionDelegate implements IHand
     }
 
 
+    @Override
     public void addHandlerListener(IHandlerListener handlerListener) {
         // noop
     }
 
+    @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
         ISelection selection = HandlerUtil.getCurrentSelection(event);
         selectionChanged(null, selection);
@@ -208,14 +210,17 @@ public class ForceFileSyncActionDelegate extends ActionDelegate implements IHand
         return null;
     }
 
+    @Override
     public boolean isEnabled() {
         return true;
     }
 
+    @Override
     public boolean isHandled() {
         return true;
     }
 
+    @Override
     public void removeHandlerListener(IHandlerListener handlerListener) {
         // noop
     }

@@ -84,7 +84,7 @@ public class PathVariableHelper {
             }
             int stop = start + variableValue.length();
             return path.substring(0, start) + variableName
-            + path.substring(stop, path.length());
+                    + path.substring(stop, path.length());
         }
 
     }
@@ -192,8 +192,8 @@ public class PathVariableHelper {
                      */
                     FileSyncPlugin.log(
                             "Destination path does not have a leading slash: "
-                            + ipath + " and therefore default destination "
-                            + "will be used (if any)", null, IStatus.ERROR);
+                                    + ipath + " and therefore default destination "
+                                    + "will be used (if any)", null, IStatus.ERROR);
                     return null;
                 }
             }
@@ -207,17 +207,17 @@ public class PathVariableHelper {
         }
         // TODO un-resolve project
         IPath workspaceLocation = ResourcesPlugin.getWorkspace().getRoot().getLocation()
-        .makeAbsolute();
+                .makeAbsolute();
         String pathStr;
         if (projectPath != null && projectPath.isPrefixOf(path)) {
             pathStr = FileMapping.MAP_PROJECT_RELATIVE
-            + removeFirstSegments(path, projectPath.segmentCount());
+                    + removeFirstSegments(path, projectPath.segmentCount());
         } else if (workspaceLocation.isPrefixOf(path)) {
             pathStr = FileMapping.MAP_WORKSPACE_RELATIVE
-            + removeFirstSegments(path, workspaceLocation.segmentCount());
+                    + removeFirstSegments(path, workspaceLocation.segmentCount());
         } else if (pathVariableValue != null && pathVariableValue.isPrefixOf(path)) {
             pathStr = pathVariableName + "/"
-            + removeFirstSegments(path, pathVariableValue.segmentCount());
+                    + removeFirstSegments(path, pathVariableValue.segmentCount());
         } else {
             pathStr = path.toPortableString();
         }

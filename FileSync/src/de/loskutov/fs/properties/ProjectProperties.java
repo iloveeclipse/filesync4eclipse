@@ -184,7 +184,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
             IProject project = (IProject) projects.get(i);
             if (project == null || !project.isAccessible()) {
                 ProjectProperties props = (ProjectProperties) projectsToProps
-                .get(project);
+                        .get(project);
                 props.prefListeners.clear();
                 projectsToProps.remove(project);
             }
@@ -334,6 +334,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         }
     }
 
+    @Override
     public void preferenceChange(PreferenceChangeEvent event) {
         if (!isIgnorePreferenceListeners()) {
             buildPathMap(preferences);
@@ -416,6 +417,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         this.mappings = mappings;
     }
 
+    @Override
     public void added(NodeChangeEvent event) {
         if (!isIgnorePreferenceListeners()) {
             buildPathMap(preferences);
@@ -424,6 +426,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         }
     }
 
+    @Override
     public void removed(NodeChangeEvent event) {
         try {
             // in case preferences are entirely deleted
@@ -462,7 +465,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
             rebuildPathMap = false;
             for (int i = 0; i < prefListeners.size(); i++) {
                 IPreferenceChangeListener listener = (IPreferenceChangeListener) prefListeners
-                .get(i);
+                        .get(i);
                 IEclipsePreferences.PreferenceChangeEvent event = new IEclipsePreferences.PreferenceChangeEvent(
                         preferences, KEY_PROJECT, project, project);
                 listener.preferenceChange(event);

@@ -26,7 +26,7 @@ public class SelectionButtonDialogField extends DialogField {
     private Button fButton;
     private boolean fIsSelected;
     private DialogField[] fAttachedDialogFields;
-    private int fButtonStyle;
+    private final int fButtonStyle;
 
     /**
      * Creates a selection button.
@@ -77,6 +77,7 @@ public class SelectionButtonDialogField extends DialogField {
     /*
      * @see DialogField#doFillIntoGrid
      */
+    @Override
     public Control[] doFillIntoGrid(Composite parent, int nColumns) {
         assertEnoughColumns(nColumns);
 
@@ -110,9 +111,11 @@ public class SelectionButtonDialogField extends DialogField {
             fButton.setEnabled(isEnabled());
             fButton.setSelection(fIsSelected);
             fButton.addSelectionListener(new SelectionListener() {
+                @Override
                 public void widgetDefaultSelected(SelectionEvent e) {
                     doWidgetSelected(e);
                 }
+                @Override
                 public void widgetSelected(SelectionEvent e) {
                     doWidgetSelected(e);
                 }
@@ -148,6 +151,7 @@ public class SelectionButtonDialogField extends DialogField {
     /* (non-Javadoc)
      * @see org.eclipse.jdt.internal.ui.wizards.dialogfields.DialogField#setLabelText(java.lang.String)
      */
+    @Override
     public void setLabelText(String labeltext) {
         fLabelText= labeltext;
         if (isOkToUse(fButton)) {
@@ -180,6 +184,7 @@ public class SelectionButtonDialogField extends DialogField {
     /*
      * @see DialogField#updateEnableState
      */
+    @Override
     protected void updateEnableState() {
         super.updateEnableState();
         if (isOkToUse(fButton)) {
@@ -190,6 +195,7 @@ public class SelectionButtonDialogField extends DialogField {
     /*(non-Javadoc)
      * @see org.eclipse.jdt.internal.ui.wizards.dialogfields.DialogField#refresh()
      */
+    @Override
     public void refresh() {
         super.refresh();
         if (isOkToUse(fButton)) {

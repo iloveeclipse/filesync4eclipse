@@ -24,6 +24,7 @@ public class PathListElementComparator implements Comparator, Serializable {
     /* (non-Javadoc)
      * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
      */
+    @Override
     public int compare(Object o1, Object o2) {
         if(!(o1 instanceof PathListElement) || !(o2 instanceof PathListElement)){
             return 0;

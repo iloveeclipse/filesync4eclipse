@@ -251,6 +251,7 @@ public class FileMapping {
         return sb.toString();
     }
 
+    @Override
     public String toString() {
         return encode();
     }
@@ -320,10 +321,10 @@ public class FileMapping {
             for (int i = 0; i < length; i++) {
                 if (!sourcePath.isRoot()) {
                     fullCharExclusionPatterns[i] = prefixPath
-                    .append(exclusionPatterns[i]).toString().toCharArray();
+                            .append(exclusionPatterns[i]).toString().toCharArray();
                 } else {
                     fullCharExclusionPatterns[i] = exclusionPatterns[i].toString()
-                    .toCharArray();
+                            .toCharArray();
                 }
             }
         }
@@ -344,10 +345,10 @@ public class FileMapping {
             for (int i = 0; i < length; i++) {
                 if (!sourcePath.isRoot()) {
                     fullCharInclusionPatterns[i] = prefixPath
-                    .append(inclusionPatterns[i]).toString().toCharArray();
+                            .append(inclusionPatterns[i]).toString().toCharArray();
                 } else {
                     fullCharInclusionPatterns[i] = inclusionPatterns[i].toString()
-                    .toCharArray();
+                            .toCharArray();
                 }
             }
         }
@@ -357,6 +358,7 @@ public class FileMapping {
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;
@@ -371,6 +373,7 @@ public class FileMapping {
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
+    @Override
     public int hashCode() {
         String mapAsString = encode();
         return mapAsString.hashCode();

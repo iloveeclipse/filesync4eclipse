@@ -82,10 +82,12 @@ public class InclusionExclusionDialog extends StatusDialog {
             elementImage = registry.get(key);
         }
 
+        @Override
         public Image getImage(Object element) {
             return elementImage;
         }
 
+        @Override
         public String getText(Object element) {
             return (String) element;
         }
@@ -160,6 +162,7 @@ public class InclusionExclusionDialog extends StatusDialog {
         return patternList;
     }
 
+    @Override
     protected Control createDialogArea(Composite parent) {
         Composite composite = (Composite) super.createDialogArea(parent);
 
@@ -242,18 +245,22 @@ public class InclusionExclusionDialog extends StatusDialog {
 
     class ExclusionPatternAdapter implements IListAdapter, IDialogFieldListener {
 
+        @Override
         public void customButtonPressed(ListDialogField field, int index) {
             doCustomButtonPressed(field, index);
         }
 
+        @Override
         public void selectionChanged(ListDialogField field) {
             doSelectionChanged(field);
         }
 
+        @Override
         public void doubleClicked(ListDialogField field) {
             doDoubleClicked(field);
         }
 
+        @Override
         public void dialogFieldChanged(DialogField field) {
             // ??
         }
@@ -312,7 +319,7 @@ public class InclusionExclusionDialog extends StatusDialog {
             for (int i = 0; i < objects.length; i++) {
                 IResource curr = (IResource) objects[i];
                 IPath path = curr.getFullPath().removeFirstSegments(existingSegments)
-                .makeRelative();
+                        .makeRelative();
                 String res;
                 if (curr instanceof IContainer) {
                     res = path.addTrailingSeparator().toString();

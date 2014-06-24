@@ -307,7 +307,7 @@ implements IPreferenceChangeListener {
                     } catch (CoreException e) {
                         FileSyncPlugin.log(
                                 "Errors during sync of the resource delta:"
-                                + resourceDelta + " for project '"
+                                        + resourceDelta + " for project '"
                                         + currentProject + "'", e, IStatus.ERROR);
                     } finally {
                         wizard.cleanUp(monitor);
@@ -455,6 +455,7 @@ implements IPreferenceChangeListener {
             this.wizard = wizard;
         }
 
+        @Override
         public boolean visit(IResourceDelta delta) {
             if (delta == null) {
                 return false;
@@ -510,6 +511,7 @@ implements IPreferenceChangeListener {
         /* (non-Javadoc)
          * @see org.eclipse.core.resources.IResourceVisitor#visit(org.eclipse.core.resources.IResource)
          */
+        @Override
         public boolean visit(IResource resource) {
             monitor.worked(1);
             checkCancel(monitor, wizard);
@@ -566,6 +568,7 @@ implements IPreferenceChangeListener {
         /* (non-Javadoc)
          * @see org.eclipse.core.resources.IResourceVisitor#visit(org.eclipse.core.resources.IResource)
          */
+        @Override
         public boolean visit(IResource resource) {
             if (monitor.isCanceled()) {
                 throw new OperationCanceledException();
@@ -654,6 +657,7 @@ implements IPreferenceChangeListener {
         /* (non-Javadoc)
          * @see org.eclipse.core.resources.IResourceDeltaVisitor#visit(org.eclipse.core.resources.IResourceDelta)
          */
+        @Override
         public boolean visit(IResourceDelta delta) {
             return visit(delta.getResource());
         }
@@ -662,6 +666,7 @@ implements IPreferenceChangeListener {
     /* (non-Javadoc)
      * @see org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener#preferenceChange(org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent)
      */
+    @Override
     public void preferenceChange(PreferenceChangeEvent event) {
         if (ignorePrefChange) {
             return;
@@ -697,11 +702,13 @@ implements IPreferenceChangeListener {
     IResourceVisitor {
         public int count = 0;
 
+        @Override
         public boolean visit(IResourceDelta delta) {
             count++;
             return true;
         }
 
+        @Override
         public boolean visit(IResource resource) {
             count++;
             return true;

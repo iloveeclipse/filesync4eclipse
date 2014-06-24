@@ -57,6 +57,7 @@ public class SupportPanel {
         link.setText(" - <a>visit homepage</a>");
         link.setToolTipText("You need just a sense of humor!");
         link.addListener (SWT.Selection, new Listener () {
+            @Override
             public void handleEvent(Event event) {
                 handleUrlClick("http://andrei.gmxhome.de/filesync");
             }
@@ -67,6 +68,7 @@ public class SupportPanel {
         link.setText(" - <a>report issue or feature request</a>");
         link.setToolTipText("You need a valid google account at google.com!");
         link.addListener (SWT.Selection, new Listener () {
+            @Override
             public void handleEvent(Event event) {
                 handleUrlClick("http://code.google.com/a/eclipselabs.org/p/filesync4eclipse/issues/list");
             }
@@ -77,6 +79,7 @@ public class SupportPanel {
         link.setText(" - <a>add to your Ohloh software stack</a>");
         link.setToolTipText("You need a valid Ohloh account at ohloh.net!");
         link.addListener (SWT.Selection, new Listener () {
+            @Override
             public void handleEvent(Event event) {
                 handleUrlClick("http://www.ohloh.net/p/filesync4eclipse");
             }
@@ -87,6 +90,7 @@ public class SupportPanel {
         link.setText(" - <a>add to your favorites at Eclipse MarketPlace</a>");
         link.setToolTipText("You need a valid bugzilla account at Eclipse.org!");
         link.addListener (SWT.Selection, new Listener () {
+            @Override
             public void handleEvent(Event event) {
                 handleUrlClick("http://marketplace.eclipse.org/content/filesync");
             }
@@ -97,6 +101,7 @@ public class SupportPanel {
         link.setText(" - <a>make a donation to support plugin development</a>");
         link.setToolTipText("You do NOT need a PayPal account!");
         link.addListener (SWT.Selection, new Listener () {
+            @Override
             public void handleEvent(Event event) {
                 handleUrlClick("https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=R5SHJLNGUXKHU");
             }

@@ -50,6 +50,7 @@ public class TableLayoutComposite extends Composite {
     public TableLayoutComposite(Composite parent, int style) {
         super(parent, style);
         addControlListener(new ControlAdapter() {
+            @Override
             public void controlResized(ControlEvent e) {
                 Rectangle area= getClientArea();
                 Table table= (Table)getChildren()[0];

@@ -110,8 +110,8 @@ public class LineReader {
             if (newLineEndIdx >= 0) {
                 line = new StringBuffer(newLineEndIdx - lastLineEndIdx);
                 line
-                        .append(partOfArray(charBuffer, lastLineEndIdx + 1,
-                                newLineEndIdx + 1));
+                .append(partOfArray(charBuffer, lastLineEndIdx + 1,
+                        newLineEndIdx + 1));
                 lastLineEndIdx = newLineEndIdx;
                 return line;
             }

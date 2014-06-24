@@ -42,7 +42,7 @@ public class ProjectHelper {
             desc = project.getDescription();
         } catch (CoreException e) {
             FileSyncPlugin.log("hasBuilder(): failed for project '"
-                + project.getName() + "'", e, IStatus.INFO);
+                    + project.getName() + "'", e, IStatus.INFO);
             return false;
         }
         ICommand[] commands = desc.getBuildSpec();
@@ -67,7 +67,7 @@ public class ProjectHelper {
             desc = project.getDescription();
         } catch (CoreException e) {
             FileSyncPlugin.log("addBuilder(): failed for project '"
-                + project.getName() + "'", e, IStatus.WARNING);
+                    + project.getName() + "'", e, IStatus.WARNING);
             return false;
         }
         return isBuilderDisabled(project, desc);
@@ -122,7 +122,7 @@ public class ProjectHelper {
             desc = project.getDescription();
         } catch (CoreException e) {
             FileSyncPlugin.log("addBuilder(): failed for project '"
-                + project.getName() + "'", e, IStatus.WARNING);
+                    + project.getName() + "'", e, IStatus.WARNING);
             return false;
         }
 
@@ -147,7 +147,7 @@ public class ProjectHelper {
         } catch (CoreException e) {
             FileSyncPlugin.log(
                     "addBuilder(): failed to change .project file for project '"
-                    + project.getName() + "'", e, IStatus.WARNING);
+                            + project.getName() + "'", e, IStatus.WARNING);
             return false;
         }
         return true;
@@ -179,7 +179,7 @@ public class ProjectHelper {
             desc = project.getDescription();
         } catch (CoreException e) {
             FileSyncPlugin.log("hasBuilder(): failed for project '"
-                + project.getName() + "'", e, IStatus.INFO);
+                    + project.getName() + "'", e, IStatus.INFO);
             return false;
         }
         if(isBuilderDisabled(project, desc)){
@@ -206,7 +206,7 @@ public class ProjectHelper {
         } catch (CoreException e) {
             FileSyncPlugin.log(
                     "addBuilder(): failed to change .project file for project '"
-                    + project.getName() + "'", e, IStatus.WARNING);
+                            + project.getName() + "'", e, IStatus.WARNING);
             return false;
         }
 

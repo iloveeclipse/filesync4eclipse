@@ -117,6 +117,7 @@ org.eclipse.jface.dialogs.StatusDialog {
         }
     }
 
+    @Override
     protected Control createDialogArea(Composite parent) {
         Composite composite = (Composite) super.createDialogArea(parent);
 
@@ -167,10 +168,12 @@ org.eclipse.jface.dialogs.StatusDialog {
     class ExclusionPatternAdapter implements IDialogFieldListener,
     IStringButtonAdapter {
 
+        @Override
         public void dialogFieldChanged(DialogField field) {
             doStatusLineUpdate();
         }
 
+        @Override
         public void changeControlPressed(DialogField field) {
             doChangeControlPressed();
         }

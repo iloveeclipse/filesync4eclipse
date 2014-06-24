@@ -86,7 +86,7 @@ import de.loskutov.fs.dialogs.TypedViewerFilter;
 public class ProjectSyncPropertyPage extends PropertyPage implements
 IStatusChangeListener {
     protected IStatus errorStatus = new StatusInfo(IStatus.ERROR,
-    "Please select one file");
+            "Please select one file");
 
     protected IStatus okStatus = new StatusInfo();
 
@@ -143,11 +143,13 @@ IStatusChangeListener {
         pathComparator = new PathListElementComparator();
 
         defVariablesCallback = new IValueCallback() {
+            @Override
             public Object getValue() {
                 return getDefaultVariablesPath();
             }
         };
         defPathCallback = new IValueCallback() {
+            @Override
             public Object getValue() {
                 return getDefaultDestinationPath();
             }
@@ -170,6 +172,7 @@ IStatusChangeListener {
     /**
      * @see PreferencePage#createContents(Composite)
      */
+    @Override
     protected Control createContents(Composite parent) {
         TabFolder tabFolder = new TabFolder(parent, SWT.TOP);
         tabFolder.setLayout(new GridLayout(1, true));
@@ -219,7 +222,7 @@ IStatusChangeListener {
         IPath variables = null;
         try {
             String defDest = preferences.get(ProjectProperties.KEY_DEFAULT_DESTINATION,
-            "");
+                    "");
             IPath projectPath = project.getLocation();
 
             destPath = pathVariableHelper.resolveVariable(defDest, projectPath);
@@ -276,6 +279,7 @@ IStatusChangeListener {
             updateUI();
         } else {
             Display.getDefault().asyncExec(new Runnable() {
+                @Override
                 public void run() {
                     updateUI();
                 }
@@ -289,7 +293,7 @@ IStatusChangeListener {
         PathContainerAdapter adapter = new PathContainerAdapter();
 
         boolean disabled = !ProjectHelper.hasBuilder(project)
-        || ProjectHelper.isBuilderDisabled(project);
+                || ProjectHelper.isBuilderDisabled(project);
         enableFileSyncField = new SelectionButtonDialogField(SWT.CHECK);
         enableFileSyncField.setSelection(!disabled);
         enableFileSyncField.setLabelText("Enable FileSync builder for project");
@@ -315,14 +319,17 @@ IStatusChangeListener {
         foldersList.setViewerSorter(new ViewerSorter(new Collator() {
             private final Collator delegate = Collator.getInstance();
 
+            @Override
             public int compare(String source, String target) {
                 return PathListLabelProvider.compare(source, target);
             }
 
+            @Override
             public CollationKey getCollationKey(String source) {
                 return delegate.getCollationKey(source);
             }
 
+            @Override
             public int hashCode() {
                 return delegate.hashCode();
             }
@@ -390,7 +397,7 @@ IStatusChangeListener {
         String vars = preferences.get(ProjectProperties.KEY_DEFAULT_VARIABLES, null);
         if (vars != null && vars.trim().length() > 0) {
             variables = FileMapping
-            .getRelativePath(new Path(vars), project.getFullPath());
+                    .getRelativePath(new Path(vars), project.getFullPath());
             if (variables == null) {
                 FileSyncPlugin.log("Path is not relative and will be ignored: " + vars,
                         null, IStatus.ERROR);
@@ -457,9 +464,9 @@ IStatusChangeListener {
         for (int i = 0; i < elements.size(); i++) {
             PathListElement elem = (PathListElement) elements.get(i);
             IPath[] exclusionPatterns = (IPath[]) elem
-            .getAttribute(PathListElement.EXCLUSION);
+                    .getAttribute(PathListElement.EXCLUSION);
             IPath[] inclusionPatterns = (IPath[]) elem
-            .getAttribute(PathListElement.INCLUSION);
+                    .getAttribute(PathListElement.INCLUSION);
             IPath output = (IPath) elem.getAttribute(PathListElement.DESTINATION);
             if (exclusionPatterns.length > 0 || inclusionPatterns.length > 0
                     || output != null) {
@@ -526,7 +533,7 @@ IStatusChangeListener {
             }
         } else {
             boolean addRoot = MessageDialog.openQuestion(getShell(), "Project has no folders",
-            "Current project has no folders. Create mapping for project root?");
+                    "Current project has no folders. Create mapping for project root?");
             if(addRoot){
                 PathListElement entry = newFolderElement(project);
                 elementsToAdd.add(entry);
@@ -880,6 +887,7 @@ IStatusChangeListener {
                 IProject.class };
         ISelectionStatusValidator validator = new TypedElementSelectionValidator(
                 acceptedClasses, false) {
+            @Override
             public IStatus validate(Object[] elements) {
                 if (elements.length > 1 || elements.length == 0
                         || !(elements[0] instanceof IFile)) {
@@ -988,7 +996,7 @@ IStatusChangeListener {
             if (!currPath.equals(entryPath)) {
                 if (currPath.isPrefixOf(entryPath)) {
                     IPath[] exclusionFilters = (IPath[]) curr
-                    .getAttribute(PathListElement.EXCLUSION);
+                            .getAttribute(PathListElement.EXCLUSION);
                     if (!isExcludedPath(entryPath, exclusionFilters)) {
                         IPath pathToExclude = entryPath.removeFirstSegments(
                                 currPath.segmentCount()).addTrailingSeparator();
@@ -1002,7 +1010,7 @@ IStatusChangeListener {
                     }
                 } else if (entryPath.isPrefixOf(currPath)) {
                     IPath[] exclusionFilters = (IPath[]) newEntry
-                    .getAttribute(PathListElement.EXCLUSION);
+                            .getAttribute(PathListElement.EXCLUSION);
 
                     if (!isExcludedPath(currPath, exclusionFilters)) {
                         IPath pathToExclude = currPath.removeFirstSegments(
@@ -1066,6 +1074,7 @@ IStatusChangeListener {
         return false;
     }
 
+    @Override
     protected void performDefaults() {
         IEclipsePreferences preferences = getPreferences(false);
         String defPath = preferences.get(ProjectProperties.KEY_DEFAULT_DESTINATION, "");
@@ -1085,6 +1094,7 @@ IStatusChangeListener {
         }
     }
 
+    @Override
     public boolean performOk() {
         if (!destFolderStatus.isOK()) {
             return false;
@@ -1119,7 +1129,7 @@ IStatusChangeListener {
 
         IPath projectPath = project.getLocation();
         String defPath = pathVariableHelper
-        .unResolveVariable(getDefaultDestinationPath(), projectPath);
+                .unResolveVariable(getDefaultDestinationPath(), projectPath);
         if (defPath == null) {
             defPath = "";
         }
@@ -1184,6 +1194,7 @@ IStatusChangeListener {
      *
      * @see IStatusChangeListener#statusChanged
      */
+    @Override
     public void statusChanged(IStatus status) {
         setValid(!status.matches(IStatus.ERROR));
         applyToStatusLine(this, status);
@@ -1380,22 +1391,27 @@ IStatusChangeListener {
 
         private final Object[] EMPTY_ARR = new Object[0];
 
+        @Override
         public void customButtonPressed(TreeListDialogField field, int index) {
             pathListButtonPressed(field, index);
         }
 
+        @Override
         public void selectionChanged(TreeListDialogField field) {
             pathListSelectionChanged(field);
         }
 
+        @Override
         public void doubleClicked(TreeListDialogField field) {
             pathListDoubleClicked(field);
         }
 
+        @Override
         public void keyPressed(TreeListDialogField field, KeyEvent event) {
             pathListKeyPressed(field, event);
         }
 
+        @Override
         public Object[] getChildren(TreeListDialogField field, Object element) {
             if (element instanceof PathListElement) {
                 return ((PathListElement) element).getChildren(!useFolderOutputsField
@@ -1404,6 +1420,7 @@ IStatusChangeListener {
             return EMPTY_ARR;
         }
 
+        @Override
         public Object getParent(TreeListDialogField field, Object element) {
             if (element instanceof PathListElementAttribute) {
                 return ((PathListElementAttribute) element).getParent();
@@ -1411,10 +1428,12 @@ IStatusChangeListener {
             return null;
         }
 
+        @Override
         public boolean hasChildren(TreeListDialogField field, Object element) {
             return (element instanceof PathListElement);
         }
 
+        @Override
         public void dialogFieldChanged(DialogField field) {
             pathListDialogFieldChanged(field);
         }
@@ -1422,10 +1441,12 @@ IStatusChangeListener {
 
     class BuildPathAdapter implements IStringButtonAdapter, IDialogFieldListener {
 
+        @Override
         public void changeControlPressed(DialogField field) {
             ProjectSyncPropertyPage.this.changeControlPressed(field);
         }
 
+        @Override
         public void dialogFieldChanged(DialogField field) {
             ProjectSyncPropertyPage.this.dialogFieldChanged(field);
         }

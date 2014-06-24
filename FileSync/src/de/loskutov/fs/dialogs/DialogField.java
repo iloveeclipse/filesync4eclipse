@@ -87,12 +87,13 @@ public class DialogField {
     public void postSetFocusOnDialogField(Display display) {
         if (display != null) {
             display.asyncExec(
-                new Runnable() {
-                    public void run() {
-                        setFocus();
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            setFocus();
+                        }
                     }
-                }
-            );
+                    );
         }
     }
 
@@ -155,7 +156,7 @@ public class DialogField {
 
     /**
      * Tests is the control is not <code>null</code> and not disposed.
-    */
+     */
     protected final boolean isOkToUse(Control control) {
         return (control != null) && (Display.getCurrent() != null) && !control.isDisposed();
     }

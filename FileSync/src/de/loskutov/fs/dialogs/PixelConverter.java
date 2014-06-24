@@ -10,15 +10,14 @@
  *******************************************************************************/
 package de.loskutov.fs.dialogs;
 
+import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.graphics.FontMetrics;
 import org.eclipse.swt.graphics.GC;
 import org.eclipse.swt.widgets.Control;
 
-import org.eclipse.jface.dialogs.Dialog;
-
 public class PixelConverter {
 
-    private FontMetrics fFontMetrics;
+    private final FontMetrics fFontMetrics;
 
     public PixelConverter(Control control) {
         GC gc = new GC(control);

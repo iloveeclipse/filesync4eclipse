@@ -44,7 +44,7 @@ import de.loskutov.fs.properties.ProjectProperties;
  */
 public class SyncWizard {
     protected static final IContentType TEXT_TYPE = Platform.getContentTypeManager()
-    .getContentType("org.eclipse.core.runtime.text"); //$NON-NLS-1$
+            .getContentType("org.eclipse.core.runtime.text"); //$NON-NLS-1$
 
 
     /**
@@ -298,7 +298,7 @@ public class SyncWizard {
         }
         if (usesDefaultOutputFolder() && rootPath != null) {
             IContainer[] containers = ResourcesPlugin.getWorkspace().getRoot()
-            .findContainersForLocation(rootPath);
+                    .findContainersForLocation(rootPath);
             if (containers.length > 0) {
                 for (int i = 0; i < containers.length; i++) {
                     if (!list.contains(containers[i])) {
@@ -506,7 +506,7 @@ public class SyncWizard {
      */
     protected boolean isContainer(IResource resource) {
         return resource.getType() == IResource.FOLDER
-        || resource.getType() == IResource.PROJECT;
+                || resource.getType() == IResource.PROJECT;
     }
 
     /**

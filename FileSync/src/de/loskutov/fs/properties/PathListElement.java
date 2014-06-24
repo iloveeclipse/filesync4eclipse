@@ -28,15 +28,15 @@ public class PathListElement {
 
     public static final String INCLUSION = "inclusion";
 
-    private IProject fProject;
+    private final IProject fProject;
 
     private IPath fPath;
 
-    private IResource fResource;
+    private final IResource fResource;
 
     private FileMapping cachedMapping;
 
-    private ArrayList fChildren;
+    private final ArrayList fChildren;
 
     public PathListElement(IProject project, IPath path, IResource res,
             IValueCallback defPath, IValueCallback defVars) {
@@ -167,6 +167,7 @@ public class PathListElement {
     /*
      * @see Object#equals(java.lang.Object)
      */
+    @Override
     public boolean equals(Object other) {
         if (other != null && other.getClass().equals(getClass())) {
             PathListElement elem = (PathListElement) other;
@@ -178,6 +179,7 @@ public class PathListElement {
     /*
      * @see Object#hashCode()
      */
+    @Override
     public int hashCode() {
         return getMapping().hashCode();
     }
@@ -185,6 +187,7 @@ public class PathListElement {
     /* (non-Javadoc)
      * @see java.lang.Object#toString()
      */
+    @Override
     public String toString() {
         return getMapping().toString();
     }
