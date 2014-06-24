@@ -1,10 +1,10 @@
 /*******************************************************************************
- * Copyright (c) 2009 Andrei Loskutov.
+ * Copyright (c) 2009 Andrey Loskutov.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * Contributor:  Andrey Loskutov - initial API and implementation
  *******************************************************************************/
 package de.loskutov.fs.command;
 
@@ -20,7 +20,7 @@ import de.loskutov.fs.FileSyncPlugin;
 
 /**
  * Utility class for file system related operations.
- * @author Andrei
+ * @author Andrey
  */
 public final class FS {
 

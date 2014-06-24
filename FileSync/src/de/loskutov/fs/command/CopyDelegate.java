@@ -12,7 +12,7 @@ import de.loskutov.fs.FileSyncPlugin;
 
 /**
  * @author Coloma Escribano, Ignacio - initial idea and first implementation
- * @author Andrei - production ready code :)
+ * @author Andrey - production ready code :)
  */
 public class CopyDelegate {
 

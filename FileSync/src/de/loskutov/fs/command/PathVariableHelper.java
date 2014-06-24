@@ -1,10 +1,10 @@
 /*******************************************************************************
- * Copyright (c) 2009 Andrei Loskutov.
+ * Copyright (c) 2009 Andrey Loskutov.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
  * http://www.eclipse.org/legal/epl-v10.html
- * Contributor:  Andrei Loskutov - initial API and implementation
+ * Contributor:  Andrey Loskutov - initial API and implementation
  *******************************************************************************/
 package de.loskutov.fs.command;
 
@@ -26,7 +26,7 @@ import de.loskutov.fs.FileSyncPlugin;
  * of resolved variables for this path and their substitutes. Using same helper for
  * different paths can lead to unexpected issues if at least one of the paths contains a
  * variable part.
- * @author Andrei
+ * @author Andrey
  */
 public class PathVariableHelper {
     /** path variable name. may be null. */
@@ -95,9 +95,9 @@ public class PathVariableHelper {
         String newValue = "hello_O_Apollo";
         System.out.println(newValue + " > " + v.unResolve(newValue));
 
-        v = new Variable("//server/share/${env_var:CLIENT}/data", "//server/share/Andrei/data");
+        v = new Variable("//server/share/${env_var:CLIENT}/data", "//server/share/Andrey/data");
         System.out.println(v.variableName + " = " + v.variableValue);
-        newValue = "//server2/share2/Andrei/test";
+        newValue = "//server2/share2/Andrey/test";
         System.out.println(newValue + " > " + v.unResolve(newValue));
 
         v = new Variable("${env_var:CLIENT}/data/${env_var:TODAY}", "c:/andrei/data/20090131");
