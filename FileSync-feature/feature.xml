@@ -4,8 +4,7 @@
       label="FileSync"
       version="1.3.8.qualifier"
       provider-name="Andrey Loskutov"
-      plugin="de.loskutov.FileSync"
-      image="loskutov32.gif">
+      plugin="de.loskutov.FileSync">
 
    <description url="http://andrei.gmxhome.de/filesync/index.html">
       FileSync plugin for Eclipse is a file synchronisation tool. The
@@ -14,16 +13,16 @@ with Eclipse project files.
    </description>
 
    <copyright url="http://andrei.gmxhome.de/filesync/copyright.html">
-      Copyright (C)2002 - 2013 by Andrey Loskutov &lt;Loskutov@gmx.de&gt;. All rights reserved.
+      Copyright (C)2002 - 2014 by Andrey Loskutov &lt;Loskutov@gmx.de&gt;. All rights reserved.
    </copyright>
 
    <license url="http://www.eclipse.org/legal/epl-v10.html">
-      Copyright (c) 2002 - 2013 Andrey Loskutov, licensed under the Eclipse Public License 1.0.
+      Copyright (c) 2002 - 2014 Andrey Loskutov, licensed under the Eclipse Public License 1.0.
    </license>
 
    <url>
-      <update label="Andrei Loskutov plugins site" url="http://andrei.gmxhome.de/eclipse/"/>
-      <discovery label="Andrei Loskutov plugins site" url="http://andrei.gmxhome.de/eclipse/"/>
+      <update label="Andrey Loskutov plugins site" url="http://andrei.gmxhome.de/eclipse/"/>
+      <discovery label="Andrey Loskutov plugins site" url="http://andrei.gmxhome.de/eclipse/"/>
    </url>
 
    <requires>
