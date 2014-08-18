@@ -415,7 +415,11 @@ implements IPreferenceChangeListener {
      */
     protected boolean checkSettingsTimestamp(IResource settingsFile) {
         long oldStamp = modificationStamp;
-        long localTimeStamp = settingsFile.getLocation().toFile().lastModified();
+        IPath location = settingsFile.getLocation();
+        if(location == null){
+            return true;
+        }
+        long localTimeStamp = location.toFile().lastModified();
         boolean changed = oldStamp != 0 && oldStamp != localTimeStamp;
         if (oldStamp == 0 || changed) {
             modificationStamp = localTimeStamp;
@@ -574,7 +578,12 @@ implements IPreferenceChangeListener {
                                 .getProjectRelativePath());
                         if (match) {
                             Long time = (Long) pathToTimeStamp.get(variablesPath);
-                            long newTime = resource.getLocation().toFile().lastModified();
+                            IPath location = resource.getLocation();
+                            if(location == null){
+                                // full refresh here?
+                                return true;
+                            }
+                            long newTime = location.toFile().lastModified();
                             if (time != null && time.longValue() != newTime) {
                                 time = Long.valueOf(newTime);
                                 pathToTimeStamp.put(variablesPath, time);
