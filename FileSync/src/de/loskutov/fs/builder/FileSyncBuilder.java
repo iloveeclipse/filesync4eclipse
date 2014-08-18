@@ -53,13 +53,11 @@ implements IPreferenceChangeListener {
      */
     public static final String SETTINGS_FILE = FileSyncPlugin.PLUGIN_ID + ".prefs";
 
-    private static final IPath SETTINGS_PATH = new Path(SETTINGS_DIR)
-    .append(SETTINGS_FILE);
+    private static final IPath SETTINGS_PATH = new Path(SETTINGS_DIR).append(SETTINGS_FILE);
 
     public static final int MAPPING_CHANGED_IN_GUI_BUILD = 999;
 
-    public static final Integer MAPPING_CHANGED_IN_GUI = new Integer(
-            MAPPING_CHANGED_IN_GUI_BUILD);
+    public static final Integer MAPPING_CHANGED_IN_GUI = Integer.valueOf(MAPPING_CHANGED_IN_GUI_BUILD);
 
     private boolean wizardNotAvailable;
 
@@ -76,6 +74,8 @@ implements IPreferenceChangeListener {
     volatile boolean ignorePrefChange;
 
     volatile private int visitorFlags;
+
+    private static final IProject [] NO_PROJECTS = new IProject[0];
 
     /** called by Eclipse through reflection */
     public FileSyncBuilder() {
@@ -116,22 +116,16 @@ implements IPreferenceChangeListener {
         build(kind, new HashMap(), monitor);
     }
 
-    /*
-     * (non-Javadoc)
-     * @see org.eclipse.core.resources.IncrementalProjectBuilder#clean(org.eclipse.core.runtime.IProgressMonitor)
-     */
     @Override
     protected void clean(IProgressMonitor monitor) throws CoreException {
         build(CLEAN_BUILD, new HashMap(), monitor);
     }
 
-    /*
-     * @see org.eclipse.core.internal.events.InternalBuilder#build(int, Map, IProgressMonitor)
-     */
+    @SuppressWarnings("unchecked")
     @Override
     protected IProject[] build(int kind, Map args, IProgressMonitor monitor) {
         if (isDisabled()) {
-            return null;
+            return NO_PROJECTS;
         }
         if (args == null) {
             args = new HashMap();
@@ -140,7 +134,7 @@ implements IPreferenceChangeListener {
         updateVisitorFlags(props);
 
         SyncWizard wizard = new SyncWizard();
-        IProject[] result = null;
+        IProject[] result = NO_PROJECTS;
         try {
             switch (kind) {
             case AUTO_BUILD:
@@ -148,9 +142,6 @@ implements IPreferenceChangeListener {
                 break;
             case INCREMENTAL_BUILD:
                 result = buildIncremental(args, props, wizard, monitor);
-                break;
-            case FULL_BUILD:
-                result = buildFull(args, props, wizard, monitor);
                 break;
             case CLEAN_BUILD:
                 // Currently it seems that Eclipse does not use "clean" flag for builders
@@ -161,6 +152,7 @@ implements IPreferenceChangeListener {
                 args.put(MAPPING_CHANGED_IN_GUI, MAPPING_CHANGED_IN_GUI);
                 result = buildFull(args, props, wizard, monitor);
                 break;
+            case FULL_BUILD: // fall-through
             default:
                 result = buildFull(args, props, wizard, monitor);
                 break;
@@ -173,7 +165,7 @@ implements IPreferenceChangeListener {
                         IStatus.WARNING);
                 wizardNotAvailable = true;
             }
-            return null;
+            return NO_PROJECTS;
         } catch (IllegalStateException e) {
             if (!wizardNotAvailable) {
                 FileSyncPlugin.log("Couldn't run file sync for project '"
@@ -181,7 +173,7 @@ implements IPreferenceChangeListener {
                         IStatus.WARNING);
                 wizardNotAvailable = true;
             }
-            return null;
+            return NO_PROJECTS;
         }
 
         return result;
@@ -212,7 +204,7 @@ implements IPreferenceChangeListener {
         if (currentProject != null) {
             fullProjectBuild(args, currentProject, props, wizard, monitor, false);
         }
-        return null;
+        return NO_PROJECTS;
     }
 
     /**
@@ -228,7 +220,7 @@ implements IPreferenceChangeListener {
         if (currentProject != null) {
             fullProjectBuild(args, currentProject, props, wizard, monitor, true);
         }
-        return null;
+        return NO_PROJECTS;
     }
 
     /**
@@ -504,13 +496,6 @@ implements IPreferenceChangeListener {
             this.clean = clean;
         }
 
-        public Object getMonitor() {
-            return monitor;
-        }
-
-        /* (non-Javadoc)
-         * @see org.eclipse.core.resources.IResourceVisitor#visit(org.eclipse.core.resources.IResource)
-         */
         @Override
         public boolean visit(IResource resource) {
             monitor.worked(1);
@@ -542,9 +527,6 @@ implements IPreferenceChangeListener {
         }
     }
 
-    /**
-     * @author Andrey
-     */
     private class FSPropsChecker implements IResourceVisitor, IResourceDeltaVisitor {
         private final IProgressMonitor monitor;
 
@@ -552,22 +534,12 @@ implements IPreferenceChangeListener {
 
         boolean propsChanged;
 
-        /**
-         * @param monitor
-         * @param props
-         */
         public FSPropsChecker(IProgressMonitor monitor, ProjectProperties props) {
             this.monitor = monitor;
             this.props = props;
         }
 
-        public Object getMonitor() {
-            return monitor;
-        }
-
-        /* (non-Javadoc)
-         * @see org.eclipse.core.resources.IResourceVisitor#visit(org.eclipse.core.resources.IResource)
-         */
+        @SuppressWarnings("unchecked")
         @Override
         public boolean visit(IResource resource) {
             if (monitor.isCanceled()) {
@@ -604,7 +576,7 @@ implements IPreferenceChangeListener {
                             Long time = (Long) pathToTimeStamp.get(variablesPath);
                             long newTime = resource.getLocation().toFile().lastModified();
                             if (time != null && time.longValue() != newTime) {
-                                time = new Long(newTime);
+                                time = Long.valueOf(newTime);
                                 pathToTimeStamp.put(variablesPath, time);
                                 // we could stop and do full build, because vars are changed
                                 props.refreshPathMap();
@@ -616,7 +588,7 @@ implements IPreferenceChangeListener {
                                     break;
                                 }
                             } else if (time == null) {
-                                time = new Long(newTime);
+                                time = Long.valueOf(newTime);
                                 pathToTimeStamp.put(variablesPath, time);
                             }
                         }
