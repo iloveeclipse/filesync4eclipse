@@ -30,6 +30,7 @@ import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.jobs.IJobManager;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.jface.preference.IPreferenceStore;
 import org.eclipse.jface.viewers.StructuredSelection;
@@ -264,7 +265,7 @@ public class TestBuilder extends TestCase {
 		mapFile.append('\n');
 
 		String toOSString = srcProject.getLocation().append(
-		".settings/de.loskutov.FileSync.prefs").toOSString();
+				".settings/de.loskutov.FileSync.prefs").toOSString();
 		File f = new File(toOSString);
 		f.getParentFile().mkdirs();
 		if (f.exists()) {
@@ -340,7 +341,7 @@ public class TestBuilder extends TestCase {
 
 	@SuppressWarnings("null")
 	private IProject createSourceProject(Properties props, boolean deleteExisting)
-	throws Exception {
+			throws Exception {
 		IWorkspace workspace = ResourcesPlugin.getWorkspace();
 		IWorkspaceRoot root = workspace.getRoot();
 		String srcProjectName = props.getProperty("src_project");
@@ -414,7 +415,7 @@ public class TestBuilder extends TestCase {
 	}
 
 	private Properties[] createVarsFiles(String defVarsPath, String extraVarsPath)
-	throws Exception {
+			throws Exception {
 		Properties props1 = new Properties();
 		Properties props2 = new Properties();
 		IFile file = srcProj.getFile(defVarsPath);
@@ -601,9 +602,9 @@ public class TestBuilder extends TestCase {
 	}
 
 	private void waitForBuilder() throws Exception {
-		IJobManager jobManager = Platform.getJobManager();
+		IJobManager jobManager = Job.getJobManager();
 		synchronized (this) {
-			wait(300);
+			wait(500);
 		}
 		try {
 			jobManager.join(ResourcesPlugin.FAMILY_MANUAL_BUILD, monitor);
@@ -676,7 +677,7 @@ public class TestBuilder extends TestCase {
 		System.out.println("\nSynchronized files :\n");
 
 		final IPathVariableManager pmanager = ResourcesPlugin.getWorkspace()
-		.getPathVariableManager();
+				.getPathVariableManager();
 		IResourceVisitor visitor = new IResourceVisitor() {
 			public boolean visit(IResource resource) throws CoreException {
 				if (resource instanceof IProject) {
