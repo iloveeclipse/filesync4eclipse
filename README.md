@@ -1,5 +1,5 @@
 # filesync4eclipse
-File sysnchronization plugin for Eclipse
+File synchronization plugin for Eclipse
 
 FileSync plugin for Eclipse is a file synchronisation tool.
 
