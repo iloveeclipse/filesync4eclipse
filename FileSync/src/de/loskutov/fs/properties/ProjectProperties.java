@@ -213,7 +213,13 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
     }
 
     public static void removeInstance(IProject project) {
-        projectsToProps.remove(project);
+        ProjectProperties removed = (ProjectProperties) projectsToProps.remove(project);
+        if(removed != null && removed.preferences != null){
+            removed.preferences.removeNodeChangeListener(removed);
+            removed.preferences.removePreferenceChangeListener(removed);
+            IStringVariableManager manager = VariablesPlugin.getDefault().getStringVariableManager();
+            manager.removeValueVariableListener(removed);
+        }
     }
 
     /**
