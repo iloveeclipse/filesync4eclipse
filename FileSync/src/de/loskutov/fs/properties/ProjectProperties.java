@@ -29,6 +29,10 @@ import org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChang
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.NodeChangeEvent;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.PreferenceChangeEvent;
 import org.eclipse.core.runtime.preferences.IScopeContext;
+import org.eclipse.core.variables.IStringVariableManager;
+import org.eclipse.core.variables.IValueVariable;
+import org.eclipse.core.variables.IValueVariableListener;
+import org.eclipse.core.variables.VariablesPlugin;
 import org.osgi.service.prefs.BackingStoreException;
 
 import de.loskutov.fs.FileSyncPlugin;
@@ -76,7 +80,7 @@ import de.loskutov.fs.command.FileMapping;
  </pre>
  * @author Andrey
  */
-public class ProjectProperties implements IPreferenceChangeListener, INodeChangeListener {
+public class ProjectProperties implements IPreferenceChangeListener, INodeChangeListener, IValueVariableListener {
 
     /**
      * Any valid file path for the default synchronizing target
@@ -175,6 +179,8 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         buildPathMap(preferences);
         preferences.addPreferenceChangeListener(this);
         preferences.addNodeChangeListener(this);
+        IStringVariableManager manager = VariablesPlugin.getDefault().getStringVariableManager();
+        manager.addValueVariableListener(this);
     }
 
     public static ProjectProperties getInstance(IResource resource) {
@@ -490,6 +496,33 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         }
         hashCode = new Long(code);
         return hashCode;
+    }
+
+    @Override
+    public void variablesAdded(IValueVariable[] variables) {
+        if (!isIgnorePreferenceListeners()) {
+            buildPathMap(preferences);
+        } else {
+            rebuildPathMap = true;
+        }
+    }
+
+    @Override
+    public void variablesRemoved(IValueVariable[] variables) {
+        if (!isIgnorePreferenceListeners()) {
+            buildPathMap(preferences);
+        } else {
+            rebuildPathMap = true;
+        }
+    }
+
+    @Override
+    public void variablesChanged(IValueVariable[] variables) {
+        if (!isIgnorePreferenceListeners()) {
+            buildPathMap(preferences);
+        } else {
+            rebuildPathMap = true;
+        }
     }
 
 }
