@@ -20,9 +20,15 @@ import java.util.Properties;
 import org.eclipse.core.resources.IPathVariableManager;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
+import org.eclipse.core.resources.IResourceChangeEvent;
+import org.eclipse.core.resources.IResourceChangeListener;
 import org.eclipse.core.resources.ProjectScope;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.jobs.IJobChangeEvent;
+import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.core.runtime.jobs.JobChangeAdapter;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.INodeChangeListener;
 import org.eclipse.core.runtime.preferences.IEclipsePreferences.IPreferenceChangeListener;
@@ -80,7 +86,7 @@ import de.loskutov.fs.command.FileMapping;
  </pre>
  * @author Andrey
  */
-public class ProjectProperties implements IPreferenceChangeListener, INodeChangeListener, IValueVariableListener {
+public class ProjectProperties implements IPreferenceChangeListener, INodeChangeListener, IValueVariableListener, IResourceChangeListener {
 
     /**
      * Any valid file path for the default synchronizing target
@@ -115,7 +121,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
 
     private boolean ignorePreferenceListeners;
 
-    private boolean rebuildPathMap;
+    boolean rebuildPathMap;
 
     /**
      * Mapping is built as:
@@ -134,6 +140,8 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
     private final List prefListeners;
 
     private Long hashCode;
+
+    private JobChangeAdapter jobChangeAdapter;
 
     public synchronized void addPreferenceChangeListener(FileSyncBuilder listener) {
         if (prefListeners.contains(listener)) {
@@ -181,6 +189,18 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         preferences.addNodeChangeListener(this);
         IStringVariableManager manager = VariablesPlugin.getDefault().getStringVariableManager();
         manager.addValueVariableListener(this);
+        jobChangeAdapter = new JobChangeAdapter(){
+            @Override
+            public void done(IJobChangeEvent event) {
+                // XXX dirty trick to re-evaluate dynamic egit variables on branch change
+                if(!event.getJob().getClass().getName().contains("org.eclipse.egit.ui.internal.branch.BranchOperationUI")){
+                    return;
+                }
+                rebuildPathMap();
+            }
+        };
+        Job.getJobManager().addJobChangeListener(jobChangeAdapter);
+        ResourcesPlugin.getWorkspace().addResourceChangeListener(this);
     }
 
     public static ProjectProperties getInstance(IResource resource) {
@@ -188,11 +208,8 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         List projects = new ArrayList(projectsToProps.keySet());
         for (int i = 0; i < projects.size(); i++) {
             IProject project = (IProject) projects.get(i);
-            if (project == null || !project.isAccessible()) {
-                ProjectProperties props = (ProjectProperties) projectsToProps
-                        .get(project);
-                props.prefListeners.clear();
-                projectsToProps.remove(project);
+            if (!project.isAccessible()) {
+                removeInstance(project);
             }
         }
 
@@ -200,7 +217,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
             return null;
         }
         IProject project = resource.getProject();
-        if (project == null) {
+        if (project == null || !project.isAccessible()) {
             return null;
         }
         ProjectProperties props = (ProjectProperties) projectsToProps.get(project);
@@ -214,18 +231,34 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
 
     public static void removeInstance(IProject project) {
         ProjectProperties removed = (ProjectProperties) projectsToProps.remove(project);
-        if(removed != null && removed.preferences != null){
-            removed.preferences.removeNodeChangeListener(removed);
-            removed.preferences.removePreferenceChangeListener(removed);
-            IStringVariableManager manager = VariablesPlugin.getDefault().getStringVariableManager();
-            manager.removeValueVariableListener(removed);
+        if(removed != null){
+            removed.dispose();
         }
+    }
+
+    void dispose() {
+        if(preferences != null){
+            preferences.removeNodeChangeListener(this);
+            preferences.removePreferenceChangeListener(this);
+            preferences = null;
+        }
+        IStringVariableManager manager = VariablesPlugin.getDefault().getStringVariableManager();
+        manager.removeValueVariableListener(this);
+        if(jobChangeAdapter != null) {
+            Job.getJobManager().removeJobChangeListener(jobChangeAdapter);
+        }
+        ResourcesPlugin.getWorkspace().removeResourceChangeListener(this);
+        prefListeners.clear();
+        projectsToProps.remove(project);
     }
 
     /**
      * @param prefs
      */
-    private void buildPathMap(IEclipsePreferences prefs) {
+    void buildPathMap(IEclipsePreferences prefs) {
+        if(prefs == null){
+            return;
+        }
         hashCode = null;
 
         String[] keys;
@@ -240,8 +273,9 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
 
         ArrayList mappingList = new ArrayList(keys.length);
         for (int i = 0; i < keys.length; i++) {
-            if (keys[i].startsWith(FileMapping.FULL_MAP_PREFIX)) {
-                FileMapping mapping = new FileMapping(prefs.get(keys[i], null), project
+            String key = keys[i];
+            if (key.startsWith(FileMapping.FULL_MAP_PREFIX)) {
+                FileMapping mapping = new FileMapping(prefs.get(key, null), project
                         .getLocation());
 
                 if (mappingList.contains(mapping)) {
@@ -249,7 +283,7 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
                             + mapping + "' for project '" + project.getName() + "'",
                             null, IStatus.WARNING);
 
-                    prefs.remove(keys[i]);
+                    prefs.remove(key);
                 } else {
                     mappingList.add(mapping);
                 }
@@ -370,6 +404,9 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
      */
     public void refreshPreferences() {
         this.ignorePreferenceListeners = true;
+        if(preferences == null){
+            return;
+        }
         try {
             hashCode = null;
             preferences.clear();
@@ -475,13 +512,17 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
         if (!ignorePreferenceListeners && rebuildPathMap) {
             buildPathMap(preferences);
             rebuildPathMap = false;
-            for (int i = 0; i < prefListeners.size(); i++) {
-                IPreferenceChangeListener listener = (IPreferenceChangeListener) prefListeners
-                        .get(i);
-                IEclipsePreferences.PreferenceChangeEvent event = new IEclipsePreferences.PreferenceChangeEvent(
-                        preferences, KEY_PROJECT, project, project);
-                listener.preferenceChange(event);
-            }
+            notifyListeners(preferences);
+        }
+    }
+
+    void notifyListeners(IEclipsePreferences prefs) {
+        for (int i = 0; i < prefListeners.size(); i++) {
+            IPreferenceChangeListener listener = (IPreferenceChangeListener) prefListeners
+                    .get(i);
+            IEclipsePreferences.PreferenceChangeEvent event = new IEclipsePreferences.PreferenceChangeEvent(
+                    prefs, KEY_PROJECT, project, project);
+            listener.preferenceChange(event);
         }
     }
 
@@ -506,29 +547,36 @@ public class ProjectProperties implements IPreferenceChangeListener, INodeChange
 
     @Override
     public void variablesAdded(IValueVariable[] variables) {
-        if (!isIgnorePreferenceListeners()) {
-            buildPathMap(preferences);
-        } else {
-            rebuildPathMap = true;
-        }
+        rebuildPathMap();
     }
 
     @Override
     public void variablesRemoved(IValueVariable[] variables) {
-        if (!isIgnorePreferenceListeners()) {
-            buildPathMap(preferences);
-        } else {
-            rebuildPathMap = true;
-        }
+        rebuildPathMap();
     }
 
     @Override
     public void variablesChanged(IValueVariable[] variables) {
-        if (!isIgnorePreferenceListeners()) {
-            buildPathMap(preferences);
-        } else {
-            rebuildPathMap = true;
-        }
+        rebuildPathMap();
     }
 
+    void rebuildPathMap() {
+        IEclipsePreferences prefs = preferences;
+        if(prefs == null){
+            return;
+        }
+        buildPathMap(prefs);
+        rebuildPathMap = false;
+        notifyListeners(prefs);
+    }
+
+    @Override
+    public void resourceChanged(IResourceChangeEvent event) {
+        IResource resource = event.getResource();
+        if ((event.getType() == IResourceChangeEvent.PRE_CLOSE
+                || event.getType() == IResourceChangeEvent.PRE_DELETE)
+                && resource != null && resource.equals(project)) {
+            dispose();
+        }
+    }
 }
