@@ -19,7 +19,17 @@
             nameFilter="*"
             class="de.loskutov.fs.properties.ProjectSyncPropertyPage"
             name="File synchronization"
-            id="de.loskutov.fs.properties.samplePropertyPage"/>
+            id="de.loskutov.fs.properties.samplePropertyPage">
+         <filter
+               name="open"
+               value="true">
+         </filter>
+         <enabledWhen>
+         	<adapt
+                type="org.eclipse.core.resources.IProject">
+          	</adapt>
+         </enabledWhen>
+       </page>
    </extension>
    <extension
          id="FSPreferences"
