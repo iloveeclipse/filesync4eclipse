@@ -403,7 +403,15 @@ implements IPreferenceChangeListener {
     }
 
     private void updateVisitorFlags(ProjectProperties props) {
-        IEclipsePreferences preferences = props.getPreferences(false);
+        try {
+            updateVisitorFlagsInternal(props, false);
+        } catch (IllegalStateException e) {
+            updateVisitorFlagsInternal(props, true);
+        }
+    }
+
+    private void updateVisitorFlagsInternal(ProjectProperties props, boolean force) {
+        IEclipsePreferences preferences = props.getPreferences(force);
         boolean includeTeamFiles = preferences.getBoolean(
                 ProjectProperties.KEY_INCLUDE_TEAM_PRIVATE, false);
         visitorFlags = includeTeamFiles? IContainer.INCLUDE_TEAM_PRIVATE_MEMBERS : IResource.NONE;
