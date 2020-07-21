@@ -55,33 +55,20 @@ public class SupportPanel {
         Link link = new Link(commonPanel, SWT.NONE);
         link.setFont(font);
         link.setText(" - <a>visit homepage</a>");
-        link.setToolTipText("You need just a sense of humor!");
         link.addListener (SWT.Selection, new Listener () {
             @Override
             public void handleEvent(Event event) {
-                handleUrlClick("http://andrei.gmxhome.de/filesync");
+                handleUrlClick("https://github.com/iloveeclipse/plugins/wiki/FileSync");
             }
         });
 
         link = new Link(commonPanel, SWT.NONE);
         link.setFont(font);
         link.setText(" - <a>report issue or feature request</a>");
-        link.setToolTipText("You need a valid google account at google.com!");
         link.addListener (SWT.Selection, new Listener () {
             @Override
             public void handleEvent(Event event) {
-                handleUrlClick("http://code.google.com/a/eclipselabs.org/p/filesync4eclipse/issues/list");
-            }
-        });
-
-        link = new Link(commonPanel, SWT.NONE);
-        link.setFont(font);
-        link.setText(" - <a>add to your Ohloh software stack</a>");
-        link.setToolTipText("You need a valid Ohloh account at ohloh.net!");
-        link.addListener (SWT.Selection, new Listener () {
-            @Override
-            public void handleEvent(Event event) {
-                handleUrlClick("http://www.ohloh.net/p/filesync4eclipse");
+                handleUrlClick("https://github.com/iloveeclipse/filesync4eclipse/issues");
             }
         });
 
